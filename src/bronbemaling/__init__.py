@@ -36,6 +36,12 @@ from .damage import (
     classify_damage,
     SBR_THRESHOLDS,
 )
+from .numerical import (
+    FDGrid,
+    create_grid,
+    solve_steady_state,
+    extract_drawdown_at_points,
+)
 
 __version__ = "0.1.0"
 
@@ -66,5 +72,9 @@ __all__ = [
     "assess_building_damage",
     "classify_damage",
     "SBR_THRESHOLDS",
+    "FDGrid",
+    "create_grid",
+    "solve_steady_state",
+    "extract_drawdown_at_points",
     "__version__",
 ]
