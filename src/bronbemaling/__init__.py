@@ -42,6 +42,15 @@ from .numerical import (
     solve_steady_state,
     extract_drawdown_at_points,
 )
+from .plotting import (
+    plot_cross_section,
+    plot_plan_view,
+    plot_settlement_trough,
+    plot_time_settlement,
+    plot_effective_stress_profile,
+    plot_3d_drawdown,
+    plot_damage_summary,
+)
 
 __version__ = "0.1.0"
 
@@ -76,5 +85,12 @@ __all__ = [
     "create_grid",
     "solve_steady_state",
     "extract_drawdown_at_points",
+    "plot_cross_section",
+    "plot_plan_view",
+    "plot_settlement_trough",
+    "plot_time_settlement",
+    "plot_effective_stress_profile",
+    "plot_3d_drawdown",
+    "plot_damage_summary",
     "__version__",
 ]
