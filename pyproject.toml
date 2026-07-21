@@ -14,6 +14,11 @@ dependencies = [
 [project.optional-dependencies]
 notebook = ["jupyter>=1.0", "ipykernel>=6.0"]
 test = ["pytest>=7.0"]
+docs = [
+    "mkdocs>=1.5",
+    "mkdocs-material>=9.5",
+    "mkdocstrings[python]>=0.24",
+]
 
 [build-system]
 requires = ["hatchling"]

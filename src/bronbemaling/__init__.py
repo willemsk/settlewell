@@ -21,6 +21,15 @@ from .hydraulics import (
     thiem_drawdown_single_well,
     theis_drawdown_single_well,
 )
+from .settlement import (
+    compute_initial_stress_profile,
+    compute_stress_increase_from_drawdown,
+    compute_layer_settlement_cc_cr,
+    compute_layer_settlement_eoed,
+    compute_total_settlement,
+    compute_degree_of_consolidation,
+    compute_settlement_vs_time,
+)
 
 __version__ = "0.1.0"
 
@@ -40,5 +49,12 @@ __all__ = [
     "compute_radius_of_influence",
     "thiem_drawdown_single_well",
     "theis_drawdown_single_well",
+    "compute_initial_stress_profile",
+    "compute_stress_increase_from_drawdown",
+    "compute_layer_settlement_cc_cr",
+    "compute_layer_settlement_eoed",
+    "compute_total_settlement",
+    "compute_degree_of_consolidation",
+    "compute_settlement_vs_time",
     "__version__",
 ]

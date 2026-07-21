@@ -1,24 +1,42 @@
-"""Hydraulic drawdown calculations for dewatering.
+"""Hydraulic drawdown calculations for construction pit dewatering.
 
-Supports both confined and unconfined aquifers, steady-state (Thiem/Dupuit)
-and transient (Theis) solutions, with superposition for multiple wells.
+This module provides analytical solutions for steady-state (Thiem, Dupuit) and
+transient (Theis) drawdown fields around single and multi-well dewatering systems.
 """
+
 import math
+from typing import List, Optional, Tuple, Union
+
 import numpy as np
 from scipy.special import exp1
-from .models import DewateringConfig, SoilProfile, AquiferType
 
-GAMMA_W = 9.81  # [kN/m³] Unit weight of water
+from .models import AquiferType, DewateringConfig, SoilProfile
+
+GAMMA_W: float = 9.81  # [kN/m³] Unit weight of water
 
 
 def compute_transmissivity(profile: SoilProfile, config: DewateringConfig) -> float:
-    """Compute aquifer transmissivity T [m²/s] from soil layers.
-    
-    For UNCONFINED: T = sum(k_h_i * thickness_i) for all saturated layers above total depth.
-    For CONFINED: T = sum(k_h_i * thickness_i) for layers within the confined aquifer only
-                  (layers below the primary confining clay layer).
-    
-    Returns config.T if set.
+    """Compute overall aquifer transmissivity T from soil profile.
+
+    Parameters
+    ----------
+    profile : SoilProfile
+        Soil profile with layer properties and initial groundwater level.
+    config : DewateringConfig
+        Dewatering configuration specifying aquifer classification (`CONFINED` or `UNCONFINED`).
+
+    Returns
+    -------
+    float
+        Transmissivity T [m²/s].
+
+    Notes
+    -----
+    For `UNCONFINED` aquifers:
+        $$T = \\sum_i k_{h, i} \\cdot d_{\\text{sat}, i}$$
+    For `CONFINED` aquifers:
+        $$T = \\sum_{i \\in \\text{confined}} k_{h, i} \\cdot H_i$$
+    If `config.T` is explicitly specified, that value is returned.
     """
     if config.T is not None:
         return config.T
@@ -37,7 +55,6 @@ def compute_transmissivity(profile: SoilProfile, config: DewateringConfig) -> fl
             current_depth = bottom
         return T
     else:  # CONFINED
-        # Identify confining layer as layer with minimum k_h
         min_kh_idx = min(range(len(profile.layers)), key=lambda i: profile.layers[i].k_h)
         confined_layers = profile.layers[min_kh_idx + 1:]
         if not confined_layers:
@@ -46,18 +63,30 @@ def compute_transmissivity(profile: SoilProfile, config: DewateringConfig) -> fl
 
 
 def compute_storativity(profile: SoilProfile, config: DewateringConfig) -> float:
-    """Compute storativity S [-] from soil layers.
-    
-    For UNCONFINED: S = specific yield ≈ e0 / (1 + e0) for the primary aquifer layer.
-    For CONFINED: S = sum(m_v_i * gamma_w * thickness_i) where m_v = 1/Eoed.
-    
-    Returns config.S if set.
+    """Compute storativity or specific yield S from soil profile.
+
+    Parameters
+    ----------
+    profile : SoilProfile
+        Soil profile containing layer void ratios and stiffness parameters.
+    config : DewateringConfig
+        Dewatering configuration specifying aquifer classification.
+
+    Returns
+    -------
+    float
+        Storativity / specific yield S [-].
+
+    Notes
+    -----
+    For `UNCONFINED` aquifers, S represents specific yield $S_y \\approx e_0 / (1 + e_0)$.
+    For `CONFINED` aquifers, S represents elastic storativity $S = \\sum \\frac{\\gamma_w H_i}{E_{\\text{oed}, i}}$.
+    If `config.S` is specified, that value is returned.
     """
     if config.S is not None:
         return config.S
 
     if config.aquifer_type == AquiferType.UNCONFINED:
-        # Aquifer layer is layer with maximum k_h
         aquifer_layer = max(profile.layers, key=lambda l: l.k_h)
         return aquifer_layer.e0 / (1.0 + aquifer_layer.e0)
     else:  # CONFINED
@@ -65,43 +94,75 @@ def compute_storativity(profile: SoilProfile, config: DewateringConfig) -> float
 
 
 def compute_radius_of_influence(config: DewateringConfig, T: float) -> float:
-    """Compute radius of influence R [m] using Sichardt's empirical formula.
-    
-    R = 3000 * s * sqrt(k)
-    
-    Returns config.R if explicitly set, otherwise computes it.
+    """Compute radius of influence R using Sichardt's empirical equation.
+
+    Parameters
+    ----------
+    config : DewateringConfig
+        Dewatering configuration containing target drawdown.
+    T : float
+        Aquifer transmissivity [m²/s].
+
+    Returns
+    -------
+    float
+        Radius of influence R [m].
+
+    Notes
+    -----
+    Sichardt's formula:
+    $$R = 3000 \\cdot s \\cdot \\sqrt{k_{\\text{rep}}}$$
+    where $s$ is target drawdown [m] and $k_{\\text{rep}} = T / 10.0$ [m/s].
     """
     if config.R is not None:
         return config.R
 
     s = config.target_drawdown
-    # Representative k = T / total_aquifer_thickness (assume ~10m if 0)
-    # Using 10m or average depth
     k_rep = T / 10.0
     R = 3000.0 * s * math.sqrt(k_rep)
     return max(R, 1.0)
 
 
 def thiem_drawdown_single_well(
-    r: float | np.ndarray,
+    r: Union[float, np.ndarray],
     Q: float,
     T: float,
     R: float,
     H0: float,
     aquifer_type: AquiferType,
-) -> float | np.ndarray:
-    """Steady-state drawdown at distance r from a single well.
-    
-    CONFINED (Thiem, 1906):
-        s(r) = Q / (2π T) * ln(R / r)
-    
-    UNCONFINED (Dupuit, 1863):
-        h²(r) = H0² - (Q / (π K)) * ln(R / r)
-        s(r) = H0 - h(r)
+) -> Union[float, np.ndarray]:
+    """Calculate steady-state drawdown around a single extraction well.
+
+    Parameters
+    ----------
+    r : float or numpy.ndarray
+        Distance from well axis [m].
+    Q : float
+        Pumping extraction rate [m³/s].
+    T : float
+        Aquifer transmissivity [m²/s].
+    R : float
+        Radius of influence [m].
+    H0 : float
+        Initial saturated thickness of aquifer [m].
+    aquifer_type : AquiferType
+        Aquifer type (`CONFINED` or `UNCONFINED`).
+
+    Returns
+    -------
+    float or numpy.ndarray
+        Calculated steady-state drawdown s [m].
+
+    Notes
+    -----
+    Confined aquifer (Thiem, 1906):
+    $$s(r) = \\frac{Q}{2\\pi T} \\ln\\left(\\frac{R}{r}\\right)$$
+
+    Unconfined aquifer (Dupuit, 1863):
+    $$h^2(r) = H_0^2 - \\frac{Q}{\\pi K} \\ln\\left(\\frac{R}{r}\\right), \\quad s(r) = H_0 - h(r)$$
     """
     is_scalar = np.isscalar(r)
     r_arr = np.atleast_1d(np.asarray(r, dtype=float))
-    # Clip r to minimum radius of 0.075m to avoid singularity
     r_eff = np.maximum(r_arr, 0.075)
 
     if aquifer_type == AquiferType.CONFINED:
@@ -118,15 +179,36 @@ def thiem_drawdown_single_well(
 
 
 def theis_drawdown_single_well(
-    r: float | np.ndarray,
+    r: Union[float, np.ndarray],
     t: float,
     Q: float,
     T: float,
     S: float,
-) -> float | np.ndarray:
-    """Transient drawdown at distance r and time t from a single well (Theis, 1935).
-    
-    s(r, t) = Q / (4π T) * W(u) where W(u) = exp1(u).
+) -> Union[float, np.ndarray]:
+    """Calculate transient drawdown using the Theis (1935) well function.
+
+    Parameters
+    ----------
+    r : float or numpy.ndarray
+        Distance from well axis [m].
+    t : float
+        Elapsed pumping duration [seconds].
+    Q : float
+        Pumping rate [m³/s].
+    T : float
+        Transmissivity [m²/s].
+    S : float
+        Storativity [-].
+
+    Returns
+    -------
+    float or numpy.ndarray
+        Transient drawdown s [m].
+
+    Notes
+    -----
+    $$s(r, t) = \\frac{Q}{4\\pi T} W(u), \\quad u = \\frac{r^2 S}{4 T t}$$
+    where $W(u) = \\text{exp1}(u)$ is the exponential integral.
     """
     is_scalar = np.isscalar(r)
     r_arr = np.atleast_1d(np.asarray(r, dtype=float))
@@ -143,12 +225,29 @@ def theis_drawdown_single_well(
 
 
 def compute_drawdown_at_points(
-    points: list[tuple[float, float]],
+    points: List[Tuple[float, float]],
     config: DewateringConfig,
     profile: SoilProfile,
-    time_s: float | None = None,
+    time_s: Optional[float] = None,
 ) -> np.ndarray:
-    """Compute total drawdown at multiple (x,y) points using superposition."""
+    """Compute total drawdown at specified (x, y) evaluation points using superposition.
+
+    Parameters
+    ----------
+    points : List[Tuple[float, float]]
+        List of (x, y) coordinate pairs [m].
+    config : DewateringConfig
+        Dewatering configuration with well coordinates and rates.
+    profile : SoilProfile
+        Soil profile for hydraulic property estimation.
+    time_s : float, optional
+        Pumping duration [seconds]. If None, steady-state drawdown is calculated.
+
+    Returns
+    -------
+    numpy.ndarray
+        1D array of drawdown values [m] at each point, capped at `config.target_drawdown`.
+    """
     T = compute_transmissivity(profile, config)
     S = compute_storativity(profile, config)
     R = compute_radius_of_influence(config, T)
@@ -172,15 +271,38 @@ def compute_drawdown_at_points(
 
 
 def compute_drawdown_grid(
-    x_range: tuple[float, float],
-    y_range: tuple[float, float],
+    x_range: Tuple[float, float],
+    y_range: Tuple[float, float],
     nx: int,
     ny: int,
     config: DewateringConfig,
     profile: SoilProfile,
-    time_s: float | None = None,
-) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """Compute drawdown on a regular 2D grid for contour plotting."""
+    time_s: Optional[float] = None,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Compute drawdown distribution across a regular 2D rectangular grid.
+
+    Parameters
+    ----------
+    x_range : Tuple[float, float]
+        (x_min, x_max) grid extents [m].
+    y_range : Tuple[float, float]
+        (y_min, y_max) grid extents [m].
+    nx : int
+        Number of grid divisions in x-direction.
+    ny : int
+        Number of grid divisions in y-direction.
+    config : DewateringConfig
+        Dewatering configuration.
+    profile : SoilProfile
+        Soil profile.
+    time_s : float, optional
+        Pumping time [seconds]. None for steady-state.
+
+    Returns
+    -------
+    Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
+        (X, Y, S) meshgrid arrays of shape (ny, nx), where S is the 2D drawdown array [m].
+    """
     x = np.linspace(x_range[0], x_range[1], nx)
     y = np.linspace(y_range[0], y_range[1], ny)
     X, Y = np.meshgrid(x, y)
