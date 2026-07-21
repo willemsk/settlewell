@@ -11,6 +11,8 @@ This package provides standard Flemish/Dutch geotechnical engineering models for
 - Multi-well drawdown superposition.
 - 1D Terzaghi consolidation and settlement analysis.
 - Burland & Wroth / SBR building damage classification.
+- 2D finite-difference groundwater solver.
+- 7 publication-quality visualizations.
 
 ## Navigation
 
@@ -19,3 +21,6 @@ This package provides standard Flemish/Dutch geotechnical engineering models for
     - [Models](api/models.md) — Input data classes
     - [Hydraulics](api/hydraulics.md) — Drawdown calculations
     - [Settlement](api/settlement.md) — Consolidation engine
+    - [Damage](api/damage.md) — Building damage classification
+    - [Numerical](api/numerical.md) — Finite-difference solver
+    - [Plotting](api/plotting.md) — Visualization functions

@@ -38,3 +38,4 @@ For every implementation phase:
 | v3 | 2026-07-21 | Restructured into 8 phased implementation stages with dependency diagram, verification gates, and review protocol |
 | v4 | 2026-07-21 | Added mandatory documentation requirement rule (NumPy docstrings + MkDocs autodoc build for every phase) |
 | v5 | 2026-07-21 | Integrated docs into spec: mkdocs.yml, docs/ structure, per-phase doc deliverables, doc build in verification gates, __all__ in __init__.py, py.typed, fixed docs/index.md nav |
+| v6 | 2026-07-21 | Reviewed and verified Phases 4–6 (Damage, Numerical, Plotting); updated spec.md with complete exported symbols list and docs/index.md overview |
