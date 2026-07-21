@@ -14,38 +14,26 @@ A Python package (`bronbemaling`) with a Jupyter notebook (`example_analysis.ipy
 d:\repos\bronbemaling\
 ├── pyproject.toml
 ├── README.md
-├── mkdocs.yml                       # MkDocs configuration (Material theme + mkdocstrings)
 ├── src/
 │   └── bronbemaling/
-│       ├── __init__.py              # Package exports + __all__
-│       ├── py.typed                 # PEP 561 type stub marker (empty file)
-│       ├── models.py                # All dataclasses (input models)
-│       ├── hydraulics.py            # Drawdown calculations (Thiem, Theis)
-│       ├── settlement.py            # Terzaghi consolidation + settlement
-│       ├── damage.py                # Burland/Wroth + SBR classification
-│       ├── numerical.py             # 2D finite-difference groundwater solver
-│       └── plotting.py              # All 7 visualization functions
+│       ├── __init__.py          # Package exports
+│       ├── models.py            # All dataclasses (input models)
+│       ├── hydraulics.py        # Drawdown calculations (Thiem, Theis)
+│       ├── settlement.py        # Terzaghi consolidation + settlement
+│       ├── damage.py            # Burland/Wroth + SBR classification
+│       ├── numerical.py         # 2D finite-difference groundwater solver
+│       └── plotting.py          # All 7 visualization functions
 ├── tests/
-│   ├── conftest.py                  # Shared pytest fixtures (profiles, configs)
-│   ├── test_models.py               # Dataclass and validation tests
-│   ├── test_hydraulics.py           # Drawdown calculation unit tests
-│   ├── test_settlement.py           # Consolidation unit tests
-│   ├── test_damage.py               # Damage classification unit tests
-│   ├── test_numerical.py            # Finite-difference solver unit tests
-│   ├── test_plotting.py             # Plot smoke/regression tests
+│   ├── conftest.py              # Shared pytest fixtures (profiles, configs)
+│   ├── test_models.py           # Dataclass and validation tests
+│   ├── test_hydraulics.py       # Drawdown calculation unit tests
+│   ├── test_settlement.py       # Consolidation unit tests
+│   ├── test_damage.py           # Damage classification unit tests
+│   ├── test_numerical.py        # Finite-difference solver unit tests
+│   ├── test_plotting.py         # Plot smoke/regression tests
 │   └── test_physics_convergence.py  # Limiting-case convergence tests (@slow)
-├── docs/
-│   ├── index.md                     # Landing page with project overview
-│   ├── getting-started.md           # Installation, quick start, build docs
-│   └── api/                         # Auto-generated API reference (mkdocstrings)
-│       ├── models.md                # Phase 1
-│       ├── hydraulics.md            # Phase 2
-│       ├── settlement.md            # Phase 3
-│       ├── damage.md                # Phase 4
-│       ├── numerical.md             # Phase 5
-│       └── plotting.md              # Phase 6
 └── notebooks/
-    └── example_analysis.ipynb       # Full worked example with Flemish defaults
+    └── example_analysis.ipynb   # Full worked example with Flemish defaults
 ```
 
 ---
@@ -72,27 +60,19 @@ graph LR
     P5 --> P8
 ```
 
-| Phase | Name | Source Files | Test Files | Doc Files | Verification Gate |
-|---|---|---|---|---|---|
-| 1 | **Scaffolding & Data Models** | `pyproject.toml`, `README.md`, `mkdocs.yml`, `__init__.py`, `py.typed`, `models.py` | `conftest.py`, `test_models.py` | `index.md`, `getting-started.md`, `api/models.md` | Tests + doc build pass |
-| 2 | **Hydraulics (Drawdown)** | `hydraulics.py` | `test_hydraulics.py` | `api/hydraulics.md` | Tests + doc build pass |
-| 3 | **Settlement (Consolidation)** | `settlement.py` | `test_settlement.py` | `api/settlement.md` | Tests + doc build pass |
-| 4 | **Damage Assessment** | `damage.py` | `test_damage.py` | `api/damage.md` | Tests + doc build pass |
-| 5 | **Numerical Method (FD Solver)** | `numerical.py` | `test_numerical.py` | `api/numerical.md` | Tests + doc build pass |
-| 6 | **Visualizations** | `plotting.py` | `test_plotting.py` | `api/plotting.md` | Tests + doc build pass |
-| 7 | **Example Notebook** | `notebooks/example_analysis.ipynb` | — | — | All cells execute without errors |
-| 8 | **Physics Convergence Tests** | — | `test_physics_convergence.py` | — | `uv run pytest` (full suite) passes |
+| Phase | Name | Files Created | Tests | Verification Gate |
+|---|---|---|---|---|
+| 1 | **Scaffolding & Data Models** | `pyproject.toml`, `README.md`, `__init__.py`, `models.py` | `conftest.py`, `test_models.py` | `uv run pytest tests/test_models.py` passes |
+| 2 | **Hydraulics (Drawdown)** | `hydraulics.py` | `test_hydraulics.py` | `uv run pytest tests/test_hydraulics.py` passes |
+| 3 | **Settlement (Consolidation)** | `settlement.py` | `test_settlement.py` | `uv run pytest tests/test_settlement.py` passes |
+| 4 | **Damage Assessment** | `damage.py` | `test_damage.py` | `uv run pytest tests/test_damage.py` passes |
+| 5 | **Numerical Method (FD Solver)** | `numerical.py` | `test_numerical.py` | `uv run pytest tests/test_numerical.py` passes |
+| 6 | **Visualizations** | `plotting.py` | `test_plotting.py` | `uv run pytest tests/test_plotting.py` passes |
+| 7 | **Example Notebook** | `notebooks/example_analysis.ipynb` | — | All cells execute without errors |
+| 8 | **Physics Convergence Tests** | — | `test_physics_convergence.py` | `uv run pytest tests/test_physics_convergence.py` passes |
 
 > [!IMPORTANT]
-> **Review protocol**: After each phase, run that phase's verification gate (tests + doc build). Review the code and test results before approving the next phase. The `__init__.py` is created in Phase 1 with only model exports, and is **extended** in each subsequent phase to re-export new public symbols. The `__init__.py` must maintain an explicit `__all__` list.
-
-> [!IMPORTANT]
-> **Documentation per phase**: Every phase that introduces a new module must also:
-> 1. Write thorough NumPy-style docstrings on all public classes/functions (with units, formulas, parameters)
-> 2. Create a `docs/api/<module>.md` page with a `::: bronbemaling.<module>` directive
-> 3. Add the new page to the `nav:` section of `mkdocs.yml`
-> 4. Update `docs/index.md` navigation links to include the new module
-> 5. Verify with `uv run --extra docs mkdocs build` — zero warnings required
+> **Review protocol**: After each phase, run that phase's verification gate. Review the code and test results before approving the next phase. The `__init__.py` is created in Phase 1 with only model exports, and is **extended** in each subsequent phase to re-export new public symbols.
 
 > [!TIP]
 > **Fast feedback loop**: During development, run `uv run pytest -m 'not slow'` to skip the expensive convergence tests (Phase 8). Run the full suite with `uv run pytest` only after all phases are complete.
@@ -110,7 +90,6 @@ graph LR
 name = "bronbemaling"
 version = "0.1.0"
 description = "Ground settlement calculation for dewatering of construction pits"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.24",
@@ -122,11 +101,6 @@ dependencies = [
 [project.optional-dependencies]
 notebook = ["jupyter>=1.0", "ipykernel>=6.0"]
 test = ["pytest>=7.0"]
-docs = [
-    "mkdocs>=1.5",
-    "mkdocs-material>=9.5",
-    "mkdocstrings[python]>=0.24",
-]
 
 [build-system]
 requires = ["hatchling"]
@@ -138,228 +112,6 @@ markers = [
     "slow: marks tests as slow (grid refinement, convergence loops). Deselect with: pytest -m 'not slow'",
 ]
 ```
-
----
-
-#### [NEW] `mkdocs.yml`
-
-```yaml
-site_name: Bronbemaling Documentation
-site_description: Ground Settlement Calculation During Dewatering of Construction Pits
-site_author: Kherim Willems
-
-theme:
-  name: material
-  palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
-  features:
-    - navigation.indexes
-    - navigation.top
-    - content.code.copy
-
-plugins:
-  - search
-  - mkdocstrings:
-      handlers:
-        python:
-          options:
-            docstring_style: numpy
-            show_root_heading: true
-            show_source: true
-
-markdown_extensions:
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
-  - pymdownx.arithmatex:
-      generic: true
-
-# NOTE: nav is extended in each phase as new API modules are added.
-# The version below is the FINAL state after all phases.
-nav:
-  - Home: index.md
-  - Getting Started: getting-started.md
-  - API Reference:
-      - Models: api/models.md
-      - Hydraulics: api/hydraulics.md
-      - Settlement: api/settlement.md
-      - Damage: api/damage.md
-      - Numerical: api/numerical.md
-      - Plotting: api/plotting.md
-```
-
-> [!NOTE]
-> **Phase-by-phase nav evolution**:
-> - Phase 1: `nav:` includes Home, Getting Started, API Reference → Models
-> - Phase 2: Add Hydraulics to API Reference
-> - Phase 3: Add Settlement to API Reference
-> - Phase 4: Add Damage to API Reference
-> - Phase 5: Add Numerical to API Reference
-> - Phase 6: Add Plotting to API Reference
-
----
-
-#### [NEW] `docs/index.md`
-
-```markdown
-# Bronbemaling
-
-**Bronbemaling** is a Python package for calculating ground settlement (zetting)
-at neighboring structures caused by dewatering of construction pits.
-
-## Overview
-
-Dewatering (bronbemaling) lowers the groundwater table around a construction
-excavation, inducing effective stress changes in underlying soil layers.
-In compressible layers (such as clay or peat), this effective stress increase
-causes consolidation settlement, which may result in differential settlement
-and structural damage to nearby buildings.
-
-This package provides standard Flemish/Dutch geotechnical engineering models for:
-- Analytical steady-state (Thiem, Dupuit) and transient (Theis) hydraulic drawdown.
-- Multi-well drawdown superposition.
-- 1D Terzaghi consolidation and settlement analysis.
-- Burland & Wroth / SBR building damage classification.
-- 2D finite-difference groundwater solver.
-- 7 publication-quality visualizations.
-
-## Navigation
-
-- [Getting Started](getting-started.md): Installation and quick start guide.
-- **API Reference**: Complete reference for all modules:
-    - [Models](api/models.md) — Input data classes
-    - [Hydraulics](api/hydraulics.md) — Drawdown calculations
-    - [Settlement](api/settlement.md) — Consolidation engine
-    - [Damage](api/damage.md) — Building damage classification
-    - [Numerical](api/numerical.md) — Finite-difference solver
-    - [Plotting](api/plotting.md) — Visualization functions
-```
-
-> [!NOTE]
-> The navigation links in `index.md` are extended in each phase to include newly
-> created API modules. The version above is the **final** state after all phases.
-
----
-
-#### [NEW] `docs/getting-started.md`
-
-```markdown
-# Getting Started
-
-## Installation
-
-`bronbemaling` uses [`uv`](https://github.com/astral-sh/uv) for fast,
-deterministic Python package management.
-
-### Clone and Install
-
-\```bash
-git clone <repository-url>
-cd bronbemaling
-
-# Install with testing and documentation extras
-uv sync --all-extras
-\```
-
-### Running Tests
-
-\```bash
-uv run pytest -v
-\```
-
-### Building Documentation
-
-\```bash
-uv run --extra docs mkdocs build
-\```
-
-To serve documentation locally:
-
-\```bash
-uv run --extra docs mkdocs serve
-\```
-
-## Quick Example
-
-\```python
-from bronbemaling import (
-    SoilProfile,
-    SoilLayer,
-    DewateringConfig,
-    Well,
-    AquiferType,
-    compute_drawdown_at_points,
-)
-
-# 1. Define Soil Profile
-profile = SoilProfile(
-    surface_level_mtaw=5.0,
-    gwl_mtaw=4.0,
-    layers=[
-        SoilLayer(name="Sand", thickness=2.0, gamma=17.5, gamma_sat=20.0,
-                  k_h=1e-4, e0=0.5, Cc=0.02, Cr=0.005, Eoed=30000, Cv=1e-2),
-        SoilLayer(name="Clay", thickness=3.0, gamma=16.0, gamma_sat=18.5,
-                  k_h=1e-9, e0=1.0, Cc=0.30, Cr=0.06, Eoed=3000, Cv=1e-7, OCR=1.5),
-    ]
-)
-
-# 2. Configure Dewatering System
-wells = [Well(x=0.0, y=0.0, Q=0.001)]
-config = DewateringConfig(
-    wells=wells,
-    target_drawdown_mtaw=1.5,
-    original_gwl_mtaw=4.0,
-    pumping_duration_days=90,
-    aquifer_type=AquiferType.UNCONFINED,
-)
-
-# 3. Compute Drawdown at (x=10, y=0)
-drawdown = compute_drawdown_at_points([(10.0, 0.0)], config, profile)
-print(f"Drawdown at 10m distance: {drawdown[0]:.3f} m")
-\```
-```
-
----
-
-#### [NEW] `docs/api/*.md` (per-module API pages)
-
-Each API doc page follows the same pattern — a heading plus a single mkdocstrings directive:
-
-```markdown
-# <Module Name> API Reference
-
-::: bronbemaling.<module_name>
-```
-
-**Pages created per phase:**
-
-| Phase | File | Heading | Directive |
-|---|---|---|---|
-| 1 | `docs/api/models.md` | `# Data Models API Reference` | `::: bronbemaling.models` |
-| 2 | `docs/api/hydraulics.md` | `# Hydraulics API Reference` | `::: bronbemaling.hydraulics` |
-| 3 | `docs/api/settlement.md` | `# Settlement API Reference` | `::: bronbemaling.settlement` |
-| 4 | `docs/api/damage.md` | `# Damage Assessment API Reference` | `::: bronbemaling.damage` |
-| 5 | `docs/api/numerical.md` | `# Numerical Solver API Reference` | `::: bronbemaling.numerical` |
-| 6 | `docs/api/plotting.md` | `# Plotting API Reference` | `::: bronbemaling.plotting` |
-
----
-
-#### [NEW] `src/bronbemaling/py.typed`
-
-Empty file (PEP 561 marker). Signals to type checkers that this package ships inline type annotations.
 
 ---
 
@@ -1278,7 +1030,7 @@ def plot_damage_summary(
 #### [NEW] `src/bronbemaling/__init__.py`
 
 > [!NOTE]
-> Created in Phase 1 with model-only exports. **Extended** in each subsequent phase to re-export that phase's public API. The version shown below is the final state after all phases. Must maintain an explicit `__all__` list for mkdocstrings and IDE support.
+> Created in Phase 1 with model-only exports. **Extended** in each subsequent phase to re-export that phase's public API. The version shown below is the final state after all phases.
 
 ```python
 """Bronbemaling — Ground settlement calculation for dewatering of construction pits.
@@ -1292,39 +1044,15 @@ from .models import (
 from .hydraulics import (
     compute_drawdown_at_points, compute_drawdown_grid,
     compute_transmissivity, compute_storativity, compute_radius_of_influence,
-    thiem_drawdown_single_well, theis_drawdown_single_well,
 )
 from .settlement import (
     compute_initial_stress_profile, compute_stress_increase_from_drawdown,
-    compute_layer_settlement_cc_cr, compute_layer_settlement_eoed,
-    compute_total_settlement, compute_degree_of_consolidation,
-    compute_settlement_vs_time,
+    compute_total_settlement, compute_settlement_vs_time,
 )
-from .damage import assess_building_damage, classify_damage, DamageAssessment
+from .damage import assess_building_damage, DamageAssessment
 from .numerical import create_grid, solve_steady_state, extract_drawdown_at_points
 
 __version__ = "0.1.0"
-
-__all__ = [
-    # models
-    "SoilLayer", "SoilProfile", "Well", "ConstructionPit",
-    "DewateringConfig", "Building", "AquiferType", "BuildingType",
-    # hydraulics
-    "compute_drawdown_at_points", "compute_drawdown_grid",
-    "compute_transmissivity", "compute_storativity", "compute_radius_of_influence",
-    "thiem_drawdown_single_well", "theis_drawdown_single_well",
-    # settlement
-    "compute_initial_stress_profile", "compute_stress_increase_from_drawdown",
-    "compute_layer_settlement_cc_cr", "compute_layer_settlement_eoed",
-    "compute_total_settlement", "compute_degree_of_consolidation",
-    "compute_settlement_vs_time",
-    # damage
-    "assess_building_damage", "classify_damage", "DamageAssessment",
-    # numerical
-    "create_grid", "solve_steady_state", "extract_drawdown_at_points",
-    # meta
-    "__version__",
-]
 ```
 
 ---
@@ -2393,32 +2121,26 @@ class TestThinLayerConvergence:
 
 ### Per-Phase Verification Gates
 
-After each phase, run **both** the test gate and the doc build gate. All tests must pass and the doc build must produce zero warnings before proceeding to the next phase.
+After each phase, run the corresponding gate command. All tests must pass before proceeding to the next phase.
 
 ```bash
 # Phase 1 — Scaffolding & Data Models
 uv run pytest tests/test_models.py -v
-uv run --extra docs mkdocs build
 
 # Phase 2 — Hydraulics
 uv run pytest tests/test_hydraulics.py -v
-uv run --extra docs mkdocs build
 
 # Phase 3 — Settlement
 uv run pytest tests/test_settlement.py -v
-uv run --extra docs mkdocs build
 
 # Phase 4 — Damage Assessment
 uv run pytest tests/test_damage.py -v
-uv run --extra docs mkdocs build
 
 # Phase 5 — Numerical Method
 uv run pytest tests/test_numerical.py -v
-uv run --extra docs mkdocs build
 
 # Phase 6 — Visualizations
 uv run pytest tests/test_plotting.py -v
-uv run --extra docs mkdocs build
 
 # Phase 7 — Example Notebook
 # Manual: run `uv run jupyter lab` and execute all cells in a fresh kernel
@@ -2437,18 +2159,11 @@ uv run pytest
 
 # Run with verbose output:
 uv run pytest -v
-
-# Build documentation:
-uv run --extra docs mkdocs build
-
-# Serve documentation locally:
-uv run --extra docs mkdocs serve
 ```
 
 ### Acceptance Criteria
 - **Unit tests** (Phases 1–6, 6 test files): all green
 - **Physics convergence tests** (Phase 8, `@slow` marked): all green
-- **Doc build** (Phases 1–6): `uv run --extra docs mkdocs build` with zero warnings
 - **Notebook** (Phase 7): all cells execute without errors in a fresh kernel
 - **Visual plausibility**: all 7 plots look physically reasonable
 - **Settlement range**: default scenario yields 1–50 mm (residential scale)

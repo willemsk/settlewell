@@ -15,5 +15,7 @@ This package provides standard Flemish/Dutch geotechnical engineering models for
 ## Navigation
 
 - [Getting Started](getting-started.md): Installation and quick start guide.
-- [Models API Reference](api/models.md): Complete reference for input data classes.
-- [Hydraulics API Reference](api/hydraulics.md): Complete reference for drawdown calculation functions.
+- **API Reference**: Complete reference for all modules:
+    - [Models](api/models.md) — Input data classes
+    - [Hydraulics](api/hydraulics.md) — Drawdown calculations
+    - [Settlement](api/settlement.md) — Consolidation engine

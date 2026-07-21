@@ -7,7 +7,8 @@ material for AI-assisted development of the `bronbemaling` package.
 
 | File | Purpose |
 |---|---|
-| `spec.md` | **Current specification** (v2) — includes the full test suite. All implementation must conform to this spec. |
+| `spec.md` | **Current specification** (v5) — complete spec with phased implementation, test suite, and documentation infrastructure. All implementation must conform to this spec. |
+| `spec_v3.md` | **Specification v3** — frozen snapshot before docs integration. For reference if needed. |
 | `spec_v1.md` | **Original specification** (v1) — frozen snapshot before tests were added. For historical reference only. |
 | `phase3_plan.md` | **Phase 3 Plan Snapshot** — detailed technical design for Phase 3 (Settlement). |
 
@@ -36,3 +37,4 @@ For every implementation phase:
 | v2 | 2026-07-21 | Added comprehensive test suite: 7 test files (conftest + 6 modules + physics convergence), pytest config, `__post_init__` validation requirements |
 | v3 | 2026-07-21 | Restructured into 8 phased implementation stages with dependency diagram, verification gates, and review protocol |
 | v4 | 2026-07-21 | Added mandatory documentation requirement rule (NumPy docstrings + MkDocs autodoc build for every phase) |
+| v5 | 2026-07-21 | Integrated docs into spec: mkdocs.yml, docs/ structure, per-phase doc deliverables, doc build in verification gates, __all__ in __init__.py, py.typed, fixed docs/index.md nav |
