@@ -30,6 +30,12 @@ from .settlement import (
     compute_degree_of_consolidation,
     compute_settlement_vs_time,
 )
+from .damage import (
+    DamageAssessment,
+    assess_building_damage,
+    classify_damage,
+    SBR_THRESHOLDS,
+)
 
 __version__ = "0.1.0"
 
@@ -56,5 +62,9 @@ __all__ = [
     "compute_total_settlement",
     "compute_degree_of_consolidation",
     "compute_settlement_vs_time",
+    "DamageAssessment",
+    "assess_building_damage",
+    "classify_damage",
+    "SBR_THRESHOLDS",
     "__version__",
 ]

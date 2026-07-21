@@ -48,3 +48,4 @@ nav:
       - Models: api/models.md
       - Hydraulics: api/hydraulics.md
       - Settlement: api/settlement.md
+      - Damage: api/damage.md
