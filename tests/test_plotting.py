@@ -94,3 +94,9 @@ class TestPlotContent:
         fig = plot_plan_view(pit, six_well_config, building, X, Y, S, assessment)
         assert len(fig.axes) >= 1
         plt.close(fig)
+
+    def test_soil_color_fallback(self):
+        from settlewell.plotting import _get_soil_color as get_soil_color
+        # Soil name not in dictionary (e.g., "unknown_material") should return fallback hex #B0C4DE
+        color = get_soil_color("unknown_material")
+        assert color == "#B0C4DE"

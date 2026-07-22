@@ -1,7 +1,7 @@
 """Unit tests for settlewell.models — dataclass properties and validation."""
 import pytest
 import math
-from settlewell import SoilLayer, SoilProfile, Building, DewateringConfig, BuildingType
+from settlewell.models import SoilLayer, SoilProfile, Building, DewateringConfig, BuildingType, Well, ConstructionPit
 
 
 class TestSoilProfile:
@@ -89,3 +89,94 @@ class TestBuilding:
         assert len(pts) == 5
         # First point should be center
         assert pts[0] == pytest.approx((12.0, 0.0))
+
+class TestModelsEdgeCases:
+    def test_soillayer_validation_edges(self):
+        kwargs = dict(name="X", thickness=1.0, gamma=17.0, gamma_sat=19.0,
+                      k_h=1e-4, e0=0.5, Cc=0.02, Cr=0.005, Eoed=30000, Cv=1e-2, OCR=1.0)
+
+        # e0 < 0
+        kwargs["e0"] = -0.1
+        with pytest.raises(ValueError, match="Initial void ratio e0"):
+            SoilLayer(**kwargs)
+
+        # Cc < 0
+        kwargs["e0"] = 0.5
+        kwargs["Cc"] = -0.1
+        with pytest.raises(ValueError, match="Compression index Cc"):
+            SoilLayer(**kwargs)
+
+        # Cr < 0
+        kwargs["Cc"] = 0.02
+        kwargs["Cr"] = -0.1
+        with pytest.raises(ValueError, match="Recompression index Cr must be >= 0"):
+            SoilLayer(**kwargs)
+
+        # Cr > Cc
+        kwargs["Cr"] = 0.05
+        with pytest.raises(ValueError, match="cannot exceed virgin compression index"):
+            SoilLayer(**kwargs)
+
+    def test_soilprofile_mtaw_conversions(self, flemish_profile):
+        # surface is 5.0 mTAW
+        assert flemish_profile.mtaw_to_depth(3.0) == pytest.approx(2.0)
+        assert flemish_profile.depth_to_mtaw(2.0) == pytest.approx(3.0)
+
+    def test_well_validation_edges(self):
+        # r_w <= 0
+        with pytest.raises(ValueError, match="Well radius"):
+            Well(x=0, y=0, Q=0.001, r_w=0.0)
+
+        # screen_top < screen_bottom
+        with pytest.raises(ValueError, match="cannot be below screen_bottom_mtaw"):
+            Well(x=0, y=0, Q=0.001, screen_top_mtaw=-10.0, screen_bottom_mtaw=-5.0)
+
+    def test_constructionpit_validation_edges(self):
+        # length <= 0
+        with pytest.raises(ValueError, match="length must be"):
+            ConstructionPit(length=0.0, width=10.0, depth=5.0)
+        # width <= 0
+        with pytest.raises(ValueError, match="width must be"):
+            ConstructionPit(length=10.0, width=0.0, depth=5.0)
+        # depth <= 0
+        with pytest.raises(ValueError, match="depth must be"):
+            ConstructionPit(length=10.0, width=10.0, depth=0.0)
+
+    def test_dewateringconfig_validation_edges(self):
+        well = Well(x=0, y=0, Q=0.001)
+        # target_drawdown_mtaw > original_gwl_mtaw
+        with pytest.raises(ValueError, match="cannot be above"):
+            DewateringConfig(wells=[well], target_drawdown_mtaw=5.0, original_gwl_mtaw=4.0, pumping_duration_days=1)
+
+        # pumping_duration_days <= 0
+        with pytest.raises(ValueError, match="pumping_duration_days must be"):
+            DewateringConfig(wells=[well], target_drawdown_mtaw=2.0, original_gwl_mtaw=4.0, pumping_duration_days=0.0)
+
+        # R <= 0
+        with pytest.raises(ValueError, match="Radius of influence R"):
+            DewateringConfig(wells=[well], target_drawdown_mtaw=2.0, original_gwl_mtaw=4.0, pumping_duration_days=1, R=-1.0)
+
+        # T <= 0
+        with pytest.raises(ValueError, match="Transmissivity T"):
+            DewateringConfig(wells=[well], target_drawdown_mtaw=2.0, original_gwl_mtaw=4.0, pumping_duration_days=1, T=-1e-4)
+
+        # S <= 0
+        with pytest.raises(ValueError, match="Storativity S"):
+            DewateringConfig(wells=[well], target_drawdown_mtaw=2.0, original_gwl_mtaw=4.0, pumping_duration_days=1, S=-0.1)
+
+    def test_building_validation_edges(self):
+        # length <= 0
+        with pytest.raises(ValueError, match="Building length"):
+            Building(x=0, y=0, length=0.0, width=10.0)
+        # width <= 0
+        with pytest.raises(ValueError, match="Building width"):
+            Building(x=0, y=0, length=10.0, width=0.0)
+        # foundation_depth < 0
+        with pytest.raises(ValueError, match="Building foundation_depth"):
+            Building(x=0, y=0, length=10.0, width=10.0, foundation_depth=-1.0)
+
+    def test_soillayer_cv_edge(self):
+        kwargs = dict(name="X", thickness=1.0, gamma=17.0, gamma_sat=19.0,
+                      k_h=1e-4, e0=0.5, Cc=0.02, Cr=0.005, Eoed=30000, Cv=-1.0, OCR=1.0)
+        with pytest.raises(ValueError, match="Coefficient of consolidation Cv must be"):
+            SoilLayer(**kwargs)
