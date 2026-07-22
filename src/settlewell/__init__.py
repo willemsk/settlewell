@@ -1,4 +1,4 @@
-"""Bronbemaling — Ground settlement calculation for dewatering of construction pits.
+"""Settlewell — Ground settlement calculation for dewatering of construction pits.
 
 Berekening van grondverzakking door bronbemaling bij bouwputten.
 """

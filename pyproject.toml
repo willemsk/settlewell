@@ -1,8 +1,9 @@
 [project]
-name = "bronbemaling"
+name = "settlewell"
 version = "0.1.0"
 description = "Ground settlement calculation for dewatering of construction pits"
 readme = "README.md"
+license = { text = "MIT" }
 requires-python = ">=3.11"
 dependencies = [
     "numpy>=1.24",

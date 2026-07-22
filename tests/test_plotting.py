@@ -1,4 +1,4 @@
-"""Smoke and regression tests for bronbemaling.plotting — verify plots render without errors."""
+"""Smoke and regression tests for settlewell.plotting — verify plots render without errors."""
 
 from functools import partial
 
@@ -9,9 +9,9 @@ import numpy as np
 import plotly.graph_objects as go
 import pytest
 
-from bronbemaling.damage import assess_building_damage
-from bronbemaling.hydraulics import compute_drawdown_at_points, compute_drawdown_grid
-from bronbemaling.plotting import (
+from settlewell.damage import assess_building_damage
+from settlewell.hydraulics import compute_drawdown_at_points, compute_drawdown_grid
+from settlewell.plotting import (
     plot_3d_drawdown,
     plot_cross_section,
     plot_damage_summary,
@@ -20,7 +20,7 @@ from bronbemaling.plotting import (
     plot_settlement_trough,
     plot_time_settlement,
 )
-from bronbemaling.settlement import compute_initial_stress_profile, compute_total_settlement
+from settlewell.settlement import compute_initial_stress_profile, compute_total_settlement
 
 
 class TestPlotSmoke:

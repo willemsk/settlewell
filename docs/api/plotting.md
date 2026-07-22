@@ -1,3 +1,3 @@
 # Plotting API Reference
 
-::: bronbemaling.plotting
+::: settlewell.plotting

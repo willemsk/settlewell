@@ -2,13 +2,13 @@
 
 ## Installation
 
-`bronbemaling` uses [`uv`](https://github.com/astral-sh/uv) for fast, deterministic Python package management.
+`settlewell` uses [`uv`](https://github.com/astral-sh/uv) for fast, deterministic Python package management.
 
 ### Clone and Install
 
 ```bash
-git clone <repository-url>
-cd bronbemaling
+git clone https://github.com/willemsk/settlewell.git
+cd settlewell
 
 # Install with testing and documentation extras
 uv sync --all-extras
@@ -35,7 +35,7 @@ uv run --extra docs mkdocs serve
 ## Quick Example
 
 ```python
-from bronbemaling import (
+from settlewell import (
     SoilProfile,
     SoilLayer,
     DewateringConfig,

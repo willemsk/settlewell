@@ -1,10 +1,10 @@
-# Ground Settlement During Dewatering (`bronbemaling`)
+# Settlewell (`settlewell`)
 
 A Python package and interactive Jupyter notebook for calculating ground settlement (zetting) at neighboring buildings caused by the dewatering (bronbemaling) of construction pits.
 
 ## Features
 
-- **Hydraulic Drawdown**: Confined and unconfined analytical solutions (Thiem, Theis) with well superposition.
+- **Hydraulic Drawdown**: Confined and unconfined analytical solutions (Thiem, Dupuit, Theis) with well superposition.
 - **Consolidation & Settlement**: Terzaghi 1D consolidation theory, support for Cc/Cr and Eoed models, preconsolidation pressure (OCR), time-dependent consolidation.
 - **Building Damage Assessment**: Burland & Wroth (1974) and SBR damage classification based on differential settlement and angular distortion.
 - **Numerical Method**: 2D finite-difference groundwater solver.
@@ -16,8 +16,8 @@ Using `uv`:
 
 ```bash
 # Clone the repository
-git clone <repo-url>
-cd bronbemaling
+git clone https://github.com/willemsk/settlewell.git
+cd settlewell
 
 # Install dependencies and sync virtual environment
 uv sync --extra test --extra notebook
@@ -29,7 +29,7 @@ uv run pytest
 ## Usage Example
 
 ```python
-from bronbemaling import SoilProfile, SoilLayer, DewateringConfig, Well, Building, BuildingType, AquiferType
+from settlewell import SoilProfile, SoilLayer, DewateringConfig, Well, Building, BuildingType, AquiferType
 
 # Define Soil Profile
 profile = SoilProfile(
@@ -41,3 +41,8 @@ profile = SoilProfile(
     ]
 )
 ```
+
+## License
+
+[MIT License](LICENSE) © 2026 Kherim Willems
+

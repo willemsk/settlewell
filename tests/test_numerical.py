@@ -1,8 +1,8 @@
-"""Unit tests for bronbemaling.numerical — 2D finite-difference solver."""
+"""Unit tests for settlewell.numerical — 2D finite-difference solver."""
 import pytest
 import numpy as np
-from bronbemaling.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
-from bronbemaling import DewateringConfig, Well, AquiferType
+from settlewell.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
+from settlewell import DewateringConfig, Well, AquiferType
 
 
 class TestCreateGrid:
@@ -38,7 +38,7 @@ class TestSolveSteadyState:
     def test_mass_balance(self, flemish_profile, pit):
         """Total well extraction ≈ total boundary outflow (conservation of mass).
         Sum Q_wells should equal net flux through boundaries within tolerance."""
-        from bronbemaling.hydraulics import compute_transmissivity
+        from settlewell.hydraulics import compute_transmissivity
         single_well_config = DewateringConfig(
             wells=[Well(x=0.0, y=0.0, Q=0.001)],
             target_drawdown_mtaw=3.0, original_gwl_mtaw=4.0,

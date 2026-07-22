@@ -1,8 +1,8 @@
-"""Unit tests for bronbemaling.settlement — Terzaghi consolidation."""
+"""Unit tests for settlewell.settlement — Terzaghi consolidation."""
 import pytest
 import numpy as np
-from bronbemaling import SoilLayer
-from bronbemaling.settlement import (
+from settlewell import SoilLayer
+from settlewell.settlement import (
     compute_initial_stress_profile,
     compute_stress_increase_from_drawdown,
     compute_layer_settlement_cc_cr,
@@ -125,7 +125,7 @@ class TestDegreeOfConsolidation:
 class TestSettlementVsTime:
     def test_settlement_vs_time_monotonic(self, flemish_profile):
         """Settlement increases monotonically over time toward ultimate value."""
-        from bronbemaling.settlement import compute_settlement_vs_time
+        from settlewell.settlement import compute_settlement_vs_time
         times = np.array([0, 1, 10, 30, 90, 365, 3650])
         s_t = compute_settlement_vs_time(flemish_profile, drawdown=1.5, times_days=times)
         assert s_t[0] >= 0
@@ -133,7 +133,7 @@ class TestSettlementVsTime:
 
     def test_settlement_vs_time_eoed(self, flemish_profile):
         """Time settlement works under eoed method without Cc specified."""
-        from bronbemaling.settlement import compute_settlement_vs_time
+        from settlewell.settlement import compute_settlement_vs_time
         times = np.array([0, 10, 100, 1000])
         s_t = compute_settlement_vs_time(flemish_profile, drawdown=1.5, times_days=times, method="eoed")
         assert s_t[0] >= 0

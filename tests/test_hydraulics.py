@@ -1,7 +1,7 @@
-"""Unit tests for bronbemaling.hydraulics — drawdown calculations."""
+"""Unit tests for settlewell.hydraulics — drawdown calculations."""
 import pytest
 import numpy as np
-from bronbemaling.hydraulics import (
+from settlewell.hydraulics import (
     compute_transmissivity,
     thiem_drawdown_single_well,
     theis_drawdown_single_well,
@@ -9,7 +9,7 @@ from bronbemaling.hydraulics import (
     compute_radius_of_influence,
     compute_drawdown_grid,
 )
-from bronbemaling import AquiferType, DewateringConfig, Well
+from settlewell import AquiferType, DewateringConfig, Well
 
 
 class TestTransmissivity:

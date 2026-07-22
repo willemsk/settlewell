@@ -1,3 +1,3 @@
 # Data Models API Reference
 
-::: bronbemaling.models
+::: settlewell.models

@@ -1,3 +1,3 @@
 # Hydraulics API Reference
 
-::: bronbemaling.hydraulics
+::: settlewell.hydraulics

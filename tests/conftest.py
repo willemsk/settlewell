@@ -1,7 +1,7 @@
-"""Shared pytest fixtures for bronbemaling test suite."""
+"""Shared pytest fixtures for settlewell test suite."""
 import pytest
 import numpy as np
-from bronbemaling import (
+from settlewell import (
     SoilLayer,
     SoilProfile,
     Well,

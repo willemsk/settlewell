@@ -8,16 +8,16 @@ Exclude with: uv run pytest -m 'not slow'
 """
 import pytest
 import numpy as np
-from bronbemaling import AquiferType, Well, DewateringConfig, SoilLayer, SoilProfile
-from bronbemaling.hydraulics import (
+from settlewell import AquiferType, Well, DewateringConfig, SoilLayer, SoilProfile
+from settlewell.hydraulics import (
     thiem_drawdown_single_well, theis_drawdown_single_well,
     compute_drawdown_at_points,
 )
-from bronbemaling.settlement import (
+from settlewell.settlement import (
     compute_total_settlement, compute_degree_of_consolidation,
     compute_settlement_vs_time,
 )
-from bronbemaling.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
+from settlewell.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
 
 
 # ============================================================
@@ -112,7 +112,7 @@ class TestFDToThiemConvergence:
 
         Test at dx = 4m, 2m, 1m. Relative error should decrease with refinement.
         Final error at dx=1m should be < 10%."""
-        from bronbemaling.hydraulics import compute_transmissivity
+        from settlewell.hydraulics import compute_transmissivity
 
         well = Well(x=0.0, y=0.0, Q=0.001)
         config = DewateringConfig(

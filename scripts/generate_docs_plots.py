@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import exp1
 
-from bronbemaling import (
+from settlewell import (
     AquiferType,
     ConstructionPit,
     DewateringConfig,
@@ -25,7 +25,7 @@ from bronbemaling import (
     theis_drawdown_single_well,
     thiem_drawdown_single_well,
 )
-from bronbemaling.settlement import compute_total_settlement
+from settlewell.settlement import compute_total_settlement
 
 # Output directory for documentation SVG assets
 OUTPUT_DIR = Path("docs/assets/images")

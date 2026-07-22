@@ -1,3 +1,3 @@
 # Settlement API Reference
 
-::: bronbemaling.settlement
+::: settlewell.settlement

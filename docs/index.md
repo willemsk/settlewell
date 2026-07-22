@@ -1,6 +1,6 @@
-# Bronbemaling
+# Settlewell
 
-**Bronbemaling** is a Python package for calculating ground settlement (zetting) at neighboring structures caused by dewatering of construction pits.
+**Settlewell** is a Python package for calculating ground settlement (zetting) at neighboring structures caused by dewatering of construction pits.
 
 ## Overview
 

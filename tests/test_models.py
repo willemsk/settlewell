@@ -1,7 +1,7 @@
-"""Unit tests for bronbemaling.models — dataclass properties and validation."""
+"""Unit tests for settlewell.models — dataclass properties and validation."""
 import pytest
 import math
-from bronbemaling import SoilLayer, SoilProfile, Building, DewateringConfig, BuildingType
+from settlewell import SoilLayer, SoilProfile, Building, DewateringConfig, BuildingType
 
 
 class TestSoilProfile:

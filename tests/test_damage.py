@@ -1,7 +1,7 @@
-"""Unit tests for bronbemaling.damage — Burland/Wroth + SBR classification."""
+"""Unit tests for settlewell.damage — Burland/Wroth + SBR classification."""
 import pytest
-from bronbemaling.damage import classify_damage, assess_building_damage, DamageAssessment
-from bronbemaling import BuildingType
+from settlewell.damage import classify_damage, assess_building_damage, DamageAssessment
+from settlewell import BuildingType
 
 
 class TestClassifyDamage:
@@ -44,7 +44,7 @@ class TestClassifyDamage:
 class TestAssessBuildingDamage:
     def test_differential_settlement(self, building, flemish_profile, six_well_config):
         """With a drawdown gradient across the building, differential settlement >= 0."""
-        from bronbemaling.hydraulics import compute_drawdown_at_points
+        from settlewell.hydraulics import compute_drawdown_at_points
         from functools import partial
         drawdown_func = partial(
             compute_drawdown_at_points, config=six_well_config, profile=flemish_profile,
@@ -58,7 +58,7 @@ class TestAssessBuildingDamage:
 
     def test_angular_distortion_formula(self, building, flemish_profile, six_well_config):
         """β = differential_settlement / distance between most-settled pair."""
-        from bronbemaling.hydraulics import compute_drawdown_at_points
+        from settlewell.hydraulics import compute_drawdown_at_points
         from functools import partial
         drawdown_func = partial(
             compute_drawdown_at_points, config=six_well_config, profile=flemish_profile,
@@ -70,7 +70,7 @@ class TestAssessBuildingDamage:
 
     def test_deflection_ratio(self, building, flemish_profile, six_well_config):
         """Deflection ratio is non-negative and properly computed."""
-        from bronbemaling.hydraulics import compute_drawdown_at_points
+        from settlewell.hydraulics import compute_drawdown_at_points
         from functools import partial
         drawdown_func = partial(
             compute_drawdown_at_points, config=six_well_config, profile=flemish_profile,
