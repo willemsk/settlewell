@@ -1,6 +1,6 @@
 # Ground Settlement During Dewatering — Python Package + Notebook
 
-A Python package (`settlewell`) with a Jupyter notebook (`example_analysis.ipynb`) demonstrating its usage. Calculates ground settlement at neighboring buildings caused by dewatering of a residential-scale construction pit.
+A Python package (`bronbemaling`) with a Jupyter notebook (`example_analysis.ipynb`) demonstrating its usage. Calculates ground settlement at neighboring buildings caused by dewatering of a residential-scale construction pit.
 
 **Target context**: Flanders, Belgium — residential basement excavation.  
 **Language**: English with Dutch terms in parentheses (e.g., "Settlement (zetting)").  
@@ -11,12 +11,12 @@ A Python package (`settlewell`) with a Jupyter notebook (`example_analysis.ipynb
 ## Project Structure
 
 ```
-d:\repos\settlewell\
+d:\repos\bronbemaling\
 ├── pyproject.toml
 ├── README.md
 ├── mkdocs.yml                       # MkDocs configuration (Material theme + mkdocstrings)
 ├── src/
-│   └── settlewell/
+│   └── bronbemaling/
 │       ├── __init__.py              # Package exports + __all__
 │       ├── py.typed                 # PEP 561 type stub marker (empty file)
 │       ├── models.py                # All dataclasses (input models)
@@ -89,7 +89,7 @@ graph LR
 > [!IMPORTANT]
 > **Documentation per phase**: Every phase that introduces a new module must also:
 > 1. Write thorough NumPy-style docstrings on all public classes/functions (with units, formulas, parameters)
-> 2. Create a `docs/api/<module>.md` page with a `::: settlewell.<module>` directive
+> 2. Create a `docs/api/<module>.md` page with a `::: bronbemaling.<module>` directive
 > 3. Add the new page to the `nav:` section of `mkdocs.yml`
 > 4. Update `docs/index.md` navigation links to include the new module
 > 5. Verify with `uv run --extra docs mkdocs build` — zero warnings required
@@ -107,7 +107,7 @@ graph LR
 
 ```toml
 [project]
-name = "settlewell"
+name = "bronbemaling"
 version = "0.1.0"
 description = "Ground settlement calculation for dewatering of construction pits"
 readme = "README.md"
@@ -144,7 +144,7 @@ markers = [
 #### [NEW] `mkdocs.yml`
 
 ```yaml
-site_name: settlewell Documentation
+site_name: Bronbemaling Documentation
 site_description: Ground Settlement Calculation During Dewatering of Construction Pits
 site_author: Kherim Willems
 
@@ -215,9 +215,9 @@ nav:
 #### [NEW] `docs/index.md`
 
 ```markdown
-# settlewell
+# Bronbemaling
 
-**settlewell** is a Python package for calculating ground settlement (zetting)
+**Bronbemaling** is a Python package for calculating ground settlement (zetting)
 at neighboring structures caused by dewatering of construction pits.
 
 ## Overview
@@ -261,14 +261,14 @@ This package provides standard Flemish/Dutch geotechnical engineering models for
 
 ## Installation
 
-`settlewell` uses [`uv`](https://github.com/astral-sh/uv) for fast,
+`bronbemaling` uses [`uv`](https://github.com/astral-sh/uv) for fast,
 deterministic Python package management.
 
 ### Clone and Install
 
 \```bash
 git clone <repository-url>
-cd settlewell
+cd bronbemaling
 
 # Install with testing and documentation extras
 uv sync --all-extras
@@ -295,7 +295,7 @@ uv run --extra docs mkdocs serve
 ## Quick Example
 
 \```python
-from settlewell import (
+from bronbemaling import (
     SoilProfile,
     SoilLayer,
     DewateringConfig,
@@ -341,29 +341,29 @@ Each API doc page follows the same pattern — a heading plus a single mkdocstri
 ```markdown
 # <Module Name> API Reference
 
-::: settlewell.<module_name>
+::: bronbemaling.<module_name>
 ```
 
 **Pages created per phase:**
 
 | Phase | File | Heading | Directive |
 |---|---|---|---|
-| 1 | `docs/api/models.md` | `# Data Models API Reference` | `::: settlewell.models` |
-| 2 | `docs/api/hydraulics.md` | `# Hydraulics API Reference` | `::: settlewell.hydraulics` |
-| 3 | `docs/api/settlement.md` | `# Settlement API Reference` | `::: settlewell.settlement` |
-| 4 | `docs/api/damage.md` | `# Damage Assessment API Reference` | `::: settlewell.damage` |
-| 5 | `docs/api/numerical.md` | `# Numerical Solver API Reference` | `::: settlewell.numerical` |
-| 6 | `docs/api/plotting.md` | `# Plotting API Reference` | `::: settlewell.plotting` |
+| 1 | `docs/api/models.md` | `# Data Models API Reference` | `::: bronbemaling.models` |
+| 2 | `docs/api/hydraulics.md` | `# Hydraulics API Reference` | `::: bronbemaling.hydraulics` |
+| 3 | `docs/api/settlement.md` | `# Settlement API Reference` | `::: bronbemaling.settlement` |
+| 4 | `docs/api/damage.md` | `# Damage Assessment API Reference` | `::: bronbemaling.damage` |
+| 5 | `docs/api/numerical.md` | `# Numerical Solver API Reference` | `::: bronbemaling.numerical` |
+| 6 | `docs/api/plotting.md` | `# Plotting API Reference` | `::: bronbemaling.plotting` |
 
 ---
 
-#### [NEW] `src/settlewell/py.typed`
+#### [NEW] `src/bronbemaling/py.typed`
 
 Empty file (PEP 561 marker). Signals to type checkers that this package ships inline type annotations.
 
 ---
 
-#### [NEW] `src/settlewell/models.py`
+#### [NEW] `src/bronbemaling/models.py`
 
 All input data structures as frozen dataclasses. Every field has a type annotation, unit in the docstring, and a sensible default where appropriate.
 
@@ -495,7 +495,7 @@ class Building:
 
 ### Phase 2 — Hydraulics (Drawdown)
 
-#### [NEW] `src/settlewell/hydraulics.py`
+#### [NEW] `src/bronbemaling/hydraulics.py`
 
 Drawdown computation via analytical solutions with well superposition.
 
@@ -671,7 +671,7 @@ def compute_drawdown_grid(
 
 ### Phase 3 — Settlement (Consolidation)
 
-#### [NEW] `src/settlewell/settlement.py`
+#### [NEW] `src/bronbemaling/settlement.py`
 
 Core settlement engine — layer-by-layer Terzaghi consolidation.
 
@@ -886,7 +886,7 @@ def compute_settlement_vs_time(
 
 ### Phase 4 — Damage Assessment
 
-#### [NEW] `src/settlewell/damage.py`
+#### [NEW] `src/bronbemaling/damage.py`
 
 Building damage classification per Burland & Wroth (1974) and SBR.
 
@@ -977,7 +977,7 @@ def assess_building_damage(
 
 ### Phase 5 — Numerical Method (Finite-Difference Solver)
 
-#### [NEW] `src/settlewell/numerical.py`
+#### [NEW] `src/bronbemaling/numerical.py`
 
 2D finite-difference groundwater flow solver — pure NumPy/SciPy.
 
@@ -1084,7 +1084,7 @@ def extract_drawdown_at_points(
 
 ### Phase 6 — Visualizations
 
-#### [NEW] `src/settlewell/plotting.py`
+#### [NEW] `src/bronbemaling/plotting.py`
 
 All 7 visualizations. Each is a standalone function returning a `matplotlib.figure.Figure` or `plotly.graph_objects.Figure`.
 
@@ -1275,13 +1275,13 @@ def plot_damage_summary(
 
 ---
 
-#### [NEW] `src/settlewell/__init__.py`
+#### [NEW] `src/bronbemaling/__init__.py`
 
 > [!NOTE]
 > Created in Phase 1 with model-only exports. **Extended** in each subsequent phase to re-export that phase's public API. The version shown below is the final state after all phases. Must maintain an explicit `__all__` list for mkdocstrings and IDE support.
 
 ```python
-"""settlewell — Ground settlement calculation for dewatering of construction pits.
+"""Bronbemaling — Ground settlement calculation for dewatering of construction pits.
 
 Berekening van grondverzakking door bronbemaling bij bouwputten.
 """
@@ -1388,7 +1388,7 @@ __all__ = [
 A complete worked example notebook with the following cell structure:
 
 **Cell 1 — Markdown**: Title, description, author, date  
-**Cell 2 — Code**: Imports (`from settlewell import *`, numpy, matplotlib, plotly)  
+**Cell 2 — Code**: Imports (`from bronbemaling import *`, numpy, matplotlib, plotly)  
 **Cell 3 — Markdown**: "§1 Input Parameters (Invoergegevens)"  
 **Cell 4 — Code**: Define the default Flemish scenario:
 
@@ -1485,7 +1485,7 @@ Shared pytest fixtures used across all test files.
 ```python
 import pytest
 import numpy as np
-from settlewell import (
+from bronbemaling import (
     SoilLayer, SoilProfile, Well, ConstructionPit,
     DewateringConfig, Building, AquiferType, BuildingType,
 )
@@ -1579,10 +1579,10 @@ def building() -> Building:
 Tests for data model correctness and input validation.
 
 ```python
-"""Unit tests for settlewell.models — dataclass properties and validation."""
+"""Unit tests for bronbemaling.models — dataclass properties and validation."""
 import pytest
 import math
-from settlewell import SoilLayer, SoilProfile, Building, DewateringConfig, BuildingType
+from bronbemaling import SoilLayer, SoilProfile, Building, DewateringConfig, BuildingType
 
 
 class TestSoilProfile:
@@ -1673,15 +1673,15 @@ class TestBuilding:
 Unit tests for drawdown calculations.
 
 ```python
-"""Unit tests for settlewell.hydraulics — drawdown calculations."""
+"""Unit tests for bronbemaling.hydraulics — drawdown calculations."""
 import pytest
 import numpy as np
-from settlewell.hydraulics import (
+from bronbemaling.hydraulics import (
     compute_transmissivity, thiem_drawdown_single_well,
     theis_drawdown_single_well, compute_drawdown_at_points,
     compute_radius_of_influence, compute_drawdown_grid,
 )
-from settlewell import AquiferType, DewateringConfig, Well
+from bronbemaling import AquiferType, DewateringConfig, Well
 
 
 class TestTransmissivity:
@@ -1790,10 +1790,10 @@ class TestDrawdownGrid:
 Unit tests for the consolidation engine.
 
 ```python
-"""Unit tests for settlewell.settlement — Terzaghi consolidation."""
+"""Unit tests for bronbemaling.settlement — Terzaghi consolidation."""
 import pytest
 import numpy as np
-from settlewell.settlement import (
+from bronbemaling.settlement import (
     compute_initial_stress_profile,
     compute_stress_increase_from_drawdown,
     compute_layer_settlement_cc_cr,
@@ -1920,10 +1920,10 @@ class TestDegreeOfConsolidation:
 Unit tests for building damage classification.
 
 ```python
-"""Unit tests for settlewell.damage — Burland/Wroth + SBR classification."""
+"""Unit tests for bronbemaling.damage — Burland/Wroth + SBR classification."""
 import pytest
-from settlewell.damage import classify_damage, assess_building_damage, DamageAssessment
-from settlewell import BuildingType
+from bronbemaling.damage import classify_damage, assess_building_damage, DamageAssessment
+from bronbemaling import BuildingType
 
 
 class TestClassifyDamage:
@@ -1967,7 +1967,7 @@ class TestClassifyDamage:
 class TestAssessBuildingDamage:
     def test_differential_settlement(self, building, flemish_profile, six_well_config):
         """With a drawdown gradient across the building, differential settlement > 0."""
-        from settlewell.hydraulics import compute_drawdown_at_points
+        from bronbemaling.hydraulics import compute_drawdown_at_points
         from functools import partial
         drawdown_func = partial(
             compute_drawdown_at_points, config=six_well_config, profile=flemish_profile,
@@ -1981,7 +1981,7 @@ class TestAssessBuildingDamage:
 
     def test_angular_distortion_formula(self, building, flemish_profile, six_well_config):
         """β = differential_settlement / distance between most-settled pair."""
-        from settlewell.hydraulics import compute_drawdown_at_points
+        from bronbemaling.hydraulics import compute_drawdown_at_points
         from functools import partial
         drawdown_func = partial(
             compute_drawdown_at_points, config=six_well_config, profile=flemish_profile,
@@ -2000,10 +2000,10 @@ class TestAssessBuildingDamage:
 Unit tests for the finite-difference solver.
 
 ```python
-"""Unit tests for settlewell.numerical — 2D finite-difference solver."""
+"""Unit tests for bronbemaling.numerical — 2D finite-difference solver."""
 import pytest
 import numpy as np
-from settlewell.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
+from bronbemaling.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
 
 
 class TestCreateGrid:
@@ -2039,8 +2039,8 @@ class TestSolveSteadyState:
     def test_mass_balance(self, flemish_profile, pit):
         """Total well extraction ≈ total boundary outflow (conservation of mass).
         Sum Q_wells should equal net flux through boundaries within tolerance."""
-        from settlewell.hydraulics import compute_transmissivity
-        well = pytest.importorskip("settlewell").Well
+        from bronbemaling.hydraulics import compute_transmissivity
+        well = pytest.importorskip("bronbemaling").Well
         single_well_config = DewateringConfig(
             wells=[well(x=0.0, y=0.0, Q=0.001)],
             target_drawdown_mtaw=3.0, original_gwl_mtaw=4.0,
@@ -2081,20 +2081,20 @@ class TestExtractDrawdown:
 Smoke and regression tests for visualizations.
 
 ```python
-"""Smoke tests for settlewell.plotting — verify plots render without errors."""
+"""Smoke tests for bronbemaling.plotting — verify plots render without errors."""
 import pytest
 import numpy as np
 import matplotlib
 matplotlib.use("Agg")  # Non-interactive backend for testing
 import matplotlib.pyplot as plt
-from settlewell.plotting import (
+from bronbemaling.plotting import (
     plot_cross_section, plot_plan_view, plot_settlement_trough,
     plot_time_settlement, plot_effective_stress_profile,
     plot_3d_drawdown, plot_damage_summary,
 )
-from settlewell.hydraulics import compute_drawdown_at_points, compute_drawdown_grid
-from settlewell.settlement import compute_initial_stress_profile, compute_stress_increase_from_drawdown, compute_total_settlement
-from settlewell.damage import assess_building_damage
+from bronbemaling.hydraulics import compute_drawdown_at_points, compute_drawdown_grid
+from bronbemaling.settlement import compute_initial_stress_profile, compute_stress_increase_from_drawdown, compute_total_settlement
+from bronbemaling.damage import assess_building_damage
 from functools import partial
 
 
@@ -2191,16 +2191,16 @@ Exclude with: uv run pytest -m 'not slow'
 """
 import pytest
 import numpy as np
-from settlewell import AquiferType, Well, DewateringConfig, SoilLayer, SoilProfile
-from settlewell.hydraulics import (
+from bronbemaling import AquiferType, Well, DewateringConfig, SoilLayer, SoilProfile
+from bronbemaling.hydraulics import (
     thiem_drawdown_single_well, theis_drawdown_single_well,
     compute_drawdown_at_points,
 )
-from settlewell.settlement import (
+from bronbemaling.settlement import (
     compute_total_settlement, compute_degree_of_consolidation,
     compute_settlement_vs_time,
 )
-from settlewell.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
+from bronbemaling.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
 
 
 # ============================================================
@@ -2297,7 +2297,7 @@ class TestFDToThiemConvergence:
 
         Test at dx = 4m, 2m, 1m. Relative error should decrease with refinement.
         Final error at dx=1m should be < 10%."""
-        from settlewell.hydraulics import compute_transmissivity
+        from bronbemaling.hydraulics import compute_transmissivity
 
         well = Well(x=0.0, y=0.0, Q=0.001)
         config = DewateringConfig(
