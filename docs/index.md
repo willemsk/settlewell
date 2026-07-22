@@ -17,6 +17,7 @@ This package provides standard Flemish/Dutch geotechnical engineering models for
 ## Navigation
 
 - [Getting Started](getting-started.md): Installation and quick start guide.
+- [Validation & Physics](validation.md): Limiting-case numerical convergence graphs and physics benchmarks.
 - **API Reference**: Complete reference for all modules:
     - [Models](api/models.md) — Input data classes
     - [Hydraulics](api/hydraulics.md) — Drawdown calculations
