@@ -340,12 +340,11 @@ def compute_settlement_vs_time(
     settlements = np.zeros_like(times_s, dtype=float)
 
     for i, layer in enumerate(profile.layers):
-        is_clay = layer.Cv > 0 and layer.Cc > 0
+        is_clay = layer.Cv > 0 and layer.k_h < 1e-5
         if is_clay:
-            # Determine drainage condition
-            # Check upper and lower layer permeability
-            has_sand_above = (i == 0) or (profile.layers[i - 1].k_h >= 1e-5)
-            has_sand_below = (i == len(profile.layers) - 1) or (profile.layers[i + 1].k_h >= 1e-5)
+            # Determine drainage condition based on adjacent permeable boundaries
+            has_sand_above = (i == 0) or (profile.layers[i - 1].k_h >= 1e-6)
+            has_sand_below = (i < len(profile.layers) - 1) and (profile.layers[i + 1].k_h >= 1e-6)
 
             if has_sand_above and has_sand_below:
                 Hdr = layer.thickness / 2.0  # Double drainage
@@ -357,6 +356,8 @@ def compute_settlement_vs_time(
                     Tv = layer.Cv * t_sec / (Hdr**2)
                     U = compute_degree_of_consolidation(Tv)
                     settlements[t_idx] += U * layer_ult[i]
+                else:
+                    settlements[t_idx] += 0.0
         else:
             # Immediate settlement in permeable sand/fill layers
             settlements += layer_ult[i]

@@ -110,6 +110,10 @@ class SoilLayer:
             raise ValueError(f"Compression index Cc must be >= 0, got {self.Cc}")
         if self.Cr < 0:
             raise ValueError(f"Recompression index Cr must be >= 0, got {self.Cr}")
+        if self.Cr > self.Cc:
+            raise ValueError(
+                f"Recompression index Cr ({self.Cr}) cannot exceed virgin compression index Cc ({self.Cc})"
+            )
         if self.Eoed <= 0:
             raise ValueError(f"Oedometric modulus Eoed must be > 0, got {self.Eoed}")
         if self.Cv < 0:
@@ -173,6 +177,36 @@ class SoilProfile:
         """
         return sum(layer.thickness for layer in self.layers)
 
+    def mtaw_to_depth(self, elevation_mtaw: float) -> float:
+        """Convert Belgian datum elevation (mTAW) to depth below ground surface [m].
+
+        Parameters
+        ----------
+        elevation_mtaw : float
+            Elevation in mTAW [m].
+
+        Returns
+        -------
+        float
+            Depth below ground surface [m] (positive downward).
+        """
+        return self.surface_level_mtaw - elevation_mtaw
+
+    def depth_to_mtaw(self, depth: float) -> float:
+        """Convert depth below ground surface [m] to Belgian datum elevation (mTAW).
+
+        Parameters
+        ----------
+        depth : float
+            Depth below ground surface [m] (positive downward).
+
+        Returns
+        -------
+        float
+            Elevation in mTAW [m].
+        """
+        return self.surface_level_mtaw - depth
+
 
 @dataclass
 class Well:
@@ -201,6 +235,14 @@ class Well:
     screen_top_mtaw: float = 0.0
     screen_bottom_mtaw: float = 0.0
 
+    def __post_init__(self) -> None:
+        if self.r_w <= 0:
+            raise ValueError(f"Well radius r_w must be > 0, got {self.r_w}")
+        if self.screen_top_mtaw < self.screen_bottom_mtaw:
+            raise ValueError(
+                f"Well screen_top_mtaw ({self.screen_top_mtaw}) cannot be below screen_bottom_mtaw ({self.screen_bottom_mtaw})"
+            )
+
 
 @dataclass
 class ConstructionPit:
@@ -228,6 +270,14 @@ class ConstructionPit:
     center_x: float = 0.0
     center_y: float = 0.0
     bottom_mtaw: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.length <= 0:
+            raise ValueError(f"ConstructionPit length must be > 0, got {self.length}")
+        if self.width <= 0:
+            raise ValueError(f"ConstructionPit width must be > 0, got {self.width}")
+        if self.depth <= 0:
+            raise ValueError(f"ConstructionPit depth must be > 0, got {self.depth}")
 
 
 @dataclass
@@ -262,6 +312,22 @@ class DewateringConfig:
     R: Optional[float] = None
     T: Optional[float] = None
     S: Optional[float] = None
+
+    def __post_init__(self) -> None:
+        if self.target_drawdown_mtaw > self.original_gwl_mtaw:
+            raise ValueError(
+                f"target_drawdown_mtaw ({self.target_drawdown_mtaw}) cannot be above original_gwl_mtaw ({self.original_gwl_mtaw})"
+            )
+        if self.pumping_duration_days <= 0:
+            raise ValueError(
+                f"pumping_duration_days must be > 0, got {self.pumping_duration_days}"
+            )
+        if self.R is not None and self.R <= 0:
+            raise ValueError(f"Radius of influence R must be > 0 if specified, got {self.R}")
+        if self.T is not None and self.T <= 0:
+            raise ValueError(f"Transmissivity T must be > 0 if specified, got {self.T}")
+        if self.S is not None and self.S <= 0:
+            raise ValueError(f"Storativity S must be > 0 if specified, got {self.S}")
 
     @property
     def target_drawdown(self) -> float:
@@ -304,6 +370,16 @@ class Building:
     orientation_deg: float = 0.0
     foundation_depth: float = 0.6
     building_type: BuildingType = BuildingType.MASONRY
+
+    def __post_init__(self) -> None:
+        if self.length <= 0:
+            raise ValueError(f"Building length must be > 0, got {self.length}")
+        if self.width <= 0:
+            raise ValueError(f"Building width must be > 0, got {self.width}")
+        if self.foundation_depth < 0:
+            raise ValueError(
+                f"Building foundation_depth must be >= 0, got {self.foundation_depth}"
+            )
 
     def corner_coordinates(self) -> List[Tuple[float, float]]:
         """Compute (x, y) coordinates of the 4 building corners.

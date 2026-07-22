@@ -55,8 +55,11 @@ def compute_transmissivity(profile: SoilProfile, config: DewateringConfig) -> fl
             current_depth = bottom
         return T
     else:  # CONFINED
+        min_kh = min(layer.k_h for layer in profile.layers)
         min_kh_idx = min(range(len(profile.layers)), key=lambda i: profile.layers[i].k_h)
         confined_layers = profile.layers[min_kh_idx + 1:]
+        if not confined_layers:
+            confined_layers = [l for l in profile.layers if l.k_h > min_kh * 10.0]
         if not confined_layers:
             confined_layers = profile.layers
         return sum(layer.k_h * layer.thickness for layer in confined_layers)
@@ -93,7 +96,9 @@ def compute_storativity(profile: SoilProfile, config: DewateringConfig) -> float
         return sum((GAMMA_W * layer.thickness) / layer.Eoed for layer in profile.layers)
 
 
-def compute_radius_of_influence(config: DewateringConfig, T: float) -> float:
+def compute_radius_of_influence(
+    config: DewateringConfig, T: float, H0: Optional[float] = None
+) -> float:
     """Compute radius of influence R using Sichardt's empirical equation.
 
     Parameters
@@ -102,6 +107,8 @@ def compute_radius_of_influence(config: DewateringConfig, T: float) -> float:
         Dewatering configuration containing target drawdown.
     T : float
         Aquifer transmissivity [m²/s].
+    H0 : float, optional
+        Saturated aquifer thickness [m]. Defaults to 10.0 if not provided.
 
     Returns
     -------
@@ -112,13 +119,14 @@ def compute_radius_of_influence(config: DewateringConfig, T: float) -> float:
     -----
     Sichardt's formula:
     $$R = 3000 \\cdot s \\cdot \\sqrt{k_{\\text{rep}}}$$
-    where $s$ is target drawdown [m] and $k_{\\text{rep}} = T / 10.0$ [m/s].
+    where $s$ is target drawdown [m] and $k_{\\text{rep}} = T / H_0$ [m/s].
     """
     if config.R is not None:
         return config.R
 
     s = config.target_drawdown
-    k_rep = T / 10.0
+    h_sat = H0 if (H0 is not None and H0 > 0) else 10.0
+    k_rep = T / max(h_sat, 1e-3)
     R = 3000.0 * s * math.sqrt(k_rep)
     return max(R, 1.0)
 
@@ -130,6 +138,7 @@ def thiem_drawdown_single_well(
     R: float,
     H0: float,
     aquifer_type: AquiferType,
+    r_w: float = 0.075,
 ) -> Union[float, np.ndarray]:
     """Calculate steady-state drawdown around a single extraction well.
 
@@ -147,6 +156,8 @@ def thiem_drawdown_single_well(
         Initial saturated thickness of aquifer [m].
     aquifer_type : AquiferType
         Aquifer type (`CONFINED` or `UNCONFINED`).
+    r_w : float, default 0.075
+        Well radius [m]. Minimum evaluation distance.
 
     Returns
     -------
@@ -163,7 +174,7 @@ def thiem_drawdown_single_well(
     """
     is_scalar = np.isscalar(r)
     r_arr = np.atleast_1d(np.asarray(r, dtype=float))
-    r_eff = np.maximum(r_arr, 0.075)
+    r_eff = np.maximum(r_arr, max(r_w, 1e-3))
 
     if aquifer_type == AquiferType.CONFINED:
         s = (Q / (2.0 * np.pi * T)) * np.log(np.maximum(R / r_eff, 1.0))
@@ -184,6 +195,7 @@ def theis_drawdown_single_well(
     Q: float,
     T: float,
     S: float,
+    r_w: float = 0.075,
 ) -> Union[float, np.ndarray]:
     """Calculate transient drawdown using the Theis (1935) well function.
 
@@ -199,6 +211,8 @@ def theis_drawdown_single_well(
         Transmissivity [m²/s].
     S : float
         Storativity [-].
+    r_w : float, default 0.075
+        Well radius [m]. Minimum evaluation distance.
 
     Returns
     -------
@@ -212,7 +226,7 @@ def theis_drawdown_single_well(
     """
     is_scalar = np.isscalar(r)
     r_arr = np.atleast_1d(np.asarray(r, dtype=float))
-    r_eff = np.maximum(r_arr, 0.075)
+    r_eff = np.maximum(r_arr, max(r_w, 1e-3))
 
     if t <= 0:
         s = np.zeros_like(r_eff)
@@ -246,24 +260,43 @@ def compute_drawdown_at_points(
     Returns
     -------
     numpy.ndarray
-        1D array of drawdown values [m] at each point, capped at `config.target_drawdown`.
+        1D array of drawdown values [m] at each point, bounded by initial saturated thickness H0.
     """
     T = compute_transmissivity(profile, config)
     S = compute_storativity(profile, config)
-    R = compute_radius_of_influence(config, T)
     H0 = profile.total_depth - profile.gwl_depth
+    R = compute_radius_of_influence(config, T, H0)
 
     drawdowns = []
     for px, py in points:
-        s_total = 0.0
-        for well in config.wells:
-            r = math.hypot(px - well.x, py - well.y)
-            if time_s is None:
-                s_w = thiem_drawdown_single_well(r, well.Q, T, R, H0, config.aquifer_type)
-            else:
-                s_w = theis_drawdown_single_well(r, time_s, well.Q, T, S)
-            s_total += float(s_w)
-        s_total = min(s_total, config.target_drawdown)
+        if config.aquifer_type == AquiferType.UNCONFINED and time_s is None:
+            # Exact Dupuit quadratic head superposition: h^2 = H0^2 - sum(H0^2 - h_i^2)
+            sum_h2_drop = 0.0
+            for well in config.wells:
+                r = math.hypot(px - well.x, py - well.y)
+                s_w = thiem_drawdown_single_well(
+                    r, well.Q, T, R, H0, AquiferType.UNCONFINED, r_w=well.r_w
+                )
+                h_w = max(0.0, H0 - float(s_w))
+                sum_h2_drop += (H0**2 - h_w**2)
+            h_tot2 = max(0.0, H0**2 - sum_h2_drop)
+            s_total = H0 - math.sqrt(h_tot2)
+        else:
+            # Linear drawdown superposition
+            s_total = 0.0
+            for well in config.wells:
+                r = math.hypot(px - well.x, py - well.y)
+                if time_s is None:
+                    s_w = thiem_drawdown_single_well(
+                        r, well.Q, T, R, H0, config.aquifer_type, r_w=well.r_w
+                    )
+                else:
+                    s_w = theis_drawdown_single_well(
+                        r, time_s, well.Q, T, S, r_w=well.r_w
+                    )
+                s_total += float(s_w)
+
+        s_total = min(s_total, H0)
         s_total = max(0.0, s_total)
         drawdowns.append(s_total)
 

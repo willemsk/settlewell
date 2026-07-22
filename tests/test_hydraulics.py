@@ -102,10 +102,25 @@ class TestDrawdownGrid:
         assert S.shape == (15, 20)
 
     def test_drawdown_clipped(self, six_well_config, flemish_profile):
-        """All drawdown values are in [0, target_drawdown]."""
+        """All drawdown values are non-negative and bounded by saturated thickness H0."""
+        H0 = flemish_profile.total_depth - flemish_profile.gwl_depth
         _, _, S = compute_drawdown_grid(
             x_range=(-50, 50), y_range=(-50, 50), nx=20, ny=15,
             config=six_well_config, profile=flemish_profile,
         )
         assert np.all(S >= 0)
-        assert np.all(S <= six_well_config.target_drawdown + 1e-10)
+        assert np.all(S <= H0 + 1e-10)
+
+    def test_unconfined_drawdown_superposition(self, simple_profile):
+        """Unconfined aquifer superposition uses Dupuit quadratic head relation."""
+        well1 = Well(x=-10.0, y=0.0, Q=0.001)
+        well2 = Well(x=10.0, y=0.0, Q=0.001)
+        config_unconfined = DewateringConfig(
+            wells=[well1, well2], target_drawdown_mtaw=1.0,
+            original_gwl_mtaw=4.0, pumping_duration_days=1,
+            aquifer_type=AquiferType.UNCONFINED, R=200.0, T=5e-4,
+        )
+        s = compute_drawdown_at_points([(0.0, 0.0)], config_unconfined, simple_profile)[0]
+        assert s > 0
+        H0 = simple_profile.total_depth - simple_profile.gwl_depth
+        assert s < H0

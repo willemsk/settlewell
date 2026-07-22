@@ -144,6 +144,13 @@ def solve_steady_state(
         if 0 < iw < ny - 1 and 0 < jw < nx - 1:
             kw = iw * nx + jw
             b[kw] += well.Q / (dx * dy)
+        else:
+            import warnings
+
+            warnings.warn(
+                f"Well at ({well.x}, {well.y}) is located on or outside grid boundary. "
+                "Expand grid extents to include well inside interior nodes."
+            )
 
     # Solve sparse linear system A * h = b
     A_csr = A.tocsr()

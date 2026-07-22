@@ -15,9 +15,13 @@ from .models import Building, ConstructionPit, DewateringConfig, SoilProfile
 
 SOIL_COLORS: Dict[str, str] = {
     "Aanvulling": "#D2B48C",  # Light brown / tan
+    "Fill": "#D2B48C",
     "Zand": "#F4D03F",        # Yellow
+    "Sand": "#F4D03F",
     "Klei": "#8FBC8F",        # Green-gray / Dark Sea Green
+    "Clay": "#8FBC8F",
     "Veen": "#654321",        # Dark brown
+    "Peat": "#654321",
 }
 
 
@@ -325,7 +329,9 @@ def plot_settlement_trough(
     settlements_mm = np.asarray(settlements) * 1000.0
 
     # Pit extent shading
-    ax.axvspan(-pit.length / 2.0, pit.length / 2.0, color="gray", alpha=0.3, label="Bouwput zone")
+    pit_left = pit.center_x - pit.length / 2.0
+    pit_right = pit.center_x + pit.length / 2.0
+    ax.axvspan(pit_left, pit_right, color="gray", alpha=0.3, label="Bouwput zone")
 
     # Building extent shading
     b_left = building.x - building.length / 2.0

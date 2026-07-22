@@ -120,3 +120,23 @@ class TestDegreeOfConsolidation:
         """At Tv=0.5, U ≈ 0.764 (standard Terzaghi table value)."""
         U = compute_degree_of_consolidation(0.5)
         assert U == pytest.approx(0.764, abs=0.005)
+
+
+class TestSettlementVsTime:
+    def test_settlement_vs_time_monotonic(self, flemish_profile):
+        """Settlement increases monotonically over time toward ultimate value."""
+        from bronbemaling.settlement import compute_settlement_vs_time
+        times = np.array([0, 1, 10, 30, 90, 365, 3650])
+        s_t = compute_settlement_vs_time(flemish_profile, drawdown=1.5, times_days=times)
+        assert s_t[0] >= 0
+        assert np.all(np.diff(s_t) >= 0)
+
+    def test_settlement_vs_time_eoed(self, flemish_profile):
+        """Time settlement works under eoed method without Cc specified."""
+        from bronbemaling.settlement import compute_settlement_vs_time
+        times = np.array([0, 10, 100, 1000])
+        s_t = compute_settlement_vs_time(flemish_profile, drawdown=1.5, times_days=times, method="eoed")
+        assert s_t[0] >= 0
+        assert np.all(np.diff(s_t) >= 0)
+        total_eoed, _ = compute_total_settlement(flemish_profile, drawdown=1.5, method="eoed")
+        assert s_t[-1] == pytest.approx(total_eoed, rel=0.05)

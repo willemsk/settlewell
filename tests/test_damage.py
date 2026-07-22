@@ -67,3 +67,15 @@ class TestAssessBuildingDamage:
             building, flemish_profile, six_well_config, drawdown_func,
         )
         assert assessment.angular_distortion > 0 or assessment.differential_settlement == 0
+
+    def test_deflection_ratio(self, building, flemish_profile, six_well_config):
+        """Deflection ratio is non-negative and properly computed."""
+        from bronbemaling.hydraulics import compute_drawdown_at_points
+        from functools import partial
+        drawdown_func = partial(
+            compute_drawdown_at_points, config=six_well_config, profile=flemish_profile,
+        )
+        assessment = assess_building_damage(
+            building, flemish_profile, six_well_config, drawdown_func,
+        )
+        assert assessment.deflection_ratio >= 0

@@ -160,9 +160,9 @@ def assess_building_damage(
                 if beta > max_beta:
                     max_beta = beta
 
-    # Deflection ratio Delta / L
+    # Deflection ratio Delta / L (max settlement relative to average foundation level)
     corner_avg = sum(settlements[1:]) / 4.0 if len(settlements) > 1 else settlements[0]
-    delta = abs(settlements[0] - corner_avg)
+    delta = abs(max_s - corner_avg)
     diag_length = math.hypot(building.length, building.width)
     deflection_ratio = delta / max(diag_length, 1e-3)
 
