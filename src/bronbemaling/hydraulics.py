@@ -55,13 +55,11 @@ def compute_transmissivity(profile: SoilProfile, config: DewateringConfig) -> fl
             current_depth = bottom
         return T
     else:  # CONFINED
-        min_kh = min(layer.k_h for layer in profile.layers)
         min_kh_idx = min(range(len(profile.layers)), key=lambda i: profile.layers[i].k_h)
         confined_layers = profile.layers[min_kh_idx + 1:]
         if not confined_layers:
-            confined_layers = [l for l in profile.layers if l.k_h > min_kh * 10.0]
-        if not confined_layers:
-            confined_layers = profile.layers
+            min_kh = profile.layers[min_kh_idx].k_h
+            confined_layers = [l for l in profile.layers if l.k_h > min_kh * 10.0] or profile.layers
         return sum(layer.k_h * layer.thickness for layer in confined_layers)
 
 
@@ -97,7 +95,7 @@ def compute_storativity(profile: SoilProfile, config: DewateringConfig) -> float
 
 
 def compute_radius_of_influence(
-    config: DewateringConfig, T: float, H0: Optional[float] = None
+    config: DewateringConfig, T: float, H0: float = 10.0
 ) -> float:
     """Compute radius of influence R using Sichardt's empirical equation.
 
@@ -107,8 +105,8 @@ def compute_radius_of_influence(
         Dewatering configuration containing target drawdown.
     T : float
         Aquifer transmissivity [m²/s].
-    H0 : float, optional
-        Saturated aquifer thickness [m]. Defaults to 10.0 if not provided.
+    H0 : float, default 10.0
+        Saturated aquifer thickness [m].
 
     Returns
     -------
@@ -125,8 +123,7 @@ def compute_radius_of_influence(
         return config.R
 
     s = config.target_drawdown
-    h_sat = H0 if (H0 is not None and H0 > 0) else 10.0
-    k_rep = T / max(h_sat, 1e-3)
+    k_rep = T / max(H0, 1e-3)
     R = 3000.0 * s * math.sqrt(k_rep)
     return max(R, 1.0)
 
@@ -268,37 +265,41 @@ def compute_drawdown_at_points(
     R = compute_radius_of_influence(config, T, H0)
 
     drawdowns = []
-    for px, py in points:
-        if config.aquifer_type == AquiferType.UNCONFINED and time_s is None:
-            # Exact Dupuit quadratic head superposition: h^2 = H0^2 - sum(H0^2 - h_i^2)
+
+    if config.aquifer_type == AquiferType.UNCONFINED and time_s is None:
+        # Exact Dupuit quadratic head superposition: h^2 = H0^2 - sum(H0^2 - h_i^2)
+        for px, py in points:
             sum_h2_drop = 0.0
             for well in config.wells:
                 r = math.hypot(px - well.x, py - well.y)
-                s_w = thiem_drawdown_single_well(
+                s_w = float(thiem_drawdown_single_well(
                     r, well.Q, T, R, H0, AquiferType.UNCONFINED, r_w=well.r_w
-                )
-                h_w = max(0.0, H0 - float(s_w))
+                ))
+                h_w = max(0.0, H0 - s_w)
                 sum_h2_drop += (H0**2 - h_w**2)
             h_tot2 = max(0.0, H0**2 - sum_h2_drop)
-            s_total = H0 - math.sqrt(h_tot2)
+            s_total = min(H0 - math.sqrt(h_tot2), H0)
+            drawdowns.append(max(0.0, s_total))
+    else:
+        # Linear drawdown superposition (confined steady-state or transient)
+        if time_s is None:
+            def single_well_drawdown(r: float, well: Well) -> float:
+                return float(thiem_drawdown_single_well(
+                    r, well.Q, T, R, H0, config.aquifer_type, r_w=well.r_w
+                ))
         else:
-            # Linear drawdown superposition
-            s_total = 0.0
-            for well in config.wells:
-                r = math.hypot(px - well.x, py - well.y)
-                if time_s is None:
-                    s_w = thiem_drawdown_single_well(
-                        r, well.Q, T, R, H0, config.aquifer_type, r_w=well.r_w
-                    )
-                else:
-                    s_w = theis_drawdown_single_well(
-                        r, time_s, well.Q, T, S, r_w=well.r_w
-                    )
-                s_total += float(s_w)
+            def single_well_drawdown(r: float, well: Well) -> float:
+                return float(theis_drawdown_single_well(
+                    r, time_s, well.Q, T, S, r_w=well.r_w
+                ))
 
-        s_total = min(s_total, H0)
-        s_total = max(0.0, s_total)
-        drawdowns.append(s_total)
+        for px, py in points:
+            s_total = sum(
+                single_well_drawdown(math.hypot(px - well.x, py - well.y), well)
+                for well in config.wells
+            )
+            s_total = min(s_total, H0)
+            drawdowns.append(max(0.0, s_total))
 
     return np.array(drawdowns, dtype=float)
 
