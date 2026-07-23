@@ -119,7 +119,10 @@ class MainWindow(QMainWindow):
         if reply == QMessageBox.StandardButton.Yes:
             self._current_file = None
             self.setWindowTitle("Settlewell — Naamloos project")
+            self.wizard.load_state({})
             self.wizard.restart()
+            self.wizard.show()
+            self._on_wizard_step_changed(self.wizard.currentId())
 
     def _on_open_project(self) -> None:
         """Open a .settlewell project file."""
@@ -136,8 +139,11 @@ class MainWindow(QMainWindow):
 
                 data = load_project(path)
                 self.wizard.load_state(data)
+                self.wizard.restart()
+                self.wizard.show()
                 self._current_file = path
                 self.setWindowTitle(f"Settlewell — {path.name}")
+                self._on_wizard_step_changed(self.wizard.currentId())
                 self.status_bar.showMessage(f"Project geladen: {path.name}")
             except Exception as e:  # noqa: BLE001
                 QMessageBox.critical(
