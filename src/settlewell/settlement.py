@@ -245,6 +245,8 @@ def compute_total_settlement(
     profile: SoilProfile,
     drawdown: float,
     method: str = "cc_cr",
+    sigma_v0_eff: Optional[np.ndarray] = None,
+    z_mids_arr: Optional[np.ndarray] = None,
 ) -> Tuple[float, List[float]]:
     """Compute total vertical surface settlement across all soil layers.
 
@@ -256,6 +258,10 @@ def compute_total_settlement(
         Drawdown at location [m].
     method : str, default "cc_cr"
         Settlement computation method (`"cc_cr"` for non-linear logarithmic or `"eoed"` for linear).
+    sigma_v0_eff : numpy.ndarray, optional
+        Precomputed initial vertical effective stress at layer midpoints [kPa].
+    z_mids_arr : numpy.ndarray, optional
+        Precomputed depth of layer midpoints [m].
 
     Returns
     -------
@@ -269,14 +275,19 @@ def compute_total_settlement(
     ValueError
         If `method` is not `"cc_cr"` or `"eoed"`.
     """
-    z_mids = []
-    curr = 0.0
-    for layer in profile.layers:
-        z_mids.append(curr + layer.thickness / 2.0)
-        curr += layer.thickness
-    z_mids_arr = np.array(z_mids, dtype=float)
+    if z_mids_arr is None:
+        z_mids = []
+        curr = 0.0
+        for layer in profile.layers:
+            z_mids.append(curr + layer.thickness / 2.0)
+            curr += layer.thickness
+        z_mids_arr = np.array(z_mids, dtype=float)
 
-    _, sigma_v0_eff, _ = compute_initial_stress_profile(profile, z_points=z_mids_arr)
+    if sigma_v0_eff is None:
+        _, sigma_v0_eff, _ = compute_initial_stress_profile(
+            profile, z_points=z_mids_arr
+        )
+
     _, delta_sigma_v = compute_stress_increase_from_drawdown(
         profile, drawdown, z_points=z_mids_arr
     )
