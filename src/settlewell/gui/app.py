@@ -3,12 +3,7 @@
 import os
 import sys
 
-# Ensure Matplotlib uses PySide6 QtAgg backend
-os.environ["QT_API"] = "PySide6"
 import matplotlib
-
-matplotlib.use("QtAgg")
-
 from PySide6.QtWidgets import QApplication
 
 from settlewell import __version__
@@ -28,6 +23,12 @@ def main() -> None:
     Sets QT_API environment variable, configures QApplication,
     applies the dark QSS stylesheet, and starts the event loop.
     """
+    os.environ["QT_API"] = "PySide6"
+    try:
+        matplotlib.use("QtAgg")
+    except Exception:
+        pass
+
     app = QApplication.instance()
     if app is None:
         app = QApplication(sys.argv)
