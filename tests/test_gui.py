@@ -4,23 +4,19 @@ import os
 from pathlib import Path
 import pytest
 
+# Skip module cleanly if PySide6 optional dependency is not installed
+pytest.importorskip("PySide6")
+
 # Force offscreen platform for headless Qt testing
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 os.environ["QT_API"] = "PySide6"
 
-# Safely import PySide6 & GUI modules, skipping cleanly if C-libraries (e.g. libEGL/libGL) or PySide6 are missing
-try:
-    from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication
 
-    from settlewell.gui.main_window import MainWindow
-    from settlewell.gui.project_io import load_project, save_project
-    from settlewell.gui.wizard import SettlewellWizard
-    from settlewell.gui.worker import AnalysisWorker
-except (ImportError, ModuleNotFoundError) as exc:
-    pytest.skip(
-        f"PySide6/Qt GUI dependencies or system libraries unavailable ({exc})",
-        allow_module_level=True,
-    )
+from settlewell.gui.main_window import MainWindow
+from settlewell.gui.project_io import load_project, save_project
+from settlewell.gui.wizard import SettlewellWizard
+from settlewell.gui.worker import AnalysisWorker
 
 
 @pytest.fixture(scope="session")
