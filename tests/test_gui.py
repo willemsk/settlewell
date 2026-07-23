@@ -4,6 +4,9 @@ import os
 from pathlib import Path
 import pytest
 
+# Skip module cleanly if PySide6 optional dependency is not installed
+pytest.importorskip("PySide6")
+
 # Force offscreen platform for headless Qt testing
 os.environ["QT_QPA_PLATFORM"] = "offscreen"
 os.environ["QT_API"] = "PySide6"
