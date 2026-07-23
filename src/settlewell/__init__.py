@@ -50,6 +50,7 @@ from .plotting import (
     plot_time_settlement,
     plot_effective_stress_profile,
     plot_3d_drawdown,
+    plot_3d_drawdown_mpl,
     plot_damage_summary,
 )
 
@@ -92,6 +93,7 @@ __all__ = [
     "plot_time_settlement",
     "plot_effective_stress_profile",
     "plot_3d_drawdown",
+    "plot_3d_drawdown_mpl",
     "plot_damage_summary",
     "__version__",
 ]

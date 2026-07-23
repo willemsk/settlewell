@@ -561,6 +561,53 @@ def plot_3d_drawdown(
     return fig
 
 
+def plot_3d_drawdown_mpl(
+    X_grid: np.ndarray,
+    Y_grid: np.ndarray,
+    drawdown_grid: np.ndarray,
+    pit: ConstructionPit = None,
+) -> plt.Figure:
+    """Native Matplotlib 3D surface plot of the drawdown cone for Qt embedding.
+
+    Parameters
+    ----------
+    X_grid : numpy.ndarray
+        2D X grid array [m].
+    Y_grid : numpy.ndarray
+        2D Y grid array [m].
+    drawdown_grid : numpy.ndarray
+        2D drawdown array [m].
+    pit : ConstructionPit, optional
+        Construction pit.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Matplotlib 3D Figure object.
+    """
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Invert drawdown for z-axis so depth cone points down
+    surf = ax.plot_surface(
+        X_grid,
+        Y_grid,
+        -drawdown_grid,
+        cmap="Blues_r",
+        edgecolor="none",
+        alpha=0.85,
+    )
+
+    ax.set_title("3D Groundwater Drawdown Surface (Bemalingskegel)")
+    ax.set_xlabel("X [m]")
+    ax.set_ylabel("Y [m]")
+    ax.set_zlabel("Verlaging [m]")
+
+    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10, label="Drawdown [m]")
+    fig.tight_layout()
+    return fig
+
+
 def plot_damage_summary(
     assessment: DamageAssessment,
 ) -> plt.Figure:
