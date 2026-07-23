@@ -1,7 +1,7 @@
 """Script to generate the complete notebooks/kauwereelstraat_31_analysis.ipynb notebook."""
 
-import os
 import nbformat as nbf
+
 
 def build_notebook():
     nb = nbf.v4.new_notebook()
@@ -500,12 +500,13 @@ print(f"  - Max zetting Buur #38 (26m):     {assessments[2].max_settlement*1000:
         nbf.v4.new_code_cell(sec8_code),
     ]
 
-    nb['cells'] = cells
-    
-    output_path = 'notebooks/kauwereelstraat_31_analysis.ipynb'
-    with open(output_path, 'w', encoding='utf-8') as f:
+    nb["cells"] = cells
+
+    output_path = "notebooks/kauwereelstraat_31_analysis.ipynb"
+    with open(output_path, "w", encoding="utf-8") as f:
         nbf.write(nb, f)
     print(f"Notebook generated successfully at: {output_path}")
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     build_notebook()

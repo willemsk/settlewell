@@ -1,4 +1,5 @@
 """Unit tests for settlewell.settlement — Terzaghi consolidation."""
+
 import pytest
 import numpy as np
 from settlewell import SoilLayer
@@ -20,6 +21,7 @@ class TestInitialStressProfile:
     Correctly determining the existing effective stresses in the ground is the necessary
     first step before calculating any settlement caused by stress changes.
     """
+
     def test_increases_with_depth(self, flemish_profile):
         """
         This test checks the physical rule that effective vertical stress must strictly increase
@@ -41,7 +43,9 @@ class TestInitialStressProfile:
         z_pts = np.array([0.5, 1.5])
         z, sigma_eff, _ = compute_initial_stress_profile(simple_profile, z_points=z_pts)
         assert sigma_eff[0] == pytest.approx(17.5 * 0.5, rel=0.01)
-        assert sigma_eff[1] == pytest.approx(17.5 * 1.0 + (20.0 - GAMMA_W) * 0.5, rel=0.01)
+        assert sigma_eff[1] == pytest.approx(
+            17.5 * 1.0 + (20.0 - GAMMA_W) * 0.5, rel=0.01
+        )
 
 
 class TestStressIncrease:
@@ -49,6 +53,7 @@ class TestStressIncrease:
     Groups tests that check the calculation of effective stress increases resulting specifically
     from a drop in the groundwater table (drawdown). This is the direct driver of dewatering settlement.
     """
+
     def test_zero_above_gwl(self, simple_profile):
         """
         This test confirms that dewatering causes absolutely zero stress increase in soils that are
@@ -57,7 +62,9 @@ class TestStressIncrease:
         given a 2.0m drawdown. The expected result is exactly 0.0 kPa stress increase.
         """
         z, dsigma = compute_stress_increase_from_drawdown(
-            simple_profile, drawdown=2.0, z_points=np.array([0.5]),
+            simple_profile,
+            drawdown=2.0,
+            z_points=np.array([0.5]),
         )
         assert dsigma[0] == pytest.approx(0.0)
 
@@ -69,7 +76,9 @@ class TestStressIncrease:
         The expected result is a stress increase equal to `9.81 * 2.0 = 19.62 kPa`.
         """
         z, dsigma = compute_stress_increase_from_drawdown(
-            simple_profile, drawdown=2.0, z_points=np.array([4.0]),
+            simple_profile,
+            drawdown=2.0,
+            z_points=np.array([4.0]),
         )
         assert dsigma[0] == pytest.approx(GAMMA_W * 2.0, rel=0.01)
 
@@ -81,7 +90,9 @@ class TestStressIncrease:
         from 1.0m to 3.0m. The expected result is a partial stress increase of `9.81 * 1.0 = 9.81 kPa`.
         """
         z, dsigma = compute_stress_increase_from_drawdown(
-            simple_profile, drawdown=2.0, z_points=np.array([2.0]),
+            simple_profile,
+            drawdown=2.0,
+            z_points=np.array([2.0]),
         )
         assert dsigma[0] == pytest.approx(GAMMA_W * 1.0, rel=0.01)
 
@@ -91,6 +102,7 @@ class TestLayerSettlement:
     Groups tests focusing on calculating the precise vertical compression of individual
     soil layers, testing the different geotechnical empirical methods (Cc/Cr and Eoed).
     """
+
     def test_nc_layer_cc_cr(self, single_clay_layer):
         """
         This test verifies the correct calculation of settlement for a Normally Consolidated (NC) clay layer
@@ -99,10 +111,21 @@ class TestLayerSettlement:
         The expected result matches the hand-calculated value of approximately 0.0657 m.
         """
         single_clay_layer_nc = SoilLayer(
-            name="Klei", thickness=3.0, gamma=16.0, gamma_sat=18.5,
-            k_h=1e-9, e0=1.0, Cc=0.30, Cr=0.06, Eoed=3000, Cv=1e-7, OCR=1.0,
+            name="Klei",
+            thickness=3.0,
+            gamma=16.0,
+            gamma_sat=18.5,
+            k_h=1e-9,
+            e0=1.0,
+            Cc=0.30,
+            Cr=0.06,
+            Eoed=3000,
+            Cv=1e-7,
+            OCR=1.0,
         )
-        s = compute_layer_settlement_cc_cr(single_clay_layer_nc, sigma_v0_eff=50.0, delta_sigma_v=20.0)
+        s = compute_layer_settlement_cc_cr(
+            single_clay_layer_nc, sigma_v0_eff=50.0, delta_sigma_v=20.0
+        )
         expected = (0.30 / 2.0) * 3.0 * np.log10(70 / 50)
         assert s == pytest.approx(expected, rel=0.01)
 
@@ -114,7 +137,9 @@ class TestLayerSettlement:
         stress increase to a soil with OCR=1.5. The expected result is a much smaller settlement (approx 0.013 m)
         calculated exclusively using Cr.
         """
-        s = compute_layer_settlement_cc_cr(single_clay_layer, sigma_v0_eff=50.0, delta_sigma_v=20.0)
+        s = compute_layer_settlement_cc_cr(
+            single_clay_layer, sigma_v0_eff=50.0, delta_sigma_v=20.0
+        )
         expected = (0.06 / 2.0) * 3.0 * np.log10(70 / 50)
         assert s == pytest.approx(expected, rel=0.01)
 
@@ -126,7 +151,9 @@ class TestLayerSettlement:
         stress increase to a layer with a preconsolidation pressure of 75 kPa. The expected result is exactly equal
         to the sum of the manually calculated Cr and Cc phases.
         """
-        s = compute_layer_settlement_cc_cr(single_clay_layer, sigma_v0_eff=50.0, delta_sigma_v=40.0)
+        s = compute_layer_settlement_cc_cr(
+            single_clay_layer, sigma_v0_eff=50.0, delta_sigma_v=40.0
+        )
         cr_part = (0.06 / 2.0) * 3.0 * np.log10(75 / 50)
         cc_part = (0.30 / 2.0) * 3.0 * np.log10(90 / 75)
         assert s == pytest.approx(cr_part + cc_part, rel=0.01)
@@ -147,6 +174,7 @@ class TestTotalSettlement:
     Groups tests that check the aggregation of individual layer settlements into a single
     total settlement value for the entire soil profile.
     """
+
     def test_zero_drawdown_zero_settlement(self, flemish_profile):
         """
         This test performs a basic validation: if there is no drawdown applied to the profile,
@@ -174,6 +202,7 @@ class TestDegreeOfConsolidation:
     Groups tests validating Terzaghi's 1D consolidation theory, which dictates how fast
     water is squeezed out of soil over time, delaying the final settlement.
     """
+
     def test_zero_at_t0(self):
         """
         This test confirms that at time zero (represented by time factor Tv=0), the degree of
@@ -205,6 +234,7 @@ class TestSettlementVsTime:
     Groups tests that combine the final total settlement calculations with the time-dependent
     degree of consolidation, producing realistic settlement-over-time curves.
     """
+
     def test_settlement_vs_time_monotonic(self, flemish_profile):
         """
         This test ensures that generated settlement curves always grow monotonically larger as time
@@ -213,8 +243,11 @@ class TestSettlementVsTime:
         values has all positive or zero step differences.
         """
         from settlewell.settlement import compute_settlement_vs_time
+
         times = np.array([0, 1, 10, 30, 90, 365, 3650])
-        s_t = compute_settlement_vs_time(flemish_profile, drawdown=1.5, times_days=times)
+        s_t = compute_settlement_vs_time(
+            flemish_profile, drawdown=1.5, times_days=times
+        )
         assert s_t[0] >= 0
         assert np.all(np.diff(s_t) >= 0)
 
@@ -226,18 +259,25 @@ class TestSettlementVsTime:
         that finally approaches the analytically calculated `eoed` total ultimate settlement.
         """
         from settlewell.settlement import compute_settlement_vs_time
+
         times = np.array([0, 10, 100, 1000])
-        s_t = compute_settlement_vs_time(flemish_profile, drawdown=1.5, times_days=times, method="eoed")
+        s_t = compute_settlement_vs_time(
+            flemish_profile, drawdown=1.5, times_days=times, method="eoed"
+        )
         assert s_t[0] >= 0
         assert np.all(np.diff(s_t) >= 0)
-        total_eoed, _ = compute_total_settlement(flemish_profile, drawdown=1.5, method="eoed")
+        total_eoed, _ = compute_total_settlement(
+            flemish_profile, drawdown=1.5, method="eoed"
+        )
         assert s_t[-1] == pytest.approx(total_eoed, rel=0.05)
+
 
 class TestSettlementEdgeCases:
     """
     Groups tests ensuring stability and predictable error handling when the settlement module
     encounters unusual arguments, bad configurations, or single-drainage edge cases.
     """
+
     def test_default_z_eval(self, flemish_profile):
         """
         This test confirms that if a user does not explicitly provide depths (`z_eval=None`) when computing
@@ -246,9 +286,12 @@ class TestSettlementEdgeCases:
         is an output array of stress increases perfectly matching the number of layers in the profile.
         """
         from settlewell.settlement import compute_stress_increase_from_drawdown
+
         # Passing z_eval=None should trigger the default calculation (center of each layer)
         drawdown = 1.0
-        delta_sigma, final_h = compute_stress_increase_from_drawdown(flemish_profile, drawdown, None)
+        delta_sigma, final_h = compute_stress_increase_from_drawdown(
+            flemish_profile, drawdown, None
+        )
         assert len(delta_sigma) == len(flemish_profile.layers)
 
     def test_unknown_settlement_method(self, flemish_profile):
@@ -258,6 +301,7 @@ class TestSettlementEdgeCases:
         `compute_total_settlement` with the bad method string. The expected result is a caught `ValueError`.
         """
         from settlewell.settlement import compute_total_settlement
+
         with pytest.raises(ValueError, match="Unknown settlement method 'unknown'"):
             compute_total_settlement(flemish_profile, 1.0, method="unknown")
 
@@ -276,11 +320,18 @@ class TestSettlementEdgeCases:
         # Profile where a clay layer is bounded by impermeable rock below (single drainage)
         profile = SoilProfile(
             layers=[
-                SoilLayer("Sand", 5.0, 18, 20, 1e-4, 0.5, 0.02, 0.005, 10000, 1e-2), # Sand above
-                SoilLayer("Clay", 5.0, 17, 19, 1e-8, 0.5, 0.02, 0.005, 10000, 1e-2), # Clay
-                SoilLayer("Rock", 5.0, 22, 22, 1e-12, 0.5, 0.02, 0.005, 10000, 1e-2) # Rock below
+                SoilLayer(
+                    "Sand", 5.0, 18, 20, 1e-4, 0.5, 0.02, 0.005, 10000, 1e-2
+                ),  # Sand above
+                SoilLayer(
+                    "Clay", 5.0, 17, 19, 1e-8, 0.5, 0.02, 0.005, 10000, 1e-2
+                ),  # Clay
+                SoilLayer(
+                    "Rock", 5.0, 22, 22, 1e-12, 0.5, 0.02, 0.005, 10000, 1e-2
+                ),  # Rock below
             ],
-            gwl_mtaw=4.0, surface_level_mtaw=5.0
+            gwl_mtaw=4.0,
+            surface_level_mtaw=5.0,
         )
 
         times_s = np.array([0, 86400, 864000])

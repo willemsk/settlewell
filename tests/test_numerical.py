@@ -1,7 +1,12 @@
 """Unit tests for settlewell.numerical — 2D finite-difference solver."""
+
 import pytest
 import numpy as np
-from settlewell.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
+from settlewell.numerical import (
+    create_grid,
+    solve_steady_state,
+    extract_drawdown_at_points,
+)
 from settlewell import DewateringConfig, Well, AquiferType
 
 
@@ -10,6 +15,7 @@ class TestCreateGrid:
     Groups tests checking the initialization of the 2D finite-difference computational grid.
     These tests ensure that the spatial domain is correctly discretized into nodes.
     """
+
     def test_dimensions(self):
         """
         This test verifies that calculating grid dimensions (`nx`, `ny`) from a given coordinate range
@@ -29,6 +35,7 @@ class TestSolveSteadyState:
     Groups tests validating the core finite-difference solver. These tests ensure the numerical
     engine converges correctly and obeys physical boundary and mass balance conditions.
     """
+
     def test_boundary_dirichlet(self, six_well_config, flemish_profile, pit):
         """
         This test confirms that Dirichlet boundary conditions are properly enforced at the edges of the grid.
@@ -40,9 +47,9 @@ class TestSolveSteadyState:
         grid = solve_steady_state(grid, six_well_config, flemish_profile, pit)
         H0 = six_well_config.original_gwl_mtaw
         # Check all 4 boundary edges
-        assert np.allclose(grid.head[0, :], H0, atol=0.01)   # bottom
+        assert np.allclose(grid.head[0, :], H0, atol=0.01)  # bottom
         assert np.allclose(grid.head[-1, :], H0, atol=0.01)  # top
-        assert np.allclose(grid.head[:, 0], H0, atol=0.01)   # left
+        assert np.allclose(grid.head[:, 0], H0, atol=0.01)  # left
         assert np.allclose(grid.head[:, -1], H0, atol=0.01)  # right
 
     def test_well_is_sink(self, six_well_config, flemish_profile, pit):
@@ -67,10 +74,13 @@ class TestSolveSteadyState:
         a 15% tolerance (accounting for coarse grid discretization error).
         """
         from settlewell.hydraulics import compute_transmissivity
+
         single_well_config = DewateringConfig(
             wells=[Well(x=0.0, y=0.0, Q=0.001)],
-            target_drawdown_mtaw=3.0, original_gwl_mtaw=4.0,
-            pumping_duration_days=1, aquifer_type=AquiferType.CONFINED,
+            target_drawdown_mtaw=3.0,
+            original_gwl_mtaw=4.0,
+            pumping_duration_days=1,
+            aquifer_type=AquiferType.CONFINED,
         )
         grid = create_grid(x_range=(-200, 200), y_range=(-200, 200), dx=5.0)
         grid = solve_steady_state(grid, single_well_config, flemish_profile, pit)
@@ -83,7 +93,9 @@ class TestSolveSteadyState:
         flux_right = T * np.sum(grid.head[:, -1] - grid.head[:, -2]) / dx * dx
         total_flux = flux_bottom + flux_top + flux_left + flux_right
         total_Q = sum(w.Q for w in single_well_config.wells)
-        assert total_flux == pytest.approx(total_Q, rel=0.15)  # 15% tolerance for coarse grid
+        assert total_flux == pytest.approx(
+            total_Q, rel=0.15
+        )  # 15% tolerance for coarse grid
 
 
 class TestExtractDrawdown:
@@ -91,6 +103,7 @@ class TestExtractDrawdown:
     Groups tests that check the interpolation logic used to extract specific point values
     from the discretized finite-difference grid solution.
     """
+
     def test_at_grid_node(self, six_well_config, flemish_profile, pit):
         """
         This test ensures that if a requested evaluation point falls exactly on a grid node,
@@ -116,7 +129,6 @@ class TestExtractDrawdown:
         The expected result is that a `UserWarning` is triggered during the solve step.
         """
         from settlewell.numerical import create_grid, solve_steady_state
-        import warnings
 
         # Create well exactly on the boundary x=-100
         well = Well(x=-100.0, y=0.0, Q=0.001)
