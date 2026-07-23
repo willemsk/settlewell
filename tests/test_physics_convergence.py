@@ -6,23 +6,31 @@ that in known limiting cases, the numerical results converge to analytical solut
 Run with: uv run pytest -m slow (included in full suite: uv run pytest)
 Exclude with: uv run pytest -m 'not slow'
 """
+
 import pytest
 import numpy as np
 from settlewell import AquiferType, Well, DewateringConfig, SoilLayer, SoilProfile
 from settlewell.hydraulics import (
-    thiem_drawdown_single_well, theis_drawdown_single_well,
+    thiem_drawdown_single_well,
+    theis_drawdown_single_well,
     compute_drawdown_at_points,
 )
 from settlewell.settlement import (
-    compute_total_settlement, compute_degree_of_consolidation,
+    compute_total_settlement,
+    compute_degree_of_consolidation,
     compute_settlement_vs_time,
 )
-from settlewell.numerical import create_grid, solve_steady_state, extract_drawdown_at_points
+from settlewell.numerical import (
+    create_grid,
+    solve_steady_state,
+    extract_drawdown_at_points,
+)
 
 
 # ============================================================
 # HYDRAULICS CONVERGENCE
 # ============================================================
+
 
 class TestTheisToThiemConvergence:
     """
@@ -45,7 +53,9 @@ class TestTheisToThiemConvergence:
         # Cooper-Jacob approximation u = r²S/(4Tt) < 0.01 holds for r <= 20m
         r_values = np.array([5.0, 10.0, 20.0])
 
-        s_thiem = thiem_drawdown_single_well(r_values, Q, T, R, H0, AquiferType.CONFINED)
+        s_thiem = thiem_drawdown_single_well(
+            r_values, Q, T, R, H0, AquiferType.CONFINED
+        )
         s_theis = theis_drawdown_single_well(r_values, t_ss, Q, T, S)
 
         for i, r in enumerate(r_values):
@@ -96,9 +106,13 @@ class TestRadialSymmetry:
         """
         well = Well(x=0.0, y=0.0, Q=0.001)
         config = DewateringConfig(
-            wells=[well], target_drawdown_mtaw=0.0, original_gwl_mtaw=4.0,
-            pumping_duration_days=1, aquifer_type=AquiferType.CONFINED,
-            R=200.0, T=5e-4,
+            wells=[well],
+            target_drawdown_mtaw=0.0,
+            original_gwl_mtaw=4.0,
+            pumping_duration_days=1,
+            aquifer_type=AquiferType.CONFINED,
+            R=200.0,
+            T=5e-4,
         )
         r = 20.0
         points = [(r, 0), (0, r), (-r, 0), (0, -r)]
@@ -122,8 +136,12 @@ class TestSuperpositionLinearity:
         """
         T, R, H0 = 5e-4, 200.0, 5.0
         r = 15.0
-        s1 = thiem_drawdown_single_well(r, Q=0.001, T=T, R=R, H0=H0, aquifer_type=AquiferType.CONFINED)
-        s2 = thiem_drawdown_single_well(r, Q=0.002, T=T, R=R, H0=H0, aquifer_type=AquiferType.CONFINED)
+        s1 = thiem_drawdown_single_well(
+            r, Q=0.001, T=T, R=R, H0=H0, aquifer_type=AquiferType.CONFINED
+        )
+        s2 = thiem_drawdown_single_well(
+            r, Q=0.002, T=T, R=R, H0=H0, aquifer_type=AquiferType.CONFINED
+        )
         assert s2 == pytest.approx(2 * s1, rel=1e-10)
 
 
@@ -143,7 +161,9 @@ class TestDrawdownMonotonicity:
         """
         T, R, H0 = 5e-4, 200.0, 5.0
         r_values = np.array([1.0, 5.0, 10.0, 20.0, 50.0, 100.0, 150.0])
-        s = thiem_drawdown_single_well(r_values, Q=0.001, T=T, R=R, H0=H0, aquifer_type=AquiferType.CONFINED)
+        s = thiem_drawdown_single_well(
+            r_values, Q=0.001, T=T, R=R, H0=H0, aquifer_type=AquiferType.CONFINED
+        )
         assert np.all(np.diff(s) <= 0), "Drawdown must decrease with distance"
 
 
@@ -167,8 +187,11 @@ class TestFDToThiemConvergence:
 
         well = Well(x=0.0, y=0.0, Q=0.001)
         config = DewateringConfig(
-            wells=[well], target_drawdown_mtaw=3.0, original_gwl_mtaw=4.0,
-            pumping_duration_days=1, aquifer_type=AquiferType.CONFINED,
+            wells=[well],
+            target_drawdown_mtaw=3.0,
+            original_gwl_mtaw=4.0,
+            pumping_duration_days=1,
+            aquifer_type=AquiferType.CONFINED,
         )
         T = compute_transmissivity(flemish_profile, config)
         R_val = 200.0
@@ -177,7 +200,12 @@ class TestFDToThiemConvergence:
         # Analytical (Thiem) at r=30
         r_test = 30.0
         s_analytical = thiem_drawdown_single_well(
-            r_test, Q=0.001, T=T, R=R_val, H0=H0, aquifer_type=AquiferType.CONFINED,
+            r_test,
+            Q=0.001,
+            T=T,
+            R=R_val,
+            H0=H0,
+            aquifer_type=AquiferType.CONFINED,
         )
 
         errors = []
@@ -191,12 +219,15 @@ class TestFDToThiemConvergence:
         # Errors should decrease with refinement
         assert errors[-1] < errors[0], "Error should decrease with grid refinement"
         # Final error should be < 10%
-        assert errors[-1] < 0.10, f"FD error at dx=1m is {errors[-1]:.1%}, should be <10%"
+        assert errors[-1] < 0.10, (
+            f"FD error at dx=1m is {errors[-1]:.1%}, should be <10%"
+        )
 
 
 # ============================================================
 # SETTLEMENT CONVERGENCE
 # ============================================================
+
 
 class TestEoedVsCcCrConsistency:
     """
@@ -214,13 +245,22 @@ class TestEoedVsCcCrConsistency:
         The expected result is that both methods return the exact same settlement value.
         """
         sigma_mid = (18.5 - 9.81) * 2.5  # 21.725 kPa
-        dsigma = 9.81 * 2.0               # 19.62 kPa
+        dsigma = 9.81 * 2.0  # 19.62 kPa
         strain_cc = (0.30 / (1.0 + 1.0)) * np.log10((sigma_mid + dsigma) / sigma_mid)
         Eoed_secant = dsigma / strain_cc
 
         layer = SoilLayer(
-            name="Klei", thickness=5.0, gamma=18.5, gamma_sat=18.5,
-            k_h=1e-9, e0=1.0, Cc=0.30, Cr=0.06, Eoed=Eoed_secant, Cv=1e-7, OCR=1.0,
+            name="Klei",
+            thickness=5.0,
+            gamma=18.5,
+            gamma_sat=18.5,
+            k_h=1e-9,
+            e0=1.0,
+            Cc=0.30,
+            Cr=0.06,
+            Eoed=Eoed_secant,
+            Cv=1e-7,
+            OCR=1.0,
         )
         profile = SoilProfile(layers=[layer], gwl_mtaw=5.0, surface_level_mtaw=5.0)
 
@@ -246,7 +286,9 @@ class TestConsolidationTimeConvergence:
         s_ult, _ = compute_total_settlement(flemish_profile, drawdown=2.0)
         # Very large time (1000 years)
         times_days = np.array([365 * 1000.0])
-        s_t = compute_settlement_vs_time(flemish_profile, drawdown=2.0, times_days=times_days)
+        s_t = compute_settlement_vs_time(
+            flemish_profile, drawdown=2.0, times_days=times_days
+        )
         assert s_t[-1] == pytest.approx(s_ult, rel=0.001)
 
 
@@ -319,8 +361,17 @@ class TestThinLayerConvergence:
             thickness = 3.0 / n_sub
             layers = [
                 SoilLayer(
-                    name=f"Klei_{i}", thickness=thickness, gamma=16.0, gamma_sat=18.5,
-                    k_h=1e-9, e0=1.0, Cc=0.30, Cr=0.06, Eoed=3000, Cv=1e-7, OCR=1.0,
+                    name=f"Klei_{i}",
+                    thickness=thickness,
+                    gamma=16.0,
+                    gamma_sat=18.5,
+                    k_h=1e-9,
+                    e0=1.0,
+                    Cc=0.30,
+                    Cr=0.06,
+                    Eoed=3000,
+                    Cv=1e-7,
+                    OCR=1.0,
                 )
                 for i in range(n_sub)
             ]

@@ -1,4 +1,5 @@
 """Unit tests for settlewell.hydraulics — drawdown calculations."""
+
 import pytest
 import numpy as np
 from settlewell.hydraulics import (
@@ -6,7 +7,6 @@ from settlewell.hydraulics import (
     thiem_drawdown_single_well,
     theis_drawdown_single_well,
     compute_drawdown_at_points,
-    compute_radius_of_influence,
     compute_drawdown_grid,
 )
 from settlewell import AquiferType, DewateringConfig, Well, SoilProfile, SoilLayer
@@ -18,6 +18,7 @@ class TestTransmissivity:
     These tests are crucial because transmissivity dictates how easily water flows through
     the aquifer, which directly controls the extent and shape of the drawdown cone.
     """
+
     def test_simple_profile(self, simple_profile):
         """
         This test verifies that the transmissivity (T) is correctly computed for a simplified
@@ -28,8 +29,11 @@ class TestTransmissivity:
         result is that T equals the saturated thickness (4m) multiplied by permeability, yielding 4e-4 m²/s.
         """
         config = DewateringConfig(
-            wells=[], target_drawdown_mtaw=3.0, original_gwl_mtaw=4.0,
-            pumping_duration_days=1, aquifer_type=AquiferType.UNCONFINED,
+            wells=[],
+            target_drawdown_mtaw=3.0,
+            original_gwl_mtaw=4.0,
+            pumping_duration_days=1,
+            aquifer_type=AquiferType.UNCONFINED,
         )
         T = compute_transmissivity(simple_profile, config)
         assert T == pytest.approx(4e-4)
@@ -41,6 +45,7 @@ class TestThiemDrawdown:
     Thiem equation. These tests verify the core analytical model used for predicting long-term
     groundwater depression.
     """
+
     def test_hand_calculated_confined(self):
         """
         This test confirms the implementation of the confined Thiem equation by comparing it
@@ -50,7 +55,11 @@ class TestThiemDrawdown:
         result is a drawdown of approximately 0.7330 m.
         """
         s = thiem_drawdown_single_well(
-            r=10.0, Q=0.001, T=5e-4, R=100.0, H0=5.0,
+            r=10.0,
+            Q=0.001,
+            T=5e-4,
+            R=100.0,
+            H0=5.0,
             aquifer_type=AquiferType.CONFINED,
         )
         expected = (0.001 / (2 * np.pi * 5e-4)) * np.log(100 / 10)
@@ -64,7 +73,11 @@ class TestThiemDrawdown:
         distance (r) equal to R (100.0). The expected result is a drawdown of exactly 0.0.
         """
         s = thiem_drawdown_single_well(
-            r=100.0, Q=0.001, T=5e-4, R=100.0, H0=5.0,
+            r=100.0,
+            Q=0.001,
+            T=5e-4,
+            R=100.0,
+            H0=5.0,
             aquifer_type=AquiferType.CONFINED,
         )
         assert s == pytest.approx(0.0, abs=1e-10)
@@ -79,7 +92,10 @@ class TestThiemDrawdown:
         """
         s = thiem_drawdown_single_well(
             r=np.array([1.0, 10.0, 50.0, 100.0, 200.0]),
-            Q=0.001, T=5e-4, R=100.0, H0=5.0,
+            Q=0.001,
+            T=5e-4,
+            R=100.0,
+            H0=5.0,
             aquifer_type=AquiferType.CONFINED,
         )
         assert np.all(s >= 0)
@@ -90,6 +106,7 @@ class TestTheisDrawdown:
     Groups tests that evaluate transient (time-dependent) groundwater drawdown calculations
     using the Theis equation. This confirms the system correctly models evolving dewatering scenarios.
     """
+
     def test_hand_calculated(self):
         """
         This test verifies the transient Theis equation implementation against a known manual
@@ -99,6 +116,7 @@ class TestTheisDrawdown:
         The expected result is that the function returns the exact analytical value.
         """
         from scipy.special import exp1
+
         Q, T, S, r, t = 0.001, 5e-4, 0.1, 10.0, 86400.0
         u = r**2 * S / (4 * T * t)
         expected = Q / (4 * np.pi * T) * float(exp1(u))
@@ -111,6 +129,7 @@ class TestSuperposition:
     Groups tests checking the principle of superposition, which allows combining
     the effects of multiple pumping wells into a single cumulative drawdown field.
     """
+
     def test_two_symmetric_wells_at_midpoint(self, simple_profile):
         """
         This test checks that linear superposition holds true for a confined aquifer by evaluating
@@ -122,14 +141,22 @@ class TestSuperposition:
         well1 = Well(x=-10.0, y=0.0, Q=0.001)
         well2 = Well(x=10.0, y=0.0, Q=0.001)
         config_2 = DewateringConfig(
-            wells=[well1, well2], target_drawdown_mtaw=-10.0,  # high limit so no clipping
-            original_gwl_mtaw=4.0, pumping_duration_days=1,
-            aquifer_type=AquiferType.CONFINED, R=200.0, T=5e-4,
+            wells=[well1, well2],
+            target_drawdown_mtaw=-10.0,  # high limit so no clipping
+            original_gwl_mtaw=4.0,
+            pumping_duration_days=1,
+            aquifer_type=AquiferType.CONFINED,
+            R=200.0,
+            T=5e-4,
         )
         config_1 = DewateringConfig(
-            wells=[well1], target_drawdown_mtaw=-10.0,
-            original_gwl_mtaw=4.0, pumping_duration_days=1,
-            aquifer_type=AquiferType.CONFINED, R=200.0, T=5e-4,
+            wells=[well1],
+            target_drawdown_mtaw=-10.0,
+            original_gwl_mtaw=4.0,
+            pumping_duration_days=1,
+            aquifer_type=AquiferType.CONFINED,
+            R=200.0,
+            T=5e-4,
         )
         s_2wells = compute_drawdown_at_points([(0.0, 0.0)], config_2, simple_profile)[0]
         s_1well = compute_drawdown_at_points([(0.0, 0.0)], config_1, simple_profile)[0]
@@ -143,6 +170,7 @@ class TestDrawdownGrid:
     These are vital for ensuring that map-based visualizations and spatial queries
     receive properly structured and bounded data.
     """
+
     def test_grid_shape(self, six_well_config, flemish_profile):
         """
         This test verifies that the mesh grid generation yields coordinate and value matrices
@@ -151,8 +179,12 @@ class TestDrawdownGrid:
         The expected result is that the X, Y, and Drawdown arrays all match the shape (15, 20).
         """
         X, Y, S = compute_drawdown_grid(
-            x_range=(-50, 50), y_range=(-50, 50), nx=20, ny=15,
-            config=six_well_config, profile=flemish_profile,
+            x_range=(-50, 50),
+            y_range=(-50, 50),
+            nx=20,
+            ny=15,
+            config=six_well_config,
+            profile=flemish_profile,
         )
         assert X.shape == (15, 20)
         assert Y.shape == (15, 20)
@@ -167,8 +199,12 @@ class TestDrawdownGrid:
         """
         H0 = flemish_profile.total_depth - flemish_profile.gwl_depth
         _, _, S = compute_drawdown_grid(
-            x_range=(-50, 50), y_range=(-50, 50), nx=20, ny=15,
-            config=six_well_config, profile=flemish_profile,
+            x_range=(-50, 50),
+            y_range=(-50, 50),
+            nx=20,
+            ny=15,
+            config=six_well_config,
+            profile=flemish_profile,
         )
         assert np.all(S >= 0)
         assert np.all(S <= H0 + 1e-10)
@@ -184,20 +220,28 @@ class TestDrawdownGrid:
         well1 = Well(x=-10.0, y=0.0, Q=0.001)
         well2 = Well(x=10.0, y=0.0, Q=0.001)
         config_unconfined = DewateringConfig(
-            wells=[well1, well2], target_drawdown_mtaw=1.0,
-            original_gwl_mtaw=4.0, pumping_duration_days=1,
-            aquifer_type=AquiferType.UNCONFINED, R=200.0, T=5e-4,
+            wells=[well1, well2],
+            target_drawdown_mtaw=1.0,
+            original_gwl_mtaw=4.0,
+            pumping_duration_days=1,
+            aquifer_type=AquiferType.UNCONFINED,
+            R=200.0,
+            T=5e-4,
         )
-        s = compute_drawdown_at_points([(0.0, 0.0)], config_unconfined, simple_profile)[0]
+        s = compute_drawdown_at_points([(0.0, 0.0)], config_unconfined, simple_profile)[
+            0
+        ]
         assert s > 0
         H0 = simple_profile.total_depth - simple_profile.gwl_depth
         assert s < H0
+
 
 class TestHydraulicsEdgeCases:
     """
     Groups tests targeting edge cases, fallback behaviors, and zero-time conditions
     within the hydraulic calculations to ensure robustness against unexpected inputs.
     """
+
     def test_confined_layer_fallback(self):
         """
         This test checks the transmissivity calculation when the soil profile does not clearly
@@ -212,7 +256,8 @@ class TestHydraulicsEdgeCases:
                 SoilLayer("Clay", 5.0, 18, 18, 1e-8, 0.5, 0.02, 0.005, 10000, 1e-2),
                 SoilLayer("Silt", 5.0, 18, 18, 2e-8, 0.5, 0.02, 0.005, 10000, 1e-2),
             ],
-            gwl_mtaw=4.0, surface_level_mtaw=5.0
+            gwl_mtaw=4.0,
+            surface_level_mtaw=5.0,
         )
         well = Well(x=0, y=0, Q=0.001)
         config = DewateringConfig([well], -10.0, 4.0, 1)
@@ -229,12 +274,18 @@ class TestHydraulicsEdgeCases:
         well1 = Well(x=-10.0, y=0.0, Q=0.001)
         well2 = Well(x=10.0, y=0.0, Q=0.001)
         config = DewateringConfig(
-            wells=[well1, well2], target_drawdown_mtaw=-10.0,
-            original_gwl_mtaw=4.0, pumping_duration_days=1,
-            aquifer_type=AquiferType.CONFINED, R=200.0, T=5e-4,
+            wells=[well1, well2],
+            target_drawdown_mtaw=-10.0,
+            original_gwl_mtaw=4.0,
+            pumping_duration_days=1,
+            aquifer_type=AquiferType.CONFINED,
+            R=200.0,
+            T=5e-4,
         )
         # Steady state calculation: time_s=None
-        drawdowns = compute_drawdown_at_points([(0.0, 0.0)], config, simple_profile, time_s=None)
+        drawdowns = compute_drawdown_at_points(
+            [(0.0, 0.0)], config, simple_profile, time_s=None
+        )
         assert drawdowns[0] > 0
 
     def test_confined_transient_linear_superposition(self, simple_profile):
@@ -247,12 +298,19 @@ class TestHydraulicsEdgeCases:
         well1 = Well(x=-10.0, y=0.0, Q=0.001)
         well2 = Well(x=10.0, y=0.0, Q=0.001)
         config = DewateringConfig(
-            wells=[well1, well2], target_drawdown_mtaw=-10.0,
-            original_gwl_mtaw=4.0, pumping_duration_days=1,
-            aquifer_type=AquiferType.CONFINED, R=200.0, T=5e-4, S=1e-4
+            wells=[well1, well2],
+            target_drawdown_mtaw=-10.0,
+            original_gwl_mtaw=4.0,
+            pumping_duration_days=1,
+            aquifer_type=AquiferType.CONFINED,
+            R=200.0,
+            T=5e-4,
+            S=1e-4,
         )
         # Transient calculation: time_s > 0
-        drawdowns = compute_drawdown_at_points([(0.0, 0.0)], config, simple_profile, time_s=86400.0)
+        drawdowns = compute_drawdown_at_points(
+            [(0.0, 0.0)], config, simple_profile, time_s=86400.0
+        )
         assert drawdowns[0] > 0
 
     def test_confined_layer_fallback_pure(self):
@@ -267,10 +325,13 @@ class TestHydraulicsEdgeCases:
             layers=[
                 SoilLayer("Sand", 5.0, 18, 18, 1e-4, 0.5, 0.02, 0.005, 10000, 1e-2),
             ],
-            gwl_mtaw=4.0, surface_level_mtaw=5.0
+            gwl_mtaw=4.0,
+            surface_level_mtaw=5.0,
         )
         well = Well(x=0, y=0, Q=0.001)
-        config = DewateringConfig([well], -10.0, 4.0, 1, aquifer_type=AquiferType.CONFINED)
+        config = DewateringConfig(
+            [well], -10.0, 4.0, 1, aquifer_type=AquiferType.CONFINED
+        )
         T = compute_transmissivity(profile, config)
         assert T > 0
 
@@ -283,6 +344,7 @@ class TestHydraulicsEdgeCases:
         """
         from settlewell.hydraulics import theis_drawdown_single_well
         import numpy as np
+
         # t <= 0 case
         s = theis_drawdown_single_well(10.0, 0.0, 0.001, 5e-4, 1e-4)
         assert np.all(s == 0.0)

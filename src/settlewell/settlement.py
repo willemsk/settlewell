@@ -88,7 +88,11 @@ def compute_initial_stress_profile(
         sigma_v_list.append(sigma_v)
         sigma_eff_list.append(sigma_eff)
 
-    return z_eval, np.array(sigma_eff_list, dtype=float), np.array(sigma_v_list, dtype=float)
+    return (
+        z_eval,
+        np.array(sigma_eff_list, dtype=float),
+        np.array(sigma_v_list, dtype=float),
+    )
 
 
 def compute_stress_increase_from_drawdown(
@@ -273,16 +277,22 @@ def compute_total_settlement(
     z_mids_arr = np.array(z_mids, dtype=float)
 
     _, sigma_v0_eff, _ = compute_initial_stress_profile(profile, z_points=z_mids_arr)
-    _, delta_sigma_v = compute_stress_increase_from_drawdown(profile, drawdown, z_points=z_mids_arr)
+    _, delta_sigma_v = compute_stress_increase_from_drawdown(
+        profile, drawdown, z_points=z_mids_arr
+    )
 
     per_layer = []
     for i, layer in enumerate(profile.layers):
         if method == "cc_cr":
-            ds = compute_layer_settlement_cc_cr(layer, sigma_v0_eff[i], delta_sigma_v[i])
+            ds = compute_layer_settlement_cc_cr(
+                layer, sigma_v0_eff[i], delta_sigma_v[i]
+            )
         elif method == "eoed":
             ds = compute_layer_settlement_eoed(layer, delta_sigma_v[i])
         else:
-            raise ValueError(f"Unknown settlement method '{method}'. Must be 'cc_cr' or 'eoed'.")
+            raise ValueError(
+                f"Unknown settlement method '{method}'. Must be 'cc_cr' or 'eoed'."
+            )
         per_layer.append(ds)
 
     return sum(per_layer), per_layer
@@ -354,12 +364,14 @@ def compute_settlement_vs_time(
         if is_clay:
             # Determine drainage condition based on adjacent permeable boundaries
             has_sand_above = (i == 0) or (profile.layers[i - 1].k_h >= 1e-6)
-            has_sand_below = (i < len(profile.layers) - 1) and (profile.layers[i + 1].k_h >= 1e-6)
+            has_sand_below = (i < len(profile.layers) - 1) and (
+                profile.layers[i + 1].k_h >= 1e-6
+            )
 
             if has_sand_above and has_sand_below:
                 Hdr = layer.thickness / 2.0  # Double drainage
             else:
-                Hdr = layer.thickness        # Single drainage
+                Hdr = layer.thickness  # Single drainage
 
             for t_idx, t_sec in enumerate(times_s):
                 if t_sec > 0:
