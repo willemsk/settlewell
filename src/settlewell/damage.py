@@ -5,8 +5,8 @@ risk for neighboring buildings.
 """
 
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Dict, List, Tuple
 
 import numpy as np
 
@@ -42,7 +42,7 @@ class DamageAssessment:
         Color code for visualization ("green", "yellow", "orange", "red", "darkred", "black").
     """
 
-    settlement_at_points: Dict[str, float]
+    settlement_at_points: dict[str, float]
     max_settlement: float
     min_settlement: float
     differential_settlement: float
@@ -56,7 +56,7 @@ class DamageAssessment:
 
 # SBR damage classification thresholds
 # (threshold_beta, category, description_en, description_nl, crack_width, color)
-SBR_THRESHOLDS: List[Tuple[float, int, str, str, str, str]] = [
+SBR_THRESHOLDS: list[tuple[float, int, str, str, str, str]] = [
     (1 / 500, 0, "Negligible", "Verwaarloosbaar", "< 0.1 mm", "green"),
     (1 / 333, 1, "Very slight", "Zeer licht", "0.1 – 1 mm", "yellow"),
     (1 / 250, 2, "Slight", "Licht", "1 – 5 mm", "orange"),
@@ -68,7 +68,7 @@ SBR_THRESHOLDS: List[Tuple[float, int, str, str, str, str]] = [
 
 def classify_damage(
     angular_distortion: float, building_type: BuildingType
-) -> Tuple[int, str, str, str]:
+) -> tuple[int, str, str, str]:
     """Classify building damage risk from angular distortion.
 
     Parameters
@@ -101,9 +101,8 @@ def classify_damage(
         if angular_distortion < max_beta:
             if building_type == BuildingType.CONCRETE_FRAME:
                 cat = max(0, cat - 1)
-                for _, c, d_en, _, crk, col in SBR_THRESHOLDS:
-                    if c == cat:
-                        return cat, d_en, crk, col
+                entry = SBR_THRESHOLDS[cat]
+                return cat, entry[2], entry[4], entry[5]
             return cat, desc_en, crack, color
 
     last_entry = SBR_THRESHOLDS[-1]
@@ -114,7 +113,7 @@ def assess_building_damage(
     building: Building,
     profile: SoilProfile,
     config: DewateringConfig,
-    drawdown_func: Callable[[List[Tuple[float, float]]], np.ndarray],
+    drawdown_func: Callable[[list[tuple[float, float]]], np.ndarray],
     settlement_method: str = "cc_cr",
 ) -> DamageAssessment:
     """Perform building damage assessment.
@@ -148,7 +147,7 @@ def assess_building_damage(
     ]
 
     keys = ["center", "corner_1", "corner_2", "corner_3", "corner_4"]
-    s_dict = {keys[i]: settlements[i] for i in range(len(pts))}
+    s_dict = dict(zip(keys, settlements))
 
     max_s = max(settlements)
     min_s = min(settlements)
@@ -162,8 +161,7 @@ def assess_building_damage(
             dist = math.hypot(p1[0] - p2[0], p1[1] - p2[1])
             if dist > 1e-6:
                 beta = abs(settlements[i] - settlements[j]) / dist
-                if beta > max_beta:
-                    max_beta = beta
+                max_beta = max(max_beta, beta)
 
     # Deflection ratio Delta / L (max settlement relative to average foundation level)
     corner_avg = sum(settlements[1:]) / 4.0 if len(settlements) > 1 else settlements[0]

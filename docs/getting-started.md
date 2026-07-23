@@ -50,9 +50,32 @@ profile = SoilProfile(
     surface_level_mtaw=5.0,
     gwl_mtaw=4.0,
     layers=[
-        SoilLayer(name="Sand", thickness=2.0, gamma=17.5, gamma_sat=20.0, k_h=1e-4, e0=0.5, Cc=0.02, Cr=0.005, Eoed=30000, Cv=1e-2),
-        SoilLayer(name="Clay", thickness=3.0, gamma=16.0, gamma_sat=18.5, k_h=1e-9, e0=1.0, Cc=0.30, Cr=0.06, Eoed=3000, Cv=1e-7, OCR=1.5),
-    ]
+        SoilLayer(
+            name="Sand",
+            thickness=2.0,
+            gamma=17.5,
+            gamma_sat=20.0,
+            k_h=1e-4,
+            e0=0.5,
+            Cc=0.02,
+            Cr=0.005,
+            Eoed=30000,
+            Cv=1e-2,
+        ),
+        SoilLayer(
+            name="Clay",
+            thickness=3.0,
+            gamma=16.0,
+            gamma_sat=18.5,
+            k_h=1e-9,
+            e0=1.0,
+            Cc=0.30,
+            Cr=0.06,
+            Eoed=3000,
+            Cv=1e-7,
+            OCR=1.5,
+        ),
+    ],
 )
 
 # 2. Configure Dewatering System
