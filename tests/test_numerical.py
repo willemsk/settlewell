@@ -126,7 +126,6 @@ class TestExtractDrawdown:
         The expected result is that a `UserWarning` is triggered during the solve step.
         """
         from settlewell.numerical import create_grid, solve_steady_state
-        import warnings
 
         # Create well exactly on the boundary x=-100
         well = Well(x=-100.0, y=0.0, Q=0.001)

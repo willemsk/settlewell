@@ -1,8 +1,7 @@
 """Unit tests for settlewell.models — dataclass properties and validation."""
 
 import pytest
-import math
-from settlewell.models import SoilLayer, SoilProfile, Building, DewateringConfig, BuildingType, Well, ConstructionPit
+from settlewell.models import SoilLayer, SoilProfile, Building, DewateringConfig, Well, ConstructionPit
 
 
 class TestSoilProfile:
