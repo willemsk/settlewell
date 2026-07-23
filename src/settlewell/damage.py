@@ -101,9 +101,8 @@ def classify_damage(
         if angular_distortion < max_beta:
             if building_type == BuildingType.CONCRETE_FRAME:
                 cat = max(0, cat - 1)
-                for _, c, d_en, _, crk, col in SBR_THRESHOLDS:
-                    if c == cat:
-                        return cat, d_en, crk, col
+                entry = SBR_THRESHOLDS[cat]
+                return cat, entry[2], entry[4], entry[5]
             return cat, desc_en, crack, color
 
     last_entry = SBR_THRESHOLDS[-1]
@@ -148,7 +147,7 @@ def assess_building_damage(
     ]
 
     keys = ["center", "corner_1", "corner_2", "corner_3", "corner_4"]
-    s_dict = {keys[i]: settlements[i] for i in range(len(pts))}
+    s_dict = dict(zip(keys, settlements))
 
     max_s = max(settlements)
     min_s = min(settlements)
