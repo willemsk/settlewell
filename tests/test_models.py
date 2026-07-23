@@ -1,7 +1,14 @@
 """Unit tests for settlewell.models — dataclass properties and validation."""
 
 import pytest
-from settlewell.models import SoilLayer, SoilProfile, Building, DewateringConfig, Well, ConstructionPit
+from settlewell.models import (
+    SoilLayer,
+    SoilProfile,
+    Building,
+    DewateringConfig,
+    Well,
+    ConstructionPit,
+)
 
 
 class TestSoilProfile:
@@ -9,6 +16,7 @@ class TestSoilProfile:
     Groups tests verifying the logic and property methods of the `SoilProfile` dataclass,
     ensuring that geological models correctly manage depth calculations and reject impossible geometries.
     """
+
     def test_gwl_depth_from_mtaw(self, flemish_profile):
         """
         This test checks that the soil profile accurately converts relative groundwater elevation (mTAW)
@@ -57,6 +65,7 @@ class TestSoilLayerValidation:
     Groups parameter validation tests for the `SoilLayer` dataclass, guaranteeing that
     geotechnical inputs adhere to strict physical boundaries (e.g., no negative weights).
     """
+
     @pytest.mark.parametrize(
         "field,value",
         [
@@ -69,7 +78,6 @@ class TestSoilLayerValidation:
             ("OCR", 0.5),
         ],
     )
-
     def test_rejects_invalid_values(self, field, value):
         """
         This parameterized test runs through multiple fields of the `SoilLayer` dataclass (like thickness,
@@ -121,6 +129,7 @@ class TestDewateringConfig:
     Groups tests covering the logic of the `DewateringConfig` object, which represents
     the overall pumping scenario and operational constraints.
     """
+
     def test_target_drawdown_from_mtaw(self, six_well_config):
         """
         This test ensures that the configuration object correctly calculates the required drawdown distance
@@ -135,6 +144,7 @@ class TestBuilding:
     Groups tests verifying the geometric functions of the `Building` dataclass, ensuring
     that spatial rotations and coordinate generations are mathematically accurate.
     """
+
     def test_corner_coordinates_no_rotation(self, building):
         """
         This test checks that the corner coordinate calculation works correctly for an axis-aligned
@@ -179,11 +189,13 @@ class TestBuilding:
         # First point should be center
         assert pts[0] == pytest.approx((12.0, 0.0))
 
+
 class TestModelsEdgeCases:
     """
     Groups exhaustive edge case and validation tests for all dataclasses, ensuring
     that deeply nested attributes and strict relational rules are enforced across the board.
     """
+
     def test_soillayer_validation_edges(self):
         """
         This test checks the finer validation rules of `SoilLayer`, specifically the relationships
@@ -191,8 +203,19 @@ class TestModelsEdgeCases:
         or logically inverted values (e.g., `Cr > Cc`). The expected result is that every specific violation
         raises a correctly formatted `ValueError`.
         """
-        kwargs = dict(name="X", thickness=1.0, gamma=17.0, gamma_sat=19.0,
-                      k_h=1e-4, e0=0.5, Cc=0.02, Cr=0.005, Eoed=30000, Cv=1e-2, OCR=1.0)
+        kwargs = dict(
+            name="X",
+            thickness=1.0,
+            gamma=17.0,
+            gamma_sat=19.0,
+            k_h=1e-4,
+            e0=0.5,
+            Cc=0.02,
+            Cr=0.005,
+            Eoed=30000,
+            Cv=1e-2,
+            OCR=1.0,
+        )
 
         # e0 < 0
         kwargs["e0"] = -0.1
@@ -265,23 +288,51 @@ class TestModelsEdgeCases:
         well = Well(x=0, y=0, Q=0.001)
         # target_drawdown_mtaw > original_gwl_mtaw
         with pytest.raises(ValueError, match="cannot be above"):
-            DewateringConfig(wells=[well], target_drawdown_mtaw=5.0, original_gwl_mtaw=4.0, pumping_duration_days=1)
+            DewateringConfig(
+                wells=[well],
+                target_drawdown_mtaw=5.0,
+                original_gwl_mtaw=4.0,
+                pumping_duration_days=1,
+            )
 
         # pumping_duration_days <= 0
         with pytest.raises(ValueError, match="pumping_duration_days must be"):
-            DewateringConfig(wells=[well], target_drawdown_mtaw=2.0, original_gwl_mtaw=4.0, pumping_duration_days=0.0)
+            DewateringConfig(
+                wells=[well],
+                target_drawdown_mtaw=2.0,
+                original_gwl_mtaw=4.0,
+                pumping_duration_days=0.0,
+            )
 
         # R <= 0
         with pytest.raises(ValueError, match="Radius of influence R"):
-            DewateringConfig(wells=[well], target_drawdown_mtaw=2.0, original_gwl_mtaw=4.0, pumping_duration_days=1, R=-1.0)
+            DewateringConfig(
+                wells=[well],
+                target_drawdown_mtaw=2.0,
+                original_gwl_mtaw=4.0,
+                pumping_duration_days=1,
+                R=-1.0,
+            )
 
         # T <= 0
         with pytest.raises(ValueError, match="Transmissivity T"):
-            DewateringConfig(wells=[well], target_drawdown_mtaw=2.0, original_gwl_mtaw=4.0, pumping_duration_days=1, T=-1e-4)
+            DewateringConfig(
+                wells=[well],
+                target_drawdown_mtaw=2.0,
+                original_gwl_mtaw=4.0,
+                pumping_duration_days=1,
+                T=-1e-4,
+            )
 
         # S <= 0
         with pytest.raises(ValueError, match="Storativity S"):
-            DewateringConfig(wells=[well], target_drawdown_mtaw=2.0, original_gwl_mtaw=4.0, pumping_duration_days=1, S=-0.1)
+            DewateringConfig(
+                wells=[well],
+                target_drawdown_mtaw=2.0,
+                original_gwl_mtaw=4.0,
+                pumping_duration_days=1,
+                S=-0.1,
+            )
 
     def test_building_validation_edges(self):
         """
@@ -305,7 +356,18 @@ class TestModelsEdgeCases:
         when creating a `SoilLayer`. A negative Cv would imply time flows backwards in consolidation math.
         The expected result is a `ValueError`.
         """
-        kwargs = dict(name="X", thickness=1.0, gamma=17.0, gamma_sat=19.0,
-                      k_h=1e-4, e0=0.5, Cc=0.02, Cr=0.005, Eoed=30000, Cv=-1.0, OCR=1.0)
+        kwargs = dict(
+            name="X",
+            thickness=1.0,
+            gamma=17.0,
+            gamma_sat=19.0,
+            k_h=1e-4,
+            e0=0.5,
+            Cc=0.02,
+            Cr=0.005,
+            Eoed=30000,
+            Cv=-1.0,
+            OCR=1.0,
+        )
         with pytest.raises(ValueError, match="Coefficient of consolidation Cv must be"):
             SoilLayer(**kwargs)

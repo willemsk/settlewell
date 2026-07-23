@@ -131,7 +131,9 @@ class TestPlotSmoke:
         drawdown_func = partial(
             compute_drawdown_at_points, config=six_well_config, profile=flemish_profile
         )
-        assessment = assess_building_damage(building, flemish_profile, six_well_config, drawdown_func)
+        assessment = assess_building_damage(
+            building, flemish_profile, six_well_config, drawdown_func
+        )
         fig = plot_damage_summary(assessment)
         assert isinstance(fig, plt.Figure)
         plt.close(fig)
@@ -142,6 +144,7 @@ class TestPlotContent:
     Groups tests that inspect the internal components of the generated figures to ensure
     that data is actually being rendered correctly, rather than just returning an empty plot.
     """
+
     def test_cross_section_layer_patches(
         self, flemish_profile, pit, six_well_config, building
     ):
@@ -163,7 +166,7 @@ class TestPlotContent:
         plt.close(fig)
 
     def test_plan_view_well_markers(
-      self, flemish_profile, pit, six_well_config, building
+        self, flemish_profile, pit, six_well_config, building
     ):
         """
         This test performs a basic check on the plan view figure to ensure that the primary
@@ -191,6 +194,7 @@ class TestPlotContent:
         The expected result is the default hex color code `#B0C4DE` (Light Steel Blue).
         """
         from settlewell.plotting import _get_soil_color as get_soil_color
+
         # Soil name not in dictionary (e.g., "unknown_material") should return fallback hex #B0C4DE
         color = get_soil_color("unknown_material")
         assert color == "#B0C4DE"

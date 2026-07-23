@@ -15,6 +15,7 @@ class TestCreateGrid:
     Groups tests checking the initialization of the 2D finite-difference computational grid.
     These tests ensure that the spatial domain is correctly discretized into nodes.
     """
+
     def test_dimensions(self):
         """
         This test verifies that calculating grid dimensions (`nx`, `ny`) from a given coordinate range
@@ -34,6 +35,7 @@ class TestSolveSteadyState:
     Groups tests validating the core finite-difference solver. These tests ensure the numerical
     engine converges correctly and obeys physical boundary and mass balance conditions.
     """
+
     def test_boundary_dirichlet(self, six_well_config, flemish_profile, pit):
         """
         This test confirms that Dirichlet boundary conditions are properly enforced at the edges of the grid.
@@ -101,6 +103,7 @@ class TestExtractDrawdown:
     Groups tests that check the interpolation logic used to extract specific point values
     from the discretized finite-difference grid solution.
     """
+
     def test_at_grid_node(self, six_well_config, flemish_profile, pit):
         """
         This test ensures that if a requested evaluation point falls exactly on a grid node,

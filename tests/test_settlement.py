@@ -21,6 +21,7 @@ class TestInitialStressProfile:
     Correctly determining the existing effective stresses in the ground is the necessary
     first step before calculating any settlement caused by stress changes.
     """
+
     def test_increases_with_depth(self, flemish_profile):
         """
         This test checks the physical rule that effective vertical stress must strictly increase
@@ -52,6 +53,7 @@ class TestStressIncrease:
     Groups tests that check the calculation of effective stress increases resulting specifically
     from a drop in the groundwater table (drawdown). This is the direct driver of dewatering settlement.
     """
+
     def test_zero_above_gwl(self, simple_profile):
         """
         This test confirms that dewatering causes absolutely zero stress increase in soils that are
@@ -100,6 +102,7 @@ class TestLayerSettlement:
     Groups tests focusing on calculating the precise vertical compression of individual
     soil layers, testing the different geotechnical empirical methods (Cc/Cr and Eoed).
     """
+
     def test_nc_layer_cc_cr(self, single_clay_layer):
         """
         This test verifies the correct calculation of settlement for a Normally Consolidated (NC) clay layer
@@ -171,6 +174,7 @@ class TestTotalSettlement:
     Groups tests that check the aggregation of individual layer settlements into a single
     total settlement value for the entire soil profile.
     """
+
     def test_zero_drawdown_zero_settlement(self, flemish_profile):
         """
         This test performs a basic validation: if there is no drawdown applied to the profile,
@@ -198,6 +202,7 @@ class TestDegreeOfConsolidation:
     Groups tests validating Terzaghi's 1D consolidation theory, which dictates how fast
     water is squeezed out of soil over time, delaying the final settlement.
     """
+
     def test_zero_at_t0(self):
         """
         This test confirms that at time zero (represented by time factor Tv=0), the degree of
@@ -229,6 +234,7 @@ class TestSettlementVsTime:
     Groups tests that combine the final total settlement calculations with the time-dependent
     degree of consolidation, producing realistic settlement-over-time curves.
     """
+
     def test_settlement_vs_time_monotonic(self, flemish_profile):
         """
         This test ensures that generated settlement curves always grow monotonically larger as time
@@ -265,11 +271,13 @@ class TestSettlementVsTime:
         )
         assert s_t[-1] == pytest.approx(total_eoed, rel=0.05)
 
+
 class TestSettlementEdgeCases:
     """
     Groups tests ensuring stability and predictable error handling when the settlement module
     encounters unusual arguments, bad configurations, or single-drainage edge cases.
     """
+
     def test_default_z_eval(self, flemish_profile):
         """
         This test confirms that if a user does not explicitly provide depths (`z_eval=None`) when computing
@@ -278,9 +286,12 @@ class TestSettlementEdgeCases:
         is an output array of stress increases perfectly matching the number of layers in the profile.
         """
         from settlewell.settlement import compute_stress_increase_from_drawdown
+
         # Passing z_eval=None should trigger the default calculation (center of each layer)
         drawdown = 1.0
-        delta_sigma, final_h = compute_stress_increase_from_drawdown(flemish_profile, drawdown, None)
+        delta_sigma, final_h = compute_stress_increase_from_drawdown(
+            flemish_profile, drawdown, None
+        )
         assert len(delta_sigma) == len(flemish_profile.layers)
 
     def test_unknown_settlement_method(self, flemish_profile):
@@ -290,6 +301,7 @@ class TestSettlementEdgeCases:
         `compute_total_settlement` with the bad method string. The expected result is a caught `ValueError`.
         """
         from settlewell.settlement import compute_total_settlement
+
         with pytest.raises(ValueError, match="Unknown settlement method 'unknown'"):
             compute_total_settlement(flemish_profile, 1.0, method="unknown")
 
@@ -308,11 +320,18 @@ class TestSettlementEdgeCases:
         # Profile where a clay layer is bounded by impermeable rock below (single drainage)
         profile = SoilProfile(
             layers=[
-                SoilLayer("Sand", 5.0, 18, 20, 1e-4, 0.5, 0.02, 0.005, 10000, 1e-2), # Sand above
-                SoilLayer("Clay", 5.0, 17, 19, 1e-8, 0.5, 0.02, 0.005, 10000, 1e-2), # Clay
-                SoilLayer("Rock", 5.0, 22, 22, 1e-12, 0.5, 0.02, 0.005, 10000, 1e-2) # Rock below
+                SoilLayer(
+                    "Sand", 5.0, 18, 20, 1e-4, 0.5, 0.02, 0.005, 10000, 1e-2
+                ),  # Sand above
+                SoilLayer(
+                    "Clay", 5.0, 17, 19, 1e-8, 0.5, 0.02, 0.005, 10000, 1e-2
+                ),  # Clay
+                SoilLayer(
+                    "Rock", 5.0, 22, 22, 1e-12, 0.5, 0.02, 0.005, 10000, 1e-2
+                ),  # Rock below
             ],
-            gwl_mtaw=4.0, surface_level_mtaw=5.0
+            gwl_mtaw=4.0,
+            surface_level_mtaw=5.0,
         )
 
         times_s = np.array([0, 86400, 864000])

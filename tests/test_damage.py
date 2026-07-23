@@ -11,6 +11,7 @@ class TestClassifyDamage:
     These tests ensure that the function correctly translates angular distortion values into
     damage categories, considering different building types and providing the expected color codes.
     """
+
     def test_zero_distortion_is_negligible(self):
         """
         This test verifies that a building experiencing zero angular distortion is classified
@@ -68,12 +69,12 @@ class TestClassifyDamage:
         each category returns its corresponding risk color (e.g., 0="green", 5="black").
         """
         expected_colors = {
-            0: "green", 
+            0: "green",
             1: "yellow",
             2: "orange",
             3: "red",
             4: "darkred",
-            5: "black"
+            5: "black",
         }
         betas = [0, 1 / 400, 1 / 300, 1 / 200, 1 / 100, 1 / 50]
         for cat, color in expected_colors.items():
@@ -91,6 +92,7 @@ class TestAssessBuildingDamage:
     angular distortion, and deflection ratios) correctly translate into building damage metrics
     and that fallback mechanics operate correctly.
     """
+
     def test_differential_settlement(self, building, flemish_profile, six_well_config):
         """
         This test checks that the calculated differential settlement is non-negative when
@@ -177,9 +179,10 @@ class TestAssessBuildingDamage:
         The expected result is that the system safely catches this and assigns the maximum possible damage category (5).
         """
         from settlewell.damage import classify_damage
+
         # Extremely high theoretical damage (e.g., beyond math.inf threshold, if possible).
         # We test the last element of the list by passing an extremely high value.
-        cat, desc, crack, color = classify_damage(100.0, 50.0) # Huge values
+        cat, desc, crack, color = classify_damage(100.0, 50.0)  # Huge values
         # Threshold 5 is the maximum fallback category
         assert cat == 5
 
