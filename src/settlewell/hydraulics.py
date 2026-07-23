@@ -10,7 +10,7 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 from scipy.special import exp1
 
-from .models import AquiferType, DewateringConfig, SoilProfile, Well
+from .models import AquiferType, DewateringConfig, SoilProfile
 
 GAMMA_W: float = 9.81  # [kN/m³] Unit weight of water
 
@@ -278,50 +278,45 @@ def compute_drawdown_at_points(
     H0 = profile.total_depth - profile.gwl_depth
     R = compute_radius_of_influence(config, T, H0)
 
-    drawdowns = []
+    pts = np.array(points, dtype=float)
+    if len(pts) == 0:
+        return np.array([], dtype=float)
+
+    px = pts[:, 0]
+    py = pts[:, 1]
 
     if config.aquifer_type == AquiferType.UNCONFINED and time_s is None:
         # Exact Dupuit quadratic head superposition: h^2 = H0^2 - sum(H0^2 - h_i^2)
-        for px, py in points:
-            sum_h2_drop = 0.0
-            for well in config.wells:
-                r = math.hypot(px - well.x, py - well.y)
-                s_w = float(
-                    thiem_drawdown_single_well(
-                        r, well.Q, T, R, H0, AquiferType.UNCONFINED, r_w=well.r_w
-                    )
-                )
-                h_w = max(0.0, H0 - s_w)
-                sum_h2_drop += H0**2 - h_w**2
-            h_tot2 = max(0.0, H0**2 - sum_h2_drop)
-            s_total = min(H0 - math.sqrt(h_tot2), H0)
-            drawdowns.append(max(0.0, s_total))
+        sum_h2_drop = np.zeros(len(pts))
+        for well in config.wells:
+            r = np.hypot(px - well.x, py - well.y)
+            s_w = thiem_drawdown_single_well(
+                r, well.Q, T, R, H0, AquiferType.UNCONFINED, r_w=well.r_w
+            )
+            h_w = np.maximum(0.0, H0 - s_w)
+            sum_h2_drop += H0**2 - h_w**2
+        h_tot2 = np.maximum(0.0, H0**2 - sum_h2_drop)
+        s_total = np.minimum(H0 - np.sqrt(h_tot2), H0)
+        drawdowns = np.maximum(0.0, s_total)
     else:
         # Linear drawdown superposition (confined steady-state or transient)
+        s_total = np.zeros(len(pts))
         if time_s is None:
-
-            def single_well_drawdown(r: float, well: Well) -> float:
-                return float(
-                    thiem_drawdown_single_well(
-                        r, well.Q, T, R, H0, config.aquifer_type, r_w=well.r_w
-                    )
+            for well in config.wells:
+                r = np.hypot(px - well.x, py - well.y)
+                s_total += thiem_drawdown_single_well(
+                    r, well.Q, T, R, H0, config.aquifer_type, r_w=well.r_w
                 )
         else:
-
-            def single_well_drawdown(r: float, well: Well) -> float:
-                return float(
-                    theis_drawdown_single_well(r, time_s, well.Q, T, S, r_w=well.r_w)
+            for well in config.wells:
+                r = np.hypot(px - well.x, py - well.y)
+                s_total += theis_drawdown_single_well(
+                    r, time_s, well.Q, T, S, r_w=well.r_w
                 )
+        s_total = np.minimum(s_total, H0)
+        drawdowns = np.maximum(0.0, s_total)
 
-        for px, py in points:
-            s_total = sum(
-                single_well_drawdown(math.hypot(px - well.x, py - well.y), well)
-                for well in config.wells
-            )
-            s_total = min(s_total, H0)
-            drawdowns.append(max(0.0, s_total))
-
-    return np.array(drawdowns, dtype=float)
+    return drawdowns
 
 
 def compute_drawdown_grid(

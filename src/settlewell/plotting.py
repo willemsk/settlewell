@@ -286,6 +286,7 @@ def plot_plan_view(
     ax.add_patch(polygon)
 
     # Annotate building corners with settlement values
+    building.evaluation_points()  # [center, c1, c2, c3, c4]
     corner_keys = ["corner_1", "corner_2", "corner_3", "corner_4"]
     for idx, (cx, cy) in enumerate(corners):
         key = corner_keys[idx]
