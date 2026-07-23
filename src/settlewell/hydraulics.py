@@ -10,7 +10,7 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 from scipy.special import exp1
 
-from .models import AquiferType, DewateringConfig, SoilProfile
+from .models import AquiferType, DewateringConfig, SoilProfile, Well
 
 GAMMA_W: float = 9.81  # [kN/m³] Unit weight of water
 
@@ -55,11 +55,15 @@ def compute_transmissivity(profile: SoilProfile, config: DewateringConfig) -> fl
             current_depth = bottom
         return T
     else:  # CONFINED
-        min_kh_idx = min(range(len(profile.layers)), key=lambda i: profile.layers[i].k_h)
-        confined_layers = profile.layers[min_kh_idx + 1:]
+        min_kh_idx = min(
+            range(len(profile.layers)), key=lambda i: profile.layers[i].k_h
+        )
+        confined_layers = profile.layers[min_kh_idx + 1 :]
         if not confined_layers:
             min_kh = profile.layers[min_kh_idx].k_h
-            confined_layers = [l for l in profile.layers if l.k_h > min_kh * 10.0] or profile.layers
+            confined_layers = [
+                layer for layer in profile.layers if layer.k_h > min_kh * 10.0
+            ] or profile.layers
         return sum(layer.k_h * layer.thickness for layer in confined_layers)
 
 
@@ -88,7 +92,7 @@ def compute_storativity(profile: SoilProfile, config: DewateringConfig) -> float
         return config.S
 
     if config.aquifer_type == AquiferType.UNCONFINED:
-        aquifer_layer = max(profile.layers, key=lambda l: l.k_h)
+        aquifer_layer = max(profile.layers, key=lambda layer: layer.k_h)
         return aquifer_layer.e0 / (1.0 + aquifer_layer.e0)
     else:  # CONFINED
         return sum((GAMMA_W * layer.thickness) / layer.Eoed for layer in profile.layers)
@@ -272,26 +276,32 @@ def compute_drawdown_at_points(
             sum_h2_drop = 0.0
             for well in config.wells:
                 r = math.hypot(px - well.x, py - well.y)
-                s_w = float(thiem_drawdown_single_well(
-                    r, well.Q, T, R, H0, AquiferType.UNCONFINED, r_w=well.r_w
-                ))
+                s_w = float(
+                    thiem_drawdown_single_well(
+                        r, well.Q, T, R, H0, AquiferType.UNCONFINED, r_w=well.r_w
+                    )
+                )
                 h_w = max(0.0, H0 - s_w)
-                sum_h2_drop += (H0**2 - h_w**2)
+                sum_h2_drop += H0**2 - h_w**2
             h_tot2 = max(0.0, H0**2 - sum_h2_drop)
             s_total = min(H0 - math.sqrt(h_tot2), H0)
             drawdowns.append(max(0.0, s_total))
     else:
         # Linear drawdown superposition (confined steady-state or transient)
         if time_s is None:
+
             def single_well_drawdown(r: float, well: Well) -> float:
-                return float(thiem_drawdown_single_well(
-                    r, well.Q, T, R, H0, config.aquifer_type, r_w=well.r_w
-                ))
+                return float(
+                    thiem_drawdown_single_well(
+                        r, well.Q, T, R, H0, config.aquifer_type, r_w=well.r_w
+                    )
+                )
         else:
+
             def single_well_drawdown(r: float, well: Well) -> float:
-                return float(theis_drawdown_single_well(
-                    r, time_s, well.Q, T, S, r_w=well.r_w
-                ))
+                return float(
+                    theis_drawdown_single_well(r, time_s, well.Q, T, S, r_w=well.r_w)
+                )
 
         for px, py in points:
             s_total = sum(

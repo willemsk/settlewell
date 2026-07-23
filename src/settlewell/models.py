@@ -97,7 +97,9 @@ class SoilLayer:
         if self.gamma <= 0:
             raise ValueError(f"Dry unit weight gamma must be > 0, got {self.gamma}")
         if self.gamma_sat <= 0:
-            raise ValueError(f"Saturated unit weight gamma_sat must be > 0, got {self.gamma_sat}")
+            raise ValueError(
+                f"Saturated unit weight gamma_sat must be > 0, got {self.gamma_sat}"
+            )
         if self.gamma_sat < self.gamma:
             raise ValueError(
                 f"Saturated unit weight ({self.gamma_sat}) cannot be less than dry unit weight ({self.gamma})"
@@ -117,9 +119,13 @@ class SoilLayer:
         if self.Eoed <= 0:
             raise ValueError(f"Oedometric modulus Eoed must be > 0, got {self.Eoed}")
         if self.Cv < 0:
-            raise ValueError(f"Coefficient of consolidation Cv must be >= 0, got {self.Cv}")
+            raise ValueError(
+                f"Coefficient of consolidation Cv must be >= 0, got {self.Cv}"
+            )
         if self.OCR < 1.0:
-            raise ValueError(f"Overconsolidation ratio OCR must be >= 1.0, got {self.OCR}")
+            raise ValueError(
+                f"Overconsolidation ratio OCR must be >= 1.0, got {self.OCR}"
+            )
 
 
 @dataclass
@@ -323,7 +329,9 @@ class DewateringConfig:
                 f"pumping_duration_days must be > 0, got {self.pumping_duration_days}"
             )
         if self.R is not None and self.R <= 0:
-            raise ValueError(f"Radius of influence R must be > 0 if specified, got {self.R}")
+            raise ValueError(
+                f"Radius of influence R must be > 0 if specified, got {self.R}"
+            )
         if self.T is not None and self.T <= 0:
             raise ValueError(f"Transmissivity T must be > 0 if specified, got {self.T}")
         if self.S is not None and self.S <= 0:

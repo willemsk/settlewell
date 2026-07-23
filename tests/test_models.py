@@ -1,7 +1,7 @@
 """Unit tests for settlewell.models — dataclass properties and validation."""
+
 import pytest
-import math
-from settlewell import SoilLayer, SoilProfile, Building, DewateringConfig, BuildingType
+from settlewell import SoilLayer, SoilProfile, Building
 
 
 class TestSoilProfile:
@@ -17,7 +17,9 @@ class TestSoilProfile:
         """gwl_mtaw > surface_level_mtaw should raise ValueError."""
         with pytest.raises(ValueError):
             SoilProfile(
-                layers=[SoilLayer("X", 1.0, 17.0, 19.0, 1e-4, 0.5, 0.02, 0.005, 30000, 1e-2)],
+                layers=[
+                    SoilLayer("X", 1.0, 17.0, 19.0, 1e-4, 0.5, 0.02, 0.005, 30000, 1e-2)
+                ],
                 gwl_mtaw=6.0,  # Above surface
                 surface_level_mtaw=5.0,
             )
@@ -29,19 +31,33 @@ class TestSoilProfile:
 
 
 class TestSoilLayerValidation:
-    @pytest.mark.parametrize("field,value", [
-        ("thickness", -1.0),
-        ("thickness", 0.0),
-        ("gamma", -5.0),
-        ("gamma_sat", -5.0),
-        ("k_h", -1e-4),
-        ("Eoed", 0.0),
-        ("OCR", 0.5),
-    ])
+    @pytest.mark.parametrize(
+        "field,value",
+        [
+            ("thickness", -1.0),
+            ("thickness", 0.0),
+            ("gamma", -5.0),
+            ("gamma_sat", -5.0),
+            ("k_h", -1e-4),
+            ("Eoed", 0.0),
+            ("OCR", 0.5),
+        ],
+    )
     def test_rejects_invalid_values(self, field, value):
         """Invalid field values should raise ValueError."""
-        kwargs = dict(name="X", thickness=1.0, gamma=17.0, gamma_sat=19.0,
-                      k_h=1e-4, e0=0.5, Cc=0.02, Cr=0.005, Eoed=30000, Cv=1e-2, OCR=1.0)
+        kwargs = dict(
+            name="X",
+            thickness=1.0,
+            gamma=17.0,
+            gamma_sat=19.0,
+            k_h=1e-4,
+            e0=0.5,
+            Cc=0.02,
+            Cr=0.005,
+            Eoed=30000,
+            Cv=1e-2,
+            OCR=1.0,
+        )
         kwargs[field] = value
         with pytest.raises(ValueError):
             SoilLayer(**kwargs)
@@ -49,8 +65,19 @@ class TestSoilLayerValidation:
     def test_rejects_gamma_sat_less_than_gamma(self):
         """gamma_sat < gamma should raise ValueError."""
         with pytest.raises(ValueError):
-            SoilLayer(name="X", thickness=1.0, gamma=19.0, gamma_sat=17.0,
-                      k_h=1e-4, e0=0.5, Cc=0.02, Cr=0.005, Eoed=30000, Cv=1e-2, OCR=1.0)
+            SoilLayer(
+                name="X",
+                thickness=1.0,
+                gamma=19.0,
+                gamma_sat=17.0,
+                k_h=1e-4,
+                e0=0.5,
+                Cc=0.02,
+                Cr=0.005,
+                Eoed=30000,
+                Cv=1e-2,
+                OCR=1.0,
+            )
 
 
 class TestDewateringConfig:

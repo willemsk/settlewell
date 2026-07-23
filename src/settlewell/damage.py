@@ -138,7 +138,9 @@ def assess_building_damage(
     drawdowns = drawdown_func(pts)
 
     settlements = [
-        compute_total_settlement(profile, max(0.0, float(d)), method=settlement_method)[0]
+        compute_total_settlement(profile, max(0.0, float(d)), method=settlement_method)[
+            0
+        ]
         for d in drawdowns
     ]
 

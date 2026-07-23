@@ -3,7 +3,7 @@
 All functions return Figure objects (matplotlib or plotly) — they do NOT call plt.show().
 """
 
-from typing import Dict, Tuple
+from typing import Dict
 
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
@@ -16,11 +16,11 @@ from .models import Building, ConstructionPit, DewateringConfig, SoilProfile
 SOIL_COLORS: Dict[str, str] = {
     "Aanvulling": "#D2B48C",  # Light brown / tan
     "Fill": "#D2B48C",
-    "Zand": "#F4D03F",        # Yellow
+    "Zand": "#F4D03F",  # Yellow
     "Sand": "#F4D03F",
-    "Klei": "#8FBC8F",        # Green-gray / Dark Sea Green
+    "Klei": "#8FBC8F",  # Green-gray / Dark Sea Green
     "Clay": "#8FBC8F",
-    "Veen": "#654321",        # Dark brown
+    "Veen": "#654321",  # Dark brown
     "Peat": "#654321",
 }
 
@@ -67,7 +67,6 @@ def plot_cross_section(
 
     # 1. Draw soil layers as horizontal bands
     curr_depth = 0.0
-    patches = []
     for layer in profile.layers:
         top_elev = profile.surface_level_mtaw - curr_depth
         bot_elev = top_elev - layer.thickness
@@ -113,7 +112,9 @@ def plot_cross_section(
             s = config.target_drawdown
         else:
             R = config.R if config.R is not None else 100.0
-            s = config.target_drawdown * max(0.0, 1.0 - np.log(max(1.0, r / r_pit)) / np.log(max(2.0, R / r_pit)))
+            s = config.target_drawdown * max(
+                0.0, 1.0 - np.log(max(1.0, r / r_pit)) / np.log(max(2.0, R / r_pit))
+            )
         gwl_lowered[i] = profile.gwl_mtaw - min(s, config.target_drawdown)
 
     ax.plot(
@@ -188,10 +189,15 @@ def plot_cross_section(
     )
 
     ax.set_xlim(x_min, x_max)
-    ax.set_ylim(profile.surface_level_mtaw - profile.total_depth - 1.0, profile.surface_level_mtaw + 6.0)
+    ax.set_ylim(
+        profile.surface_level_mtaw - profile.total_depth - 1.0,
+        profile.surface_level_mtaw + 6.0,
+    )
     ax.set_xlabel("Afstand (Distance) [m]", fontsize=12)
     ax.set_ylabel("Niveau (Elevation) [mTAW]", fontsize=12)
-    ax.set_title("Geotechnisch Profiel & Geometrie (Cross-Section)", fontsize=14, weight="bold")
+    ax.set_title(
+        "Geotechnisch Profiel & Geometrie (Cross-Section)", fontsize=14, weight="bold"
+    )
     ax.legend(loc="upper right", framealpha=0.9)
     ax.grid(True, linestyle=":", alpha=0.6)
 
@@ -239,7 +245,9 @@ def plot_plan_view(
     cbar = fig.colorbar(cf, ax=ax)
     cbar.set_label("Verlaging (Drawdown) [m]", fontsize=12)
 
-    cs = ax.contour(X_grid, Y_grid, drawdown_grid, levels=8, colors="darkblue", linewidths=0.8)
+    cs = ax.contour(
+        X_grid, Y_grid, drawdown_grid, levels=8, colors="darkblue", linewidths=0.8
+    )
     ax.clabel(cs, inline=True, fmt="%.2fm", fontsize=9)
 
     # 2. Pit outline
@@ -260,7 +268,9 @@ def plot_plan_view(
     # 3. Well markers
     for i, w in enumerate(config.wells):
         ax.scatter(w.x, w.y, color="red", s=80, zorder=5, edgecolors="black")
-        ax.text(w.x + 0.5, w.y + 0.5, f"W{i+1}", color="red", weight="bold", fontsize=9)
+        ax.text(
+            w.x + 0.5, w.y + 0.5, f"W{i + 1}", color="red", weight="bold", fontsize=9
+        )
 
     # 4. Building footprint
     corners = building.corner_coordinates()
@@ -276,7 +286,6 @@ def plot_plan_view(
     ax.add_patch(polygon)
 
     # Annotate building corners with settlement values
-    eval_pts = building.evaluation_points()  # [center, c1, c2, c3, c4]
     corner_keys = ["corner_1", "corner_2", "corner_3", "corner_4"]
     for idx, (cx, cy) in enumerate(corners):
         key = corner_keys[idx]
@@ -285,7 +294,11 @@ def plot_plan_view(
 
     ax.set_xlabel("X-coördinaat [m]", fontsize=12)
     ax.set_ylabel("Y-coördinaat [m]", fontsize=12)
-    ax.set_title("Grondplan Bemaling & Verlaging (Plan View Contours)", fontsize=14, weight="bold")
+    ax.set_title(
+        "Grondplan Bemaling & Verlaging (Plan View Contours)",
+        fontsize=14,
+        weight="bold",
+    )
     ax.legend(loc="upper left")
     ax.set_aspect("equal", "box")
     ax.grid(True, linestyle=":", alpha=0.5)
@@ -339,14 +352,24 @@ def plot_settlement_trough(
     ax.axvspan(b_left, b_right, color="khaki", alpha=0.4, label="Gebouw zone")
 
     # Plot settlement trough curve
-    ax.plot(x_transect, settlements_mm, color="purple", linewidth=2.5, marker="o", markersize=4, label="Zetting (Settlement)")
+    ax.plot(
+        x_transect,
+        settlements_mm,
+        color="purple",
+        linewidth=2.5,
+        marker="o",
+        markersize=4,
+        label="Zetting (Settlement)",
+    )
 
     # Invert y-axis so settlement goes downward
     ax.invert_yaxis()
 
     ax.set_xlabel("Afstand t.o.v. centrum bouwput [m]", fontsize=12)
     ax.set_ylabel("Zetting (Settlement) [mm]", fontsize=12)
-    ax.set_title("Zettingstroog Profiel (Settlement Trough Profile)", fontsize=14, weight="bold")
+    ax.set_title(
+        "Zettingstroog Profiel (Settlement Trough Profile)", fontsize=14, weight="bold"
+    )
     ax.legend(loc="lower right")
     ax.grid(True, linestyle=":", alpha=0.6)
 
@@ -392,7 +415,11 @@ def plot_time_settlement(
     ax1.invert_yaxis()
     ax1.set_xlabel("Tijd (Time) [dagen]", fontsize=12)
     ax1.set_ylabel("Zetting (Settlement) [mm]", fontsize=12)
-    ax1.set_title("Tijdsafhankelijke Consolidatie (Time-Settlement Curve)", fontsize=14, weight="bold")
+    ax1.set_title(
+        "Tijdsafhankelijke Consolidatie (Time-Settlement Curve)",
+        fontsize=14,
+        weight="bold",
+    )
     ax1.legend(loc="lower right")
     ax1.grid(True, linestyle=":", alpha=0.6)
 
@@ -426,22 +453,51 @@ def plot_effective_stress_profile(
     """
     fig, ax = plt.subplots(figsize=(8, 10))
 
-    ax.plot(sigma_eff_initial, z, color="blue", linewidth=2.5, label="Initieel (Before drawdown)")
-    ax.plot(sigma_eff_final, z, color="red", linewidth=2.5, label="Na verlaging (After drawdown)")
+    ax.plot(
+        sigma_eff_initial,
+        z,
+        color="blue",
+        linewidth=2.5,
+        label="Initieel (Before drawdown)",
+    )
+    ax.plot(
+        sigma_eff_final,
+        z,
+        color="red",
+        linewidth=2.5,
+        label="Na verlaging (After drawdown)",
+    )
 
-    ax.fill_betweenx(z, sigma_eff_initial, sigma_eff_final, color="lightcoral", alpha=0.4, label="Spanningstoename (Δσ')")
+    ax.fill_betweenx(
+        z,
+        sigma_eff_initial,
+        sigma_eff_final,
+        color="lightcoral",
+        alpha=0.4,
+        label="Spanningstoename (Δσ')",
+    )
 
     # Layer boundary lines
     curr_depth = 0.0
     for layer in profile.layers:
         curr_depth += layer.thickness
         ax.axhline(curr_depth, color="gray", linestyle=":", linewidth=1)
-        ax.text(max(sigma_eff_final) * 0.05, curr_depth - layer.thickness / 2.0, layer.name, fontsize=9, style="italic")
+        ax.text(
+            max(sigma_eff_final) * 0.05,
+            curr_depth - layer.thickness / 2.0,
+            layer.name,
+            fontsize=9,
+            style="italic",
+        )
 
     ax.invert_yaxis()
     ax.set_xlabel("Effectieve Korrelspanning σ'v [kPa]", fontsize=12)
     ax.set_ylabel("Diepte (Depth) [m]", fontsize=12)
-    ax.set_title("Effectieve Spanning vs Diepte (Effective Stress Profile)", fontsize=14, weight="bold")
+    ax.set_title(
+        "Effectieve Spanning vs Diepte (Effective Stress Profile)",
+        fontsize=14,
+        weight="bold",
+    )
     ax.legend(loc="lower right")
     ax.grid(True, linestyle=":", alpha=0.6)
 
@@ -525,13 +581,55 @@ def plot_damage_summary(
 
     table_data = [
         ["Parameter", "Waarde", "Eenheid", "Drempelwaarde", "Status"],
-        ["Max. zetting (Max settlement)", f"{assessment.max_settlement * 1000.0:.1f}", "mm", "—", "—"],
-        ["Min. zetting (Min settlement)", f"{assessment.min_settlement * 1000.0:.1f}", "mm", "—", "—"],
-        ["Diff. zetting (Differential settlement)", f"{assessment.differential_settlement * 1000.0:.1f}", "mm", "—", "—"],
-        ["Hoekverdraaiing β (Angular distortion)", f"1 / {int(1.0 / max(assessment.angular_distortion, 1e-9))}", "—", "1 / 500", "OK" if assessment.damage_category <= 1 else "Aandacht"],
-        ["Relatieve doorbuiging Δ/L (Deflection ratio)", f"{assessment.deflection_ratio:.5f}", "—", "—", "—"],
-        ["Schadeklasse (Damage category)", f"Klasse {assessment.damage_category}", "—", "—", assessment.damage_description],
-        ["Verwachte scheurwijdte (Crack width)", assessment.expected_crack_width, "mm", "—", "—"],
+        [
+            "Max. zetting (Max settlement)",
+            f"{assessment.max_settlement * 1000.0:.1f}",
+            "mm",
+            "—",
+            "—",
+        ],
+        [
+            "Min. zetting (Min settlement)",
+            f"{assessment.min_settlement * 1000.0:.1f}",
+            "mm",
+            "—",
+            "—",
+        ],
+        [
+            "Diff. zetting (Differential settlement)",
+            f"{assessment.differential_settlement * 1000.0:.1f}",
+            "mm",
+            "—",
+            "—",
+        ],
+        [
+            "Hoekverdraaiing β (Angular distortion)",
+            f"1 / {int(1.0 / max(assessment.angular_distortion, 1e-9))}",
+            "—",
+            "1 / 500",
+            "OK" if assessment.damage_category <= 1 else "Aandacht",
+        ],
+        [
+            "Relatieve doorbuiging Δ/L (Deflection ratio)",
+            f"{assessment.deflection_ratio:.5f}",
+            "—",
+            "—",
+            "—",
+        ],
+        [
+            "Schadeklasse (Damage category)",
+            f"Klasse {assessment.damage_category}",
+            "—",
+            "—",
+            assessment.damage_description,
+        ],
+        [
+            "Verwachte scheurwijdte (Crack width)",
+            assessment.expected_crack_width,
+            "mm",
+            "—",
+            "—",
+        ],
     ]
 
     table = ax.table(
@@ -553,8 +651,18 @@ def plot_damage_summary(
     cat_row_idx = 6
     for j in range(5):
         table[(cat_row_idx, j)].set_facecolor(assessment.risk_color)
-        table[(cat_row_idx, j)].set_text_props(color="white" if assessment.risk_color in ["red", "darkred", "black"] else "black", weight="bold")
+        table[(cat_row_idx, j)].set_text_props(
+            color="white"
+            if assessment.risk_color in ["red", "darkred", "black"]
+            else "black",
+            weight="bold",
+        )
 
-    ax.set_title("Gebouw Schade-beoordeling Samenvatting (Building Damage Summary)", fontsize=13, weight="bold", pad=20)
+    ax.set_title(
+        "Gebouw Schade-beoordeling Samenvatting (Building Damage Summary)",
+        fontsize=13,
+        weight="bold",
+        pad=20,
+    )
     fig.tight_layout()
     return fig
