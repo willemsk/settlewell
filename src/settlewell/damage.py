@@ -11,7 +11,7 @@ from typing import Callable, Dict, List, Tuple
 import numpy as np
 
 from .models import Building, BuildingType, DewateringConfig, SoilProfile
-from .settlement import compute_total_settlement
+from .settlement import compute_initial_stress_profile, compute_total_settlement
 
 
 @dataclass
@@ -140,10 +140,24 @@ def assess_building_damage(
     pts = building.evaluation_points()  # [center, corner1, corner2, corner3, corner4]
     drawdowns = drawdown_func(pts)
 
+    # Precompute layer midpoints and initial stresses to avoid redundant calculations
+    z_mids = []
+    curr = 0.0
+    for layer in profile.layers:
+        z_mids.append(curr + layer.thickness / 2.0)
+        curr += layer.thickness
+    z_mids_arr = np.array(z_mids, dtype=float)
+
+    _, sigma_v0_eff, _ = compute_initial_stress_profile(profile, z_points=z_mids_arr)
+
     settlements = [
-        compute_total_settlement(profile, max(0.0, float(d)), method=settlement_method)[
-            0
-        ]
+        compute_total_settlement(
+            profile,
+            max(0.0, float(d)),
+            method=settlement_method,
+            sigma_v0_eff=sigma_v0_eff,
+            z_mids_arr=z_mids_arr,
+        )[0]
         for d in drawdowns
     ]
 
