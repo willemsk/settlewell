@@ -104,8 +104,8 @@ class SoilLayer:
             )
         if self.k_h <= 0:
             raise ValueError(f"Hydraulic conductivity k_h must be > 0, got {self.k_h}")
-        if self.e0 < 0:
-            raise ValueError(f"Initial void ratio e0 must be >= 0, got {self.e0}")
+        if self.e0 <= 0:
+            raise ValueError(f"Initial void ratio e0 must be > 0, got {self.e0}")
         if self.Cc < 0:
             raise ValueError(f"Compression index Cc must be >= 0, got {self.Cc}")
         if self.Cr < 0:

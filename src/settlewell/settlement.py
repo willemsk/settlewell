@@ -39,6 +39,8 @@ def compute_initial_stress_profile(
 
     Notes
     -----
+    Terzaghi, K. (1943). [DOI: 10.1002/9780470172766](https://doi.org/10.1002/9780470172766)
+
     Above the groundwater level ($z \\le z_{\\text{gw}}$):
         $$\\sigma_v(z) = \\sum \\gamma_{\\text{dry}} \\Delta z, \\quad u = 0, \\quad \\sigma'_v = \\sigma_v$$
     Below the groundwater level ($z > z_{\\text{gw}}$):
@@ -114,6 +116,8 @@ def compute_stress_increase_from_drawdown(
 
     Notes
     -----
+    Terzaghi, K. (1943). [DOI: 10.1002/9780470172766](https://doi.org/10.1002/9780470172766)
+
     - For $z < z_{\\text{gw}}$: $\\Delta \\sigma'_v = 0$.
     - For $z_{\\text{gw}} \\le z < z_{\\text{gw}} + s$: $\\Delta \\sigma'_v = \\gamma_w (z - z_{\\text{gw}})$.
     - For $z \\ge z_{\\text{gw}} + s$: $\\Delta \\sigma'_v = \\gamma_w \\cdot s$.
@@ -167,6 +171,8 @@ def compute_layer_settlement_cc_cr(
 
     Notes
     -----
+    Terzaghi, K. (1943). [DOI: 10.1002/9780470172766](https://doi.org/10.1002/9780470172766)
+
     Preconsolidation pressure $\\sigma'_p = \\text{OCR} \\cdot \\sigma'_{v0}$.
 
     - **Case 1**: Fully Overconsolidated ($\\sigma'_{v0} + \\Delta \\sigma'_v \\le \\sigma'_p$)
@@ -221,6 +227,8 @@ def compute_layer_settlement_eoed(
 
     Notes
     -----
+    Terzaghi, K. (1943). [DOI: 10.1002/9780470172766](https://doi.org/10.1002/9780470172766)
+
     $$\\Delta s = \\frac{\\Delta \\sigma'_v}{E_{\\text{oed}}} \\cdot H$$
     """
     if delta_sigma_v <= 0:
@@ -295,6 +303,8 @@ def compute_degree_of_consolidation(Tv: float) -> float:
 
     Notes
     -----
+    Terzaghi, K. (1943). [DOI: 10.1002/9780470172766](https://doi.org/10.1002/9780470172766)
+
     For $T_v \\le 0.2827$ ($U < 60\\%$):
         $$U = \\sqrt{\\frac{4 T_v}{\\pi}}$$
     For $T_v > 0.2827$ ($U \\ge 60\\%$):
