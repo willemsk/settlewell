@@ -63,10 +63,6 @@ def create_grid(
     dx : float, default 1.0
         Uniform grid node spacing [m] (used for both dx and dy).
 
-    References
-    ----------
-    Harbaugh, A. W. (2005). MODFLOW-2005.
-
     Returns
     -------
     FDGrid
@@ -102,10 +98,6 @@ def solve_steady_state(
         Soil profile for transmissivity computation.
     pit : ConstructionPit
         Construction pit geometry.
-
-    References
-    ----------
-    Harbaugh, A. W. (2005). MODFLOW-2005.
 
     Returns
     -------
@@ -183,10 +175,6 @@ def extract_drawdown_at_points(
         List of (x, y) coordinate pairs [m].
     H0 : float
         Undisturbed groundwater head [mTAW].
-
-    References
-    ----------
-    Harbaugh, A. W. (2005). MODFLOW-2005.
 
     Returns
     -------

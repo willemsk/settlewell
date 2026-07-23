@@ -33,21 +33,12 @@ from settlewell.numerical import (
 
 
 class TestTheisToThiemConvergence:
-    """
-    Groups tests that verify the physical consistency between transient and steady-state models.
-    At very large times, the transient Theis solution must naturally converge to the steady-state
-    Thiem solution.
-    """
+    """At large t, Theis solution must converge to Thiem (steady-state)."""
 
     def test_convergence_at_multiple_distances(self):
-        """
-        This test proves that at a sufficiently large time (when the system reaches equilibrium),
-        the time-dependent Theis drawdown matches the steady-state Thiem drawdown. It is critical
-        for ensuring the mathematical models seamlessly transition from short-term to long-term behavior.
-        It calculates the theoretical steady-state time `t_ss`, computes both Theis and Thiem drawdowns
-        at distances of 5, 10, and 20 meters, and compares them. The expected result is that the
-        Theis drawdown is within 1% relative error of the Thiem drawdown for significant drawdown values.
-        """
+        """Theis at t_ss = R² * S / (2.25 * T) converges to Thiem within 1%.
+
+        For R=200, S=0.1, T=5e-4: t_ss = 200²*0.1/(2.25*5e-4) = 3.555e6 s ≈ 41.15 days."""
         Q, T, S, R, H0 = 0.001, 5e-4, 0.1, 200.0, 5.0
         t_ss = R**2 * S / (2.25 * T)
         # Cooper-Jacob approximation u = r²S/(4Tt) < 0.01 holds for r <= 20m
@@ -66,20 +57,11 @@ class TestTheisToThiemConvergence:
 
 
 class TestCooperJacobApproximation:
-    """
-    Groups tests comparing the Theis equation to the Cooper-Jacob approximation.
-    These tests ensure that for small values of the well function argument 'u' (typical at large times
-    or small distances), the two analytical methods yield identical results.
-    """
+    """At large t (small u), Theis matches Cooper-Jacob approximation."""
 
     def test_small_u_convergence(self):
-        """
-        This test confirms that for small values of 'u' (u < 0.01), the exact Theis equation
-        simplifies correctly to the Cooper-Jacob logarithmic approximation. This validates the
-        implementation of both formulas under specific boundary conditions. The test computes drawdown
-        using both methods for a very large time (`t = 1e7`) at a set distance. The expected result
-        is that the Theis output matches the Cooper-Jacob calculation within a tight 0.1% tolerance.
-        """
+        """For u < 0.01, Cooper-Jacob ≈ Theis within 0.1%.
+        Cooper-Jacob: s ≈ Q/(4πT) * ln(2.25*T*t / (r²*S))."""
         Q, T, S, r = 0.001, 5e-4, 0.1, 10.0
         t = 1e7  # Very large t → very small u
         u = r**2 * S / (4 * T * t)
@@ -91,19 +73,11 @@ class TestCooperJacobApproximation:
 
 
 class TestRadialSymmetry:
-    """
-    Groups tests that verify the geometric and physical symmetry of drawdown cones.
-    A single well in a homogenous aquifer must produce a perfectly circular (radial) drawdown pattern.
-    """
+    """Single well produces radially symmetric drawdown."""
 
     def test_four_equidistant_points(self, simple_profile):
-        """
-        This test checks that drawdown is radially symmetric around a single pumping well.
-        It ensures there are no unintentional directional biases in the coordinate system or
-        superposition logic. It calculates the drawdown at four points lying on a 20m circle
-        around the origin (North, South, East, West). The expected result is that all four points
-        experience identically the same drawdown amount.
-        """
+        """4 points at equal distance r=20m from a single well at origin
+        should have identical drawdown."""
         well = Well(x=0.0, y=0.0, Q=0.001)
         config = DewateringConfig(
             wells=[well],
@@ -121,19 +95,10 @@ class TestRadialSymmetry:
 
 
 class TestSuperpositionLinearity:
-    """
-    Groups tests that ensure confined aquifers obey the principle of linearity.
-    Because the partial differential equations governing confined flow are linear, the system's
-    response must scale linearly with pumping rates.
-    """
+    """In a confined aquifer (linear), doubling Q doubles drawdown."""
 
     def test_double_q_doubles_drawdown(self):
-        """
-        This test verifies that the confined steady-state drawdown is directly proportional
-        to the pumping rate (Q). It confirms the underlying linear physics assumption of the model.
-        The test computes the drawdown for a baseline Q (0.001 m³/s) and then for double that rate (0.002 m³/s).
-        The expected result is that the drawdown for the doubled rate is exactly twice the baseline drawdown.
-        """
+        """Confined Thiem: s ∝ Q (linear). Doubling Q should double s."""
         T, R, H0 = 5e-4, 200.0, 5.0
         r = 15.0
         s1 = thiem_drawdown_single_well(
@@ -146,19 +111,10 @@ class TestSuperpositionLinearity:
 
 
 class TestDrawdownMonotonicity:
-    """
-    Groups tests checking the spatial decay of the drawdown cone. Drawdown must
-    always be deepest at the well and strictly decrease as distance increases.
-    """
+    """Drawdown decreases monotonically with distance from well."""
 
     def test_monotonic_decrease(self):
-        """
-        This test ensures that the predicted drawdown strictly decreases as the distance from
-        the pumping well increases. This is a fundamental physical reality of dewatering that must
-        be maintained to prevent oscillating or physically impossible depression cones. It calculates
-        drawdown at an array of increasing distances. The expected result is that the sequential
-        differences between these values are always negative or zero (monotonic decrease).
-        """
+        """s(r1) > s(r2) for r1 < r2."""
         T, R, H0 = 5e-4, 200.0, 5.0
         r_values = np.array([1.0, 5.0, 10.0, 20.0, 50.0, 100.0, 150.0])
         s = thiem_drawdown_single_well(
@@ -169,20 +125,13 @@ class TestDrawdownMonotonicity:
 
 @pytest.mark.slow
 class TestFDToThiemConvergence:
-    """
-    Groups tests verifying that numerical Finite Difference (FD) models converge to exact
-    analytical solutions. These are vital for validating the custom numerical solver against known truth.
-    """
+    """As grid spacing dx → 0, FD drawdown converges to Thiem analytical solution."""
 
     def test_grid_refinement(self, flemish_profile, pit):
-        """
-        This test confirms that solving the dewatering equations numerically via Finite Differences
-        becomes increasingly accurate as the grid resolution improves. It validates the FD algorithm's
-        consistency and convergence properties. It computes a numerical solution at progressively finer
-        grid spacings (dx = 4m, 2m, 1m) and compares the drawdown at a fixed distance (r=30) to the exact Thiem solution.
-        The expected result is that the relative error strictly decreases with each refinement step,
-        and the final finest-grid error is less than 10%.
-        """
+        """FD drawdown at r=30m from a single well converges to Thiem as dx decreases.
+
+        Test at dx = 4m, 2m, 1m. Relative error should decrease with refinement.
+        Final error at dx=1m should be < 10%."""
         from settlewell.hydraulics import compute_transmissivity
 
         well = Well(x=0.0, y=0.0, Q=0.001)
@@ -230,20 +179,16 @@ class TestFDToThiemConvergence:
 
 
 class TestEoedVsCcCrConsistency:
-    """
-    Groups tests proving that different empirical frameworks for computing soil settlement
-    yield identical results when given mathematically equivalent input parameters.
-    """
+    """When Eoed and Cc are consistent, both methods give the same settlement."""
 
     def test_single_nc_layer(self):
-        """
-        This test verifies that calculating settlement using a secant Oedometer modulus (`Eoed`)
-        gives exactly the same result as using the Compression Index (`Cc`) when the two parameters
-        are rigorously calibrated to one another. It ensures internal consistency between the linear
-        and logarithmic settlement equations. It constructs a normally consolidated clay profile, derives
-        a matching `Eoed` from a given `Cc`, and computes total settlement using both methods.
-        The expected result is that both methods return the exact same settlement value.
-        """
+        """For a single normally consolidated layer, if Eoed_secant = Δσ' / ((Cc/(1+e0)) * log10((σ0+Δσ)/σ0)),
+        then Eoed and Cc/Cr methods should agree exactly.
+
+        Setup: 5m clay, GWL at 0m (fully saturated), drawdown = 2m.
+        σ'_v at midpoint = (18.5 - 9.81) * 2.5 = 21.725 kPa.
+        Δσ' = 9.81 * 2.0 = 19.62 kPa.
+        Secant Eoed = 19.62 / ((0.30/2.0) * log10(41.345 / 21.725)) = 468.04 kPa."""
         sigma_mid = (18.5 - 9.81) * 2.5  # 21.725 kPa
         dsigma = 9.81 * 2.0  # 19.62 kPa
         strain_cc = (0.30 / (1.0 + 1.0)) * np.log10((sigma_mid + dsigma) / sigma_mid)
@@ -270,19 +215,10 @@ class TestEoedVsCcCrConsistency:
 
 
 class TestConsolidationTimeConvergence:
-    """
-    Groups tests verifying that the time-dependent consolidation process correctly
-    asymptotes to the final calculated total settlement.
-    """
+    """Settlement converges to ultimate value at large time."""
 
     def test_settlement_reaches_ultimate(self, flemish_profile):
-        """
-        This test checks that as time approaches infinity, the transient settlement curve reaches
-        100% of the calculated total ultimate settlement. This confirms the time-scaling math (degree of consolidation)
-        correctly brackets the steady-state target. It calculates the ultimate settlement directly, and then queries
-        the time-dependent function at an extreme duration (1000 years). The expected result is that the two values
-        are equal within a 0.1% margin.
-        """
+        """At t → ∞, s(t) → s_ultimate within 0.1%."""
         s_ult, _ = compute_total_settlement(flemish_profile, drawdown=2.0)
         # Very large time (1000 years)
         times_days = np.array([365 * 1000.0])
@@ -293,19 +229,11 @@ class TestConsolidationTimeConvergence:
 
 
 class TestConsolidationTimeScaling:
-    """
-    Groups tests confirming that the consolidation equations correctly follow Terzaghi's
-    scaling laws, specifically relating time to the square of the drainage path length.
-    """
+    """Doubling drainage path quadruples time to reach same U."""
 
     def test_hdr_scaling(self):
-        """
-        This test validates that the time required to reach a specific degree of consolidation
-        scales with the square of the drainage path length (Hdr). It guarantees the model accurately
-        reflects how soil thickness drastically impacts settlement timelines. It computes the theoretical
-        time needed to reach a specific time factor (Tv) for a base thickness and a doubled thickness.
-        The expected result is that doubling the thickness requires exactly four times as much time.
-        """
+        """Tv = Cv * t / Hdr². For same Tv (same U):
+        t2/t1 = (Hdr2/Hdr1)². Doubling Hdr → t2 = 4 * t1."""
         Cv = 1e-7  # m²/s
         Hdr1 = 1.5  # m
         Hdr2 = 3.0  # m (doubled)
@@ -324,18 +252,10 @@ class TestConsolidationTimeScaling:
 
 
 class TestZeroDrawdownZeroSettlement:
-    """
-    Groups basic sanity checks verifying the null hypothesis: if there is no change
-    in groundwater conditions, there should be no structural impact on the soil.
-    """
+    """Trivial sanity check: no drawdown → no settlement."""
 
     def test_all_profiles(self, flemish_profile, simple_profile):
-        """
-        This test confirms that a drawdown of zero correctly produces zero settlement.
-        It ensures there are no rogue constants or phantom effective stress increases in the model.
-        It calls the total settlement calculation on both standard test profiles passing `drawdown=0.0`.
-        The expected result is exactly 0.0 total settlement.
-        """
+        """Both profiles should give zero settlement for zero drawdown."""
         for profile in [flemish_profile, simple_profile]:
             s, per_layer = compute_total_settlement(profile, drawdown=0.0)
             assert s == pytest.approx(0.0, abs=1e-12)
@@ -343,19 +263,12 @@ class TestZeroDrawdownZeroSettlement:
 
 @pytest.mark.slow
 class TestThinLayerConvergence:
-    """
-    Groups tests validating the numerical stability of the settlement calculations across
-    varying discretizations of the soil profile.
-    """
+    """As we subdivide layers into thinner sublayers, total settlement converges."""
 
     def test_mesh_independence(self):
-        """
-        This test checks that calculating total settlement converges to a stable value as a single
-        soil layer is sliced into increasingly thinner sub-layers. Because effective stress varies
-        non-linearly with depth, thicker layers have higher discretization error. It loops through subdivisions
-        of N=1 to N=30 for a 3m clay layer, computing total settlement each time. The expected result is
-        that the system is mesh-independent, meaning the difference between 12 and 30 slices is less than 1%.
-        """
+        """Split a 3m clay layer into N sublayers (N=1,3,6,12,30).
+        Total settlement should converge. Difference between N=12 and N=30
+        should be < 1%."""
         results = []
         for n_sub in [1, 3, 6, 12, 30]:
             thickness = 3.0 / n_sub

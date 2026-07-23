@@ -89,11 +89,8 @@ def classify_damage(
     color : str
         Associated risk color.
 
-
     Notes
     -----
-    Based on criteria from Burland & Wroth (1974) and SBRCURnet guidelines.
-
     For `CONCRETE_FRAME` structures, the building frame tolerates higher distortion,
     shifting the risk category down by 1 (category = max(0, category - 1)).
     """
