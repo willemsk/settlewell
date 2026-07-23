@@ -32,6 +32,8 @@ def compute_transmissivity(profile: SoilProfile, config: DewateringConfig) -> fl
 
     Notes
     -----
+    Theis, C. V. (1935). [DOI: 10.1029/TR016i002p00519](https://doi.org/10.1029/TR016i002p00519)
+
     For `UNCONFINED` aquifers:
         $$T = \\sum_i k_{h, i} \\cdot d_{\\text{sat}, i}$$
     For `CONFINED` aquifers:
@@ -80,6 +82,8 @@ def compute_storativity(profile: SoilProfile, config: DewateringConfig) -> float
 
     Notes
     -----
+    Theis, C. V. (1935). [DOI: 10.1029/TR016i002p00519](https://doi.org/10.1029/TR016i002p00519)
+
     For `UNCONFINED` aquifers, S represents specific yield $S_y \\approx e_0 / (1 + e_0)$.
     For `CONFINED` aquifers, S represents elastic storativity $S = \\sum \\frac{\\gamma_w H_i}{E_{\\text{oed}, i}}$.
     If `config.S` is specified, that value is returned.
@@ -115,6 +119,8 @@ def compute_radius_of_influence(
 
     Notes
     -----
+    Theis, C. V. (1935). [DOI: 10.1029/TR016i002p00519](https://doi.org/10.1029/TR016i002p00519)
+
     Sichardt's formula:
     $$R = 3000 \\cdot s \\cdot \\sqrt{k_{\\text{rep}}}$$
     where $s$ is target drawdown [m] and $k_{\\text{rep}} = T / H_0$ [m/s].
@@ -163,6 +169,8 @@ def thiem_drawdown_single_well(
 
     Notes
     -----
+    Theis, C. V. (1935). [DOI: 10.1029/TR016i002p00519](https://doi.org/10.1029/TR016i002p00519)
+
     Confined aquifer (Thiem, 1906):
     $$s(r) = \\frac{Q}{2\\pi T} \\ln\\left(\\frac{R}{r}\\right)$$
 
@@ -218,6 +226,8 @@ def theis_drawdown_single_well(
 
     Notes
     -----
+    Theis, C. V. (1935). [DOI: 10.1029/TR016i002p00519](https://doi.org/10.1029/TR016i002p00519)
+
     $$s(r, t) = \\frac{Q}{4\\pi T} W(u), \\quad u = \\frac{r^2 S}{4 T t}$$
     where $W(u) = \\text{exp1}(u)$ is the exponential integral.
     """
