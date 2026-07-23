@@ -3,8 +3,6 @@
 All functions return Figure objects (matplotlib or plotly) — they do NOT call plt.show().
 """
 
-from typing import Dict
-
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,7 +11,7 @@ import plotly.graph_objects as go
 from .damage import DamageAssessment
 from .models import Building, ConstructionPit, DewateringConfig, SoilProfile
 
-SOIL_COLORS: Dict[str, str] = {
+SOIL_COLORS: dict[str, str] = {
     "Aanvulling": "#D2B48C",  # Light brown / tan
     "Fill": "#D2B48C",
     "Zand": "#F4D03F",  # Yellow
@@ -380,7 +378,7 @@ def plot_settlement_trough(
 
 def plot_time_settlement(
     times_days: np.ndarray,
-    settlements_at_corners: Dict[str, np.ndarray],
+    settlements_at_corners: dict[str, np.ndarray],
     pumping_duration_days: float,
 ) -> plt.Figure:
     """Time-settlement consolidation curves over time.
@@ -544,21 +542,68 @@ def plot_3d_drawdown(
             colorscale="Blues",
             reversescale=True,
             name="Verlaging (Drawdown)",
-            colorbar=dict(title="Drawdown [m]"),
+            colorbar={"title": "Drawdown [m]"},
         )
     )
 
     fig.update_layout(
         title="3D Groundwater Drawdown Surface (Bemalingskegel)",
-        scene=dict(
-            xaxis_title="X [m]",
-            yaxis_title="Y [m]",
-            zaxis_title="Verlaging [m]",
-            camera=dict(eye=dict(x=1.5, y=1.5, z=1.2)),
-        ),
-        margin=dict(l=0, r=0, b=0, t=40),
+        scene={
+            "xaxis_title": "X [m]",
+            "yaxis_title": "Y [m]",
+            "zaxis_title": "Verlaging [m]",
+            "camera": {"eye": {"x": 1.5, "y": 1.5, "z": 1.2}},
+        },
+        margin={"l": 0, "r": 0, "b": 0, "t": 40},
     )
 
+    return fig
+
+
+def plot_3d_drawdown_mpl(
+    X_grid: np.ndarray,
+    Y_grid: np.ndarray,
+    drawdown_grid: np.ndarray,
+    pit: ConstructionPit = None,
+) -> plt.Figure:
+    """Native Matplotlib 3D surface plot of the drawdown cone for Qt embedding.
+
+    Parameters
+    ----------
+    X_grid : numpy.ndarray
+        2D X grid array [m].
+    Y_grid : numpy.ndarray
+        2D Y grid array [m].
+    drawdown_grid : numpy.ndarray
+        2D drawdown array [m].
+    pit : ConstructionPit, optional
+        Construction pit.
+
+    Returns
+    -------
+    matplotlib.figure.Figure
+        Matplotlib 3D Figure object.
+    """
+    fig = plt.figure(figsize=(8, 6))
+    ax = fig.add_subplot(111, projection="3d")
+
+    # Invert drawdown for z-axis so depth cone points down
+    surf = ax.plot_surface(
+        X_grid,
+        Y_grid,
+        -drawdown_grid,
+        cmap="Blues_r",
+        edgecolor="none",
+        alpha=0.85,
+    )
+
+    ax.set_title("3D Groundwater Drawdown Surface (Bemalingskegel)")
+    ax.set_xlabel("X [m]")
+    ax.set_ylabel("Y [m]")
+    ax.set_zlabel("Verlaging [m]")
+
+    fig.colorbar(surf, ax=ax, shrink=0.5, aspect=10, label="Drawdown [m]")
+    fig.tight_layout()
     return fig
 
 

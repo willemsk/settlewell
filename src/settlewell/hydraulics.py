@@ -5,7 +5,6 @@ transient (Theis) drawdown fields around single and multi-well dewatering system
 """
 
 import math
-from typing import List, Optional, Tuple, Union
 
 import numpy as np
 from scipy.special import exp1
@@ -139,14 +138,14 @@ def compute_radius_of_influence(
 
 
 def thiem_drawdown_single_well(
-    r: Union[float, np.ndarray],
+    r: float | np.ndarray,
     Q: float,
     T: float,
     R: float,
     H0: float,
     aquifer_type: AquiferType,
     r_w: float = 0.075,
-) -> Union[float, np.ndarray]:
+) -> float | np.ndarray:
     """Calculate steady-state drawdown around a single extraction well.
 
     Parameters
@@ -199,13 +198,13 @@ def thiem_drawdown_single_well(
 
 
 def theis_drawdown_single_well(
-    r: Union[float, np.ndarray],
+    r: float | np.ndarray,
     t: float,
     Q: float,
     T: float,
     S: float,
     r_w: float = 0.075,
-) -> Union[float, np.ndarray]:
+) -> float | np.ndarray:
     """Calculate transient drawdown using the Theis (1935) well function.
 
     Parameters
@@ -250,10 +249,10 @@ def theis_drawdown_single_well(
 
 
 def compute_drawdown_at_points(
-    points: List[Tuple[float, float]],
+    points: list[tuple[float, float]],
     config: DewateringConfig,
     profile: SoilProfile,
-    time_s: Optional[float] = None,
+    time_s: float | None = None,
 ) -> np.ndarray:
     """Compute total drawdown at specified (x, y) evaluation points using superposition.
 
@@ -320,14 +319,14 @@ def compute_drawdown_at_points(
 
 
 def compute_drawdown_grid(
-    x_range: Tuple[float, float],
-    y_range: Tuple[float, float],
+    x_range: tuple[float, float],
+    y_range: tuple[float, float],
     nx: int,
     ny: int,
     config: DewateringConfig,
     profile: SoilProfile,
-    time_s: Optional[float] = None,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    time_s: float | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Compute drawdown distribution across a regular 2D rectangular grid.
 
     Parameters

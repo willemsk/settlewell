@@ -41,6 +41,19 @@ When new features, design changes, or architectural additions are requested:
 4. **Obtain Plan Approval**: Present the updated implementation plan referencing `spec.md` to the user for approval.
 <!-- specification_first_updates -->
 
+<!-- optional_dependency_testing -->
+### Optional Dependency Testing & Pytest Guardrails
+
+1. **Top-Level Module Import Guard**: When writing tests for optional dependency packages (e.g., `PySide6`, `plotly`, `jupyter`), add `pytest.importorskip("<package>")` at the top of the test module before importing the optional package. This ensures `pytest` collection skips the test file gracefully without crashing when optional dependencies are omitted.
+2. **CI Workflow Synchronization**: Whenever adding a new `[project.optional-dependencies]` extra group in `pyproject.toml`, update the CI workflow files (e.g., `.github/workflows/tests.yml`) to include `--extra <group>` in the `uv sync` step so CI exercises the new functionality.
+<!-- optional_dependency_testing -->
+
+<!-- ruff_variable_naming -->
+### Variable Naming & Ruff E741 Compliance
+
+Avoid single-letter variable names `l`, `O`, or `I` (especially in loops, lambdas, and list comprehensions) to comply with Ruff `E741` ambiguous variable name rules. Prefer descriptive names like `layer_dict`, `item`, or `elem`.
+<!-- ruff_variable_naming -->
+
 ## Version History
 
 | Version | Date | Changes |

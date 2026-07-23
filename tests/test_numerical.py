@@ -1,13 +1,14 @@
 """Unit tests for settlewell.numerical — 2D finite-difference solver."""
 
-import pytest
 import numpy as np
+import pytest
+
+from settlewell import AquiferType, DewateringConfig, Well
 from settlewell.numerical import (
     create_grid,
-    solve_steady_state,
     extract_drawdown_at_points,
+    solve_steady_state,
 )
-from settlewell import DewateringConfig, Well, AquiferType
 
 
 class TestCreateGrid:
