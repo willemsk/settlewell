@@ -1,54 +1,52 @@
 site_name: Settlewell Documentation
-site_description: Ground Settlement Calculation During Dewatering of Construction Pits
+site_description: Ground Settlement Calculation During Dewatering of Construction
+  Pits
 site_author: Kherim Willems
-
 theme:
   name: material
   palette:
-    - scheme: default
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-7
-        name: Switch to dark mode
-    - scheme: slate
-      primary: indigo
-      accent: indigo
-      toggle:
-        icon: material/brightness-4
-        name: Switch to light mode
+  - scheme: default
+    primary: indigo
+    accent: indigo
+    toggle:
+      icon: material/brightness-7
+      name: Switch to dark mode
+  - scheme: slate
+    primary: indigo
+    accent: indigo
+    toggle:
+      icon: material/brightness-4
+      name: Switch to light mode
   features:
-    - navigation.indexes
-    - navigation.top
-    - content.code.copy
-
+  - navigation.indexes
+  - navigation.top
+  - content.code.copy
 plugins:
-  - search
-  - mkdocstrings:
-      handlers:
-        python:
-          options:
-            docstring_style: numpy
-            show_root_heading: true
-            show_source: true
-
+- search
+- mkdocstrings:
+    handlers:
+      python:
+        options:
+          docstring_style: numpy
+          show_root_heading: true
+          show_source: true
 markdown_extensions:
-  - pymdownx.highlight:
-      anchor_linenums: true
-  - pymdownx.inlinehilite
-  - pymdownx.snippets
-  - pymdownx.superfences
-  - pymdownx.arithmatex:
-      generic: true
-
+- pymdownx.highlight:
+    anchor_linenums: true
+- pymdownx.inlinehilite
+- pymdownx.snippets
+- pymdownx.superfences
+- pymdownx.arithmatex:
+    generic: true
 nav:
-  - Home: index.md
-  - Getting Started: getting-started.md
-  - Validation & Physics: validation.md
-  - API Reference:
-      - Models: api/models.md
-      - Hydraulics: api/hydraulics.md
-      - Settlement: api/settlement.md
-      - Damage: api/damage.md
-      - Numerical: api/numerical.md
-      - Plotting: api/plotting.md
+- Home: index.md
+- Getting Started: getting-started.md
+- Validation & Physics: validation.md
+- Theory: theory.md
+- API Reference:
+  - Models: api/models.md
+  - Hydraulics: api/hydraulics.md
+  - Settlement: api/settlement.md
+  - Damage: api/damage.md
+  - Numerical: api/numerical.md
+  - Plotting: api/plotting.md
