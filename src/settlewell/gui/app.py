@@ -7,6 +7,7 @@ import matplotlib
 from PySide6.QtWidgets import QApplication
 
 from settlewell import __version__
+
 from .main_window import MainWindow
 from .theme import DARK_STYLESHEET, MATPLOTLIB_DARK_PARAMS
 
@@ -26,7 +27,7 @@ def main() -> None:
     os.environ["QT_API"] = "PySide6"
     try:
         matplotlib.use("QtAgg")
-    except Exception:
+    except Exception:  # noqa: BLE001, S110
         pass
 
     app = QApplication.instance()

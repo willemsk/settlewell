@@ -247,5 +247,5 @@ class AnalysisWorker(QObject):
 
             self.finished.emit(results)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             self.error.emit(str(e))

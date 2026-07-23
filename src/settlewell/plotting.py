@@ -3,8 +3,6 @@
 All functions return Figure objects (matplotlib or plotly) — they do NOT call plt.show().
 """
 
-from typing import Dict
-
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
@@ -13,7 +11,7 @@ import plotly.graph_objects as go
 from .damage import DamageAssessment
 from .models import Building, ConstructionPit, DewateringConfig, SoilProfile
 
-SOIL_COLORS: Dict[str, str] = {
+SOIL_COLORS: dict[str, str] = {
     "Aanvulling": "#D2B48C",  # Light brown / tan
     "Fill": "#D2B48C",
     "Zand": "#F4D03F",  # Yellow
@@ -379,7 +377,7 @@ def plot_settlement_trough(
 
 def plot_time_settlement(
     times_days: np.ndarray,
-    settlements_at_corners: Dict[str, np.ndarray],
+    settlements_at_corners: dict[str, np.ndarray],
     pumping_duration_days: float,
 ) -> plt.Figure:
     """Time-settlement consolidation curves over time.
@@ -543,19 +541,19 @@ def plot_3d_drawdown(
             colorscale="Blues",
             reversescale=True,
             name="Verlaging (Drawdown)",
-            colorbar=dict(title="Drawdown [m]"),
+            colorbar={"title": "Drawdown [m]"},
         )
     )
 
     fig.update_layout(
         title="3D Groundwater Drawdown Surface (Bemalingskegel)",
-        scene=dict(
-            xaxis_title="X [m]",
-            yaxis_title="Y [m]",
-            zaxis_title="Verlaging [m]",
-            camera=dict(eye=dict(x=1.5, y=1.5, z=1.2)),
-        ),
-        margin=dict(l=0, r=0, b=0, t=40),
+        scene={
+            "xaxis_title": "X [m]",
+            "yaxis_title": "Y [m]",
+            "zaxis_title": "Verlaging [m]",
+            "camera": {"eye": {"x": 1.5, "y": 1.5, "z": 1.2}},
+        },
+        margin={"l": 0, "r": 0, "b": 0, "t": 40},
     )
 
     return fig

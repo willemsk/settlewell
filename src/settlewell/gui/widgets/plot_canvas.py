@@ -1,21 +1,19 @@
 """Reusable Qt widget wrapping Matplotlib FigureCanvasQTAgg and NavigationToolbar2QT."""
 
-from typing import Optional
-
+import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg, NavigationToolbar2QT
 from matplotlib.figure import Figure
-import matplotlib.pyplot as plt
 from PySide6.QtWidgets import QVBoxLayout, QWidget
 
 
 class PlotCanvas(QWidget):
     """Qt widget wrapping a Matplotlib FigureCanvas and NavigationToolbar."""
 
-    def __init__(self, fig: Optional[Figure] = None, parent=None):
+    def __init__(self, fig: Figure | None = None, parent=None):
         super().__init__(parent)
-        self._fig: Optional[Figure] = None
-        self.canvas: Optional[FigureCanvasQTAgg] = None
-        self.toolbar: Optional[NavigationToolbar2QT] = None
+        self._fig: Figure | None = None
+        self.canvas: FigureCanvasQTAgg | None = None
+        self.toolbar: NavigationToolbar2QT | None = None
 
         self.layout = QVBoxLayout(self)
         self.layout.setContentsMargins(0, 0, 0, 0)
@@ -44,6 +42,6 @@ class PlotCanvas(QWidget):
         self.layout.addWidget(self.canvas)
         self.canvas.draw()
 
-    def get_figure(self) -> Optional[Figure]:
+    def get_figure(self) -> Figure | None:
         """Return active Matplotlib Figure object."""
         return self._fig

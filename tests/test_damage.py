@@ -1,8 +1,9 @@
 """Unit tests for settlewell.damage — Burland/Wroth + SBR classification."""
 
 import pytest
-from settlewell.damage import classify_damage, assess_building_damage
+
 from settlewell import BuildingType
+from settlewell.damage import assess_building_damage, classify_damage
 
 
 class TestClassifyDamage:
@@ -21,7 +22,7 @@ class TestClassifyDamage:
         for a masonry building. The expected result is a damage category of 0 (Negligible)
         and a color code of "green".
         """
-        cat, desc, _, color = classify_damage(0.0, BuildingType.MASONRY)
+        cat, _desc, _, color = classify_damage(0.0, BuildingType.MASONRY)
         assert cat == 0
         assert color == "green"
 
@@ -102,8 +103,9 @@ class TestAssessBuildingDamage:
         is that differential settlement and angular distortion are non-negative, and the resulting damage
         category falls within the valid range of 0 to 5.
         """
-        from settlewell.hydraulics import compute_drawdown_at_points
         from functools import partial
+
+        from settlewell.hydraulics import compute_drawdown_at_points
 
         drawdown_func = partial(
             compute_drawdown_at_points,
@@ -130,8 +132,9 @@ class TestAssessBuildingDamage:
         The test assesses building damage under a standard six-well drawdown configuration. The expected
         result is that either the angular distortion is strictly positive, or the differential settlement is exactly zero.
         """
-        from settlewell.hydraulics import compute_drawdown_at_points
         from functools import partial
+
+        from settlewell.hydraulics import compute_drawdown_at_points
 
         drawdown_func = partial(
             compute_drawdown_at_points,
@@ -155,8 +158,9 @@ class TestAssessBuildingDamage:
         It executes `assess_building_damage` using typical test fixtures for building and soil properties.
         The expected result is that the resulting assessment object contains a non-negative `deflection_ratio`.
         """
-        from settlewell.hydraulics import compute_drawdown_at_points
         from functools import partial
+
+        from settlewell.hydraulics import compute_drawdown_at_points
 
         drawdown_func = partial(
             compute_drawdown_at_points,
@@ -182,7 +186,7 @@ class TestAssessBuildingDamage:
 
         # Extremely high theoretical damage (e.g., beyond math.inf threshold, if possible).
         # We test the last element of the list by passing an extremely high value.
-        cat, desc, crack, color = classify_damage(100.0, 50.0)  # Huge values
+        cat, _desc, _crack, _color = classify_damage(100.0, 50.0)  # Huge values
         # Threshold 5 is the maximum fallback category
         assert cat == 5
 
@@ -206,6 +210,6 @@ class TestAssessBuildingDamage:
         monkeypatch.setattr(damage, "SBR_THRESHOLDS", mock_thresholds)
 
         # Test fallback
-        cat, desc, crack, color = damage.classify_damage(0.010, BuildingType.MASONRY)
+        cat, desc, _crack, _color = damage.classify_damage(0.010, BuildingType.MASONRY)
         assert cat == 1
         assert desc == "Slight"

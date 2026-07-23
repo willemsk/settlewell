@@ -1,5 +1,7 @@
 """QTableWidget subclass for soil layers input and editing."""
 
+from typing import ClassVar
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 
@@ -23,7 +25,7 @@ class SoilLayerTable(QTableWidget):
 
     data_changed = Signal()
 
-    COLUMNS = [
+    COLUMNS: ClassVar[list[tuple[str, str]]] = [
         ("Naam", "Sand"),
         ("Dikte [m]", "2.0"),
         ("γ [kN/m³]", "17.5"),

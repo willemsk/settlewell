@@ -2,6 +2,7 @@
 
 import os
 from pathlib import Path
+
 import pytest
 
 # Force offscreen platform for headless Qt testing

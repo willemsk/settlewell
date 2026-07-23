@@ -1,14 +1,13 @@
 """Project file serialization and deserialization (.settlewell JSON format)."""
 
-from datetime import datetime, timezone
 import json
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Union
 
 from settlewell import __version__
 
 
-def save_project(state: dict, path: Union[str, Path]) -> None:
+def save_project(state: dict, path: str | Path) -> None:
     """Serialize wizard state dictionary to a .settlewell JSON file.
 
     Parameters
@@ -24,7 +23,7 @@ def save_project(state: dict, path: Union[str, Path]) -> None:
 
     payload = {
         "settlewell_version": __version__,
-        "created": datetime.now(timezone.utc).isoformat(),
+        "created": datetime.now(UTC).isoformat(),
         "state": state,
     }
 
@@ -33,7 +32,7 @@ def save_project(state: dict, path: Union[str, Path]) -> None:
         json.dump(payload, f, indent=2, ensure_ascii=False)
 
 
-def load_project(path: Union[str, Path]) -> dict:
+def load_project(path: str | Path) -> dict:
     """Deserialize a .settlewell JSON file into a wizard state dictionary.
 
     Parameters

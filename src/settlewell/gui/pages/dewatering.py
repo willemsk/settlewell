@@ -1,5 +1,7 @@
 """Step 4 Wizard Page: Dewatering System Configuration."""
 
+from typing import ClassVar
+
 from PySide6.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
@@ -17,11 +19,13 @@ from settlewell.models import AquiferType
 class DewateringConfigPage(QWizardPage):
     """Wizard page for configuring dewatering system parameters."""
 
-    AQUIFER_MAP = {
+    AQUIFER_MAP: ClassVar[dict[str, str]] = {
         "Freatisch (Unconfined)": AquiferType.UNCONFINED.value,
         "Afgesloten (Confined)": AquiferType.CONFINED.value,
     }
-    REVERSE_AQUIFER_MAP = {v: k for k, v in AQUIFER_MAP.items()}
+    REVERSE_AQUIFER_MAP: ClassVar[dict[str, str]] = {
+        v: k for k, v in AQUIFER_MAP.items()
+    }
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -196,7 +200,7 @@ class DewateringConfigPage(QWizardPage):
             self.duration_spin.setValue(float(dew_data["pumping_duration_days"]))
         if "aquifer_type" in dew_data:
             a_str = self.REVERSE_AQUIFER_MAP.get(
-                dew_data["aquifer_type"], list(self.AQUIFER_MAP.keys())[0]
+                dew_data["aquifer_type"], next(iter(self.AQUIFER_MAP.keys()))
             )
             self.aquifer_combo.setCurrentText(a_str)
 

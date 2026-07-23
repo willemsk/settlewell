@@ -8,6 +8,7 @@ Computes limiting-case numerical convergence data and exports SVG graphs:
 """
 
 from pathlib import Path
+
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.special import exp1

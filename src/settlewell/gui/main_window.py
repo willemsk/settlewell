@@ -1,7 +1,6 @@
 """Main application window for Settlewell GUI."""
 
 from pathlib import Path
-from typing import Optional
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence
@@ -15,6 +14,7 @@ from PySide6.QtWidgets import (
 )
 
 from settlewell import __version__
+
 from .wizard import SettlewellWizard
 
 
@@ -23,7 +23,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self, parent=None):
         super().__init__(parent)
-        self._current_file: Optional[Path] = None
+        self._current_file: Path | None = None
 
         self.setWindowTitle("Settlewell — Naamloos project")
         self.resize(1200, 800)
@@ -139,7 +139,7 @@ class MainWindow(QMainWindow):
                 self._current_file = path
                 self.setWindowTitle(f"Settlewell — {path.name}")
                 self.status_bar.showMessage(f"Project geladen: {path.name}")
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 QMessageBox.critical(
                     self, "Fout bij openen", f"Kan project niet laden:\n{e}"
                 )
@@ -175,7 +175,7 @@ class MainWindow(QMainWindow):
             self._current_file = path
             self.setWindowTitle(f"Settlewell — {path.name}")
             self.status_bar.showMessage(f"Project opgeslagen: {path.name}")
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             QMessageBox.critical(
                 self, "Fout bij opslaan", f"Kan project niet opslaan:\n{e}"
             )

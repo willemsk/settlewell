@@ -1,5 +1,7 @@
 """QTableWidget subclass for managing neighboring buildings."""
 
+from typing import ClassVar
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QComboBox, QHeaderView, QTableWidget, QTableWidgetItem
 
@@ -21,7 +23,7 @@ class BuildingTable(QTableWidget):
 
     data_changed = Signal()
 
-    HEADERS = [
+    HEADERS: ClassVar[list[str]] = [
         "X [m]",
         "Y [m]",
         "Lengte [m]",
@@ -31,11 +33,11 @@ class BuildingTable(QTableWidget):
         "Type Constructie",
     ]
 
-    TYPE_MAP = {
+    TYPE_MAP: ClassVar[dict[str, str]] = {
         "Metselwerk (Masonry)": BuildingType.MASONRY.value,
         "Betonskelet (Concrete Frame)": BuildingType.CONCRETE_FRAME.value,
     }
-    REVERSE_TYPE_MAP = {v: k for k, v in TYPE_MAP.items()}
+    REVERSE_TYPE_MAP: ClassVar[dict[str, str]] = {v: k for k, v in TYPE_MAP.items()}
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -79,7 +81,7 @@ class BuildingTable(QTableWidget):
         combo = QComboBox()
         combo.addItems(list(self.TYPE_MAP.keys()))
         type_str = self.REVERSE_TYPE_MAP.get(
-            building_type, list(self.TYPE_MAP.keys())[0]
+            building_type, next(iter(self.TYPE_MAP.keys()))
         )
         combo.setCurrentText(type_str)
         combo.currentTextChanged.connect(lambda _: self.data_changed.emit())
@@ -112,7 +114,7 @@ class BuildingTable(QTableWidget):
 
                 combo = self.cellWidget(row, 6)
                 b_type_str = (
-                    combo.currentText() if combo else list(self.TYPE_MAP.keys())[0]
+                    combo.currentText() if combo else next(iter(self.TYPE_MAP.keys()))
                 )
                 b_type = self.TYPE_MAP.get(b_type_str, BuildingType.MASONRY.value)
 

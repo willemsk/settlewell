@@ -1,5 +1,7 @@
 """QTableWidget subclass for managing dewatering wells."""
 
+from typing import ClassVar
+
 from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QHeaderView, QTableWidget, QTableWidgetItem
 
@@ -18,7 +20,7 @@ class WellTable(QTableWidget):
 
     data_changed = Signal()
 
-    HEADERS = [
+    HEADERS: ClassVar[list[str]] = [
         "X [m]",
         "Y [m]",
         "Q [m³/s]",

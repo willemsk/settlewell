@@ -1,7 +1,6 @@
 """Step 6 Wizard Page: Run Analysis & Display Multi-Tab Results."""
 
 from pathlib import Path
-from typing import List, Optional, Tuple
 
 from matplotlib.backends.backend_pdf import PdfPages
 from matplotlib.figure import Figure
@@ -32,9 +31,9 @@ class ResultsPage(QWizardPage):
             "Voer de berekening uit en bekijk de 7 gedetailleerde grafische weergaven."
         )
 
-        self._thread: Optional[QThread] = None
-        self._worker: Optional[AnalysisWorker] = None
-        self._figures: List[Tuple[str, Figure]] = []
+        self._thread: QThread | None = None
+        self._worker: AnalysisWorker | None = None
+        self._figures: list[tuple[str, Figure]] = []
 
         layout = QVBoxLayout()
 
@@ -58,7 +57,7 @@ class ResultsPage(QWizardPage):
 
         # Tab widget for 7 plots
         self.tab_widget = QTabWidget()
-        self.canvases: List[PlotCanvas] = []
+        self.canvases: list[PlotCanvas] = []
 
         # Create 7 tab canvases
         tab_names = [
@@ -135,7 +134,7 @@ class ResultsPage(QWizardPage):
         )
 
     def export_pdf(
-        self, file_path: Optional[Path] = None, show_dialog: bool = True
+        self, file_path: Path | None = None, show_dialog: bool = True
     ) -> None:
         """Export all generated figures to a multi-page PDF report."""
         if not self._figures:
@@ -168,7 +167,7 @@ class ResultsPage(QWizardPage):
                     "PDF Exporteer Succes",
                     f"PDF rapport succesvol opgeslagen in:\n{file_path}",
                 )
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             if show_dialog:
                 QMessageBox.critical(
                     self, "Fout bij exporteren", f"Kan PDF rapport niet opslaan:\n{e}"
