@@ -3,12 +3,15 @@
 from pathlib import Path
 from typing import Optional
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QAction, QKeySequence
 from PySide6.QtWidgets import (
     QFileDialog,
     QMainWindow,
     QMessageBox,
     QStatusBar,
+    QVBoxLayout,
+    QWidget,
 )
 
 from settlewell import __version__
@@ -25,9 +28,18 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Settlewell — Naamloos project")
         self.resize(1200, 800)
 
-        # Wizard central widget
-        self.wizard = SettlewellWizard(self)
-        self.setCentralWidget(self.wizard)
+        # Wizard central widget container
+        container = QWidget(self)
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        self.wizard = SettlewellWizard(container)
+        self.wizard.setWindowFlags(Qt.WindowType.Widget)
+        layout.addWidget(self.wizard)
+        self.setCentralWidget(container)
+
+        self.wizard.restart()
+        self.wizard.show()
 
         # Status bar
         self.status_bar = QStatusBar()
@@ -39,6 +51,7 @@ class MainWindow(QMainWindow):
 
         # Connect signals
         self.wizard.currentIdChanged.connect(self._on_wizard_step_changed)
+        self._on_wizard_step_changed(self.wizard.currentId())
 
     def _create_menus(self) -> None:
         """Create menu bar items and keyboard shortcuts."""
