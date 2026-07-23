@@ -1,13 +1,14 @@
 """Unit tests for settlewell.models — dataclass properties and validation."""
 
 import pytest
+
 from settlewell.models import (
+    Building,
+    ConstructionPit,
+    DewateringConfig,
     SoilLayer,
     SoilProfile,
-    Building,
-    DewateringConfig,
     Well,
-    ConstructionPit,
 )
 
 
@@ -85,19 +86,19 @@ class TestSoilLayerValidation:
         parameters) are caught at instantiation. It systematically overrides a valid dictionary with bad values.
         The expected result is that every invalid variation raises a `ValueError`.
         """
-        kwargs = dict(
-            name="X",
-            thickness=1.0,
-            gamma=17.0,
-            gamma_sat=19.0,
-            k_h=1e-4,
-            e0=0.5,
-            Cc=0.02,
-            Cr=0.005,
-            Eoed=30000,
-            Cv=1e-2,
-            OCR=1.0,
-        )
+        kwargs = {
+            "name": "X",
+            "thickness": 1.0,
+            "gamma": 17.0,
+            "gamma_sat": 19.0,
+            "k_h": 1e-4,
+            "e0": 0.5,
+            "Cc": 0.02,
+            "Cr": 0.005,
+            "Eoed": 30000,
+            "Cv": 1e-2,
+            "OCR": 1.0,
+        }
         kwargs[field] = value
         with pytest.raises(ValueError):
             SoilLayer(**kwargs)
@@ -203,19 +204,19 @@ class TestModelsEdgeCases:
         or logically inverted values (e.g., `Cr > Cc`). The expected result is that every specific violation
         raises a correctly formatted `ValueError`.
         """
-        kwargs = dict(
-            name="X",
-            thickness=1.0,
-            gamma=17.0,
-            gamma_sat=19.0,
-            k_h=1e-4,
-            e0=0.5,
-            Cc=0.02,
-            Cr=0.005,
-            Eoed=30000,
-            Cv=1e-2,
-            OCR=1.0,
-        )
+        kwargs = {
+            "name": "X",
+            "thickness": 1.0,
+            "gamma": 17.0,
+            "gamma_sat": 19.0,
+            "k_h": 1e-4,
+            "e0": 0.5,
+            "Cc": 0.02,
+            "Cr": 0.005,
+            "Eoed": 30000,
+            "Cv": 1e-2,
+            "OCR": 1.0,
+        }
 
         # e0 < 0
         kwargs["e0"] = -0.1
@@ -390,18 +391,18 @@ class TestModelsEdgeCases:
         when creating a `SoilLayer`. A negative Cv would imply time flows backwards in consolidation math.
         The expected result is a `ValueError`.
         """
-        kwargs = dict(
-            name="X",
-            thickness=1.0,
-            gamma=17.0,
-            gamma_sat=19.0,
-            k_h=1e-4,
-            e0=0.5,
-            Cc=0.02,
-            Cr=0.005,
-            Eoed=30000,
-            Cv=-1.0,
-            OCR=1.0,
-        )
+        kwargs = {
+            "name": "X",
+            "thickness": 1.0,
+            "gamma": 17.0,
+            "gamma_sat": 19.0,
+            "k_h": 1e-4,
+            "e0": 0.5,
+            "Cc": 0.02,
+            "Cr": 0.005,
+            "Eoed": 30000,
+            "Cv": -1.0,
+            "OCR": 1.0,
+        }
         with pytest.raises(ValueError, match="Coefficient of consolidation Cv must be"):
             SoilLayer(**kwargs)
