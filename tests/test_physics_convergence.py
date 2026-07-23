@@ -7,25 +7,25 @@ Run with: uv run pytest -m slow (included in full suite: uv run pytest)
 Exclude with: uv run pytest -m 'not slow'
 """
 
-import pytest
 import numpy as np
-from settlewell import AquiferType, Well, DewateringConfig, SoilLayer, SoilProfile
+import pytest
+
+from settlewell import AquiferType, DewateringConfig, SoilLayer, SoilProfile, Well
 from settlewell.hydraulics import (
-    thiem_drawdown_single_well,
-    theis_drawdown_single_well,
     compute_drawdown_at_points,
-)
-from settlewell.settlement import (
-    compute_total_settlement,
-    compute_degree_of_consolidation,
-    compute_settlement_vs_time,
+    theis_drawdown_single_well,
+    thiem_drawdown_single_well,
 )
 from settlewell.numerical import (
     create_grid,
-    solve_steady_state,
     extract_drawdown_at_points,
+    solve_steady_state,
 )
-
+from settlewell.settlement import (
+    compute_degree_of_consolidation,
+    compute_settlement_vs_time,
+    compute_total_settlement,
+)
 
 # ============================================================
 # HYDRAULICS CONVERGENCE
@@ -337,7 +337,7 @@ class TestZeroDrawdownZeroSettlement:
         The expected result is exactly 0.0 total settlement.
         """
         for profile in [flemish_profile, simple_profile]:
-            s, per_layer = compute_total_settlement(profile, drawdown=0.0)
+            s, _per_layer = compute_total_settlement(profile, drawdown=0.0)
             assert s == pytest.approx(0.0, abs=1e-12)
 
 

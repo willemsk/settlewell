@@ -1,15 +1,16 @@
 """Shared pytest fixtures for settlewell test suite."""
 
 import pytest
+
 from settlewell import (
+    AquiferType,
+    Building,
+    BuildingType,
+    ConstructionPit,
+    DewateringConfig,
     SoilLayer,
     SoilProfile,
     Well,
-    ConstructionPit,
-    DewateringConfig,
-    Building,
-    AquiferType,
-    BuildingType,
 )
 
 

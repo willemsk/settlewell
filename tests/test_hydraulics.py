@@ -1,15 +1,16 @@
 """Unit tests for settlewell.hydraulics — drawdown calculations."""
 
-import pytest
 import numpy as np
+import pytest
+
+from settlewell import AquiferType, DewateringConfig, SoilLayer, SoilProfile, Well
 from settlewell.hydraulics import (
-    compute_transmissivity,
-    thiem_drawdown_single_well,
-    theis_drawdown_single_well,
     compute_drawdown_at_points,
     compute_drawdown_grid,
+    compute_transmissivity,
+    theis_drawdown_single_well,
+    thiem_drawdown_single_well,
 )
-from settlewell import AquiferType, DewateringConfig, Well, SoilProfile, SoilLayer
 
 
 class TestTransmissivity:
@@ -342,8 +343,9 @@ class TestHydraulicsEdgeCases:
         of pumping. It directly calls `theis_drawdown_single_well` with time set to 0.0. The expected result
         is an array/value of exactly 0.0.
         """
-        from settlewell.hydraulics import theis_drawdown_single_well
         import numpy as np
+
+        from settlewell.hydraulics import theis_drawdown_single_well
 
         # t <= 0 case
         s = theis_drawdown_single_well(10.0, 0.0, 0.001, 5e-4, 1e-4)

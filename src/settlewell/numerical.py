@@ -5,7 +5,6 @@ on a regular grid, then feeds the resulting drawdown field into the settlement e
 """
 
 from dataclasses import dataclass
-from typing import List, Tuple
 
 import numpy as np
 from scipy import sparse
@@ -48,8 +47,8 @@ class FDGrid:
 
 
 def create_grid(
-    x_range: Tuple[float, float],
-    y_range: Tuple[float, float],
+    x_range: tuple[float, float],
+    y_range: tuple[float, float],
     dx: float = 1.0,
 ) -> FDGrid:
     """Create a regular 2D finite-difference grid.
@@ -170,7 +169,7 @@ def solve_steady_state(
 
 def extract_drawdown_at_points(
     grid: FDGrid,
-    points: List[Tuple[float, float]],
+    points: list[tuple[float, float]],
     H0: float,
 ) -> np.ndarray:
     """Extract drawdown at arbitrary (x, y) coordinates using bilinear interpolation.

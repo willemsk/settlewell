@@ -8,7 +8,6 @@ and neighboring buildings.
 import math
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Tuple
 
 
 class AquiferType(Enum):
@@ -149,7 +148,7 @@ class SoilProfile:
         If `layers` is empty or `gwl_mtaw > surface_level_mtaw`.
     """
 
-    layers: List[SoilLayer]
+    layers: list[SoilLayer]
     gwl_mtaw: float
     surface_level_mtaw: float
 
@@ -310,14 +309,14 @@ class DewateringConfig:
         Storativity / specific yield [-]. Computed from soil layers if None.
     """
 
-    wells: List[Well]
+    wells: list[Well]
     target_drawdown_mtaw: float
     original_gwl_mtaw: float
     pumping_duration_days: float
     aquifer_type: AquiferType = AquiferType.UNCONFINED
-    R: Optional[float] = None
-    T: Optional[float] = None
-    S: Optional[float] = None
+    R: float | None = None
+    T: float | None = None
+    S: float | None = None
 
     def __post_init__(self) -> None:
         if self.target_drawdown_mtaw > self.original_gwl_mtaw:
@@ -389,7 +388,7 @@ class Building:
                 f"Building foundation_depth must be >= 0, got {self.foundation_depth}"
             )
 
-    def corner_coordinates(self) -> List[Tuple[float, float]]:
+    def corner_coordinates(self) -> list[tuple[float, float]]:
         """Compute (x, y) coordinates of the 4 building corners.
 
         Accounts for building center translation and orientation angle.
@@ -414,7 +413,7 @@ class Building:
             abs_corners.append((self.x + x_rot, self.y + y_rot))
         return abs_corners
 
-    def evaluation_points(self) -> List[Tuple[float, float]]:
+    def evaluation_points(self) -> list[tuple[float, float]]:
         """Get key evaluation points for building damage assessment.
 
         Returns
