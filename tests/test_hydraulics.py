@@ -9,7 +9,7 @@ from settlewell.hydraulics import (
     compute_radius_of_influence,
     compute_drawdown_grid,
 )
-from settlewell import AquiferType, DewateringConfig, Well
+from settlewell import AquiferType, DewateringConfig, Well, SoilProfile, SoilLayer
 
 
 class TestTransmissivity:
@@ -124,3 +124,62 @@ class TestDrawdownGrid:
         assert s > 0
         H0 = simple_profile.total_depth - simple_profile.gwl_depth
         assert s < H0
+
+class TestHydraulicsEdgeCases:
+    def test_confined_layer_fallback(self):
+        # A profile with a single layer or layers that don't trigger the main confined logic
+        profile = SoilProfile(
+            layers=[
+                SoilLayer("Clay", 5.0, 18, 18, 1e-8, 0.5, 0.02, 0.005, 10000, 1e-2),
+                SoilLayer("Silt", 5.0, 18, 18, 2e-8, 0.5, 0.02, 0.005, 10000, 1e-2),
+            ],
+            gwl_mtaw=4.0, surface_level_mtaw=5.0
+        )
+        well = Well(x=0, y=0, Q=0.001)
+        config = DewateringConfig([well], -10.0, 4.0, 1)
+        T = compute_transmissivity(profile, config)
+        assert T > 0
+
+    def test_confined_steady_state_linear_superposition(self, simple_profile):
+        well1 = Well(x=-10.0, y=0.0, Q=0.001)
+        well2 = Well(x=10.0, y=0.0, Q=0.001)
+        config = DewateringConfig(
+            wells=[well1, well2], target_drawdown_mtaw=-10.0,
+            original_gwl_mtaw=4.0, pumping_duration_days=1,
+            aquifer_type=AquiferType.CONFINED, R=200.0, T=5e-4,
+        )
+        # Steady state calculation: time_s=None
+        drawdowns = compute_drawdown_at_points([(0.0, 0.0)], config, simple_profile, time_s=None)
+        assert drawdowns[0] > 0
+
+    def test_confined_transient_linear_superposition(self, simple_profile):
+        well1 = Well(x=-10.0, y=0.0, Q=0.001)
+        well2 = Well(x=10.0, y=0.0, Q=0.001)
+        config = DewateringConfig(
+            wells=[well1, well2], target_drawdown_mtaw=-10.0,
+            original_gwl_mtaw=4.0, pumping_duration_days=1,
+            aquifer_type=AquiferType.CONFINED, R=200.0, T=5e-4, S=1e-4
+        )
+        # Transient calculation: time_s > 0
+        drawdowns = compute_drawdown_at_points([(0.0, 0.0)], config, simple_profile, time_s=86400.0)
+        assert drawdowns[0] > 0
+
+    def test_confined_layer_fallback_pure(self):
+        # A single layer profile where min_kh_idx is 0 and no confined_layers exist after it
+        profile = SoilProfile(
+            layers=[
+                SoilLayer("Sand", 5.0, 18, 18, 1e-4, 0.5, 0.02, 0.005, 10000, 1e-2),
+            ],
+            gwl_mtaw=4.0, surface_level_mtaw=5.0
+        )
+        well = Well(x=0, y=0, Q=0.001)
+        config = DewateringConfig([well], -10.0, 4.0, 1, aquifer_type=AquiferType.CONFINED)
+        T = compute_transmissivity(profile, config)
+        assert T > 0
+
+    def test_theis_zero_time(self):
+        from settlewell.hydraulics import theis_drawdown_single_well
+        import numpy as np
+        # t <= 0 case
+        s = theis_drawdown_single_well(10.0, 0.0, 0.001, 5e-4, 1e-4)
+        assert np.all(s == 0.0)

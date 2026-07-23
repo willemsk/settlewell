@@ -79,3 +79,28 @@ class TestAssessBuildingDamage:
             building, flemish_profile, six_well_config, drawdown_func,
         )
         assert assessment.deflection_ratio >= 0
+
+    def test_damage_category_max_fallback(self):
+        from settlewell.damage import classify_damage
+        # Extremely high theoretical damage (e.g., beyond math.inf threshold, if possible).
+        # We test the last element of the list by passing an extremely high value.
+        cat, desc, crack, color = classify_damage(100.0, 50.0) # Huge values
+        # Threshold 5 is the maximum fallback category
+        assert cat == 5
+
+    def test_damage_category_max_fallback_via_mock(self, monkeypatch):
+        from settlewell import damage
+        from settlewell.models import BuildingType
+
+        # Override SBR_THRESHOLDS so it does not end in float("inf")
+        # Then, testing a value greater than the max will hit the fallback
+        mock_thresholds = [
+            (0.001, 0, "Negligible", "NL", "crack0", "green"),
+            (0.005, 1, "Slight", "NL", "crack1", "yellow"),
+        ]
+        monkeypatch.setattr(damage, "SBR_THRESHOLDS", mock_thresholds)
+
+        # Test fallback
+        cat, desc, crack, color = damage.classify_damage(0.010, BuildingType.MASONRY)
+        assert cat == 1
+        assert desc == "Slight"

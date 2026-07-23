@@ -140,3 +140,37 @@ class TestSettlementVsTime:
         assert np.all(np.diff(s_t) >= 0)
         total_eoed, _ = compute_total_settlement(flemish_profile, drawdown=1.5, method="eoed")
         assert s_t[-1] == pytest.approx(total_eoed, rel=0.05)
+
+class TestSettlementEdgeCases:
+    def test_default_z_eval(self, flemish_profile):
+        from settlewell.settlement import compute_stress_increase_from_drawdown
+        # Passing z_eval=None should trigger the default calculation (center of each layer)
+        drawdown = 1.0
+        delta_sigma, final_h = compute_stress_increase_from_drawdown(flemish_profile, drawdown, None)
+        assert len(delta_sigma) == len(flemish_profile.layers)
+
+    def test_unknown_settlement_method(self, flemish_profile):
+        from settlewell.settlement import compute_total_settlement
+        with pytest.raises(ValueError, match="Unknown settlement method 'unknown'"):
+            compute_total_settlement(flemish_profile, 1.0, method="unknown")
+
+    def test_single_drainage_condition(self):
+        from settlewell.models import SoilProfile, SoilLayer
+        from settlewell.settlement import compute_settlement_vs_time
+        import numpy as np
+
+        # Profile where a clay layer is bounded by impermeable rock below (single drainage)
+        profile = SoilProfile(
+            layers=[
+                SoilLayer("Sand", 5.0, 18, 20, 1e-4, 0.5, 0.02, 0.005, 10000, 1e-2), # Sand above
+                SoilLayer("Clay", 5.0, 17, 19, 1e-8, 0.5, 0.02, 0.005, 10000, 1e-2), # Clay
+                SoilLayer("Rock", 5.0, 22, 22, 1e-12, 0.5, 0.02, 0.005, 10000, 1e-2) # Rock below
+            ],
+            gwl_mtaw=4.0, surface_level_mtaw=5.0
+        )
+
+        times_s = np.array([0, 86400, 864000])
+        settlements_t = compute_settlement_vs_time(profile, 1.0, times_s)
+        # Verify it calculates a result correctly for single drainage
+        assert len(settlements_t) == 3
+        assert settlements_t[1] > 0

@@ -10,7 +10,7 @@ from typing import List, Optional, Tuple, Union
 import numpy as np
 from scipy.special import exp1
 
-from .models import AquiferType, DewateringConfig, SoilProfile
+from .models import AquiferType, DewateringConfig, SoilProfile, Well
 
 GAMMA_W: float = 9.81  # [kN/m³] Unit weight of water
 

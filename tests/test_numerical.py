@@ -70,3 +70,15 @@ class TestExtractDrawdown:
         expected_drawdown = H0 - grid.head[iy, ix]
         result = extract_drawdown_at_points(grid, [(x_val, y_val)], H0)
         assert result[0] == pytest.approx(expected_drawdown, abs=1e-6)
+
+    def test_well_on_boundary_warning(self, flemish_profile, pit):
+        from settlewell.numerical import create_grid, solve_steady_state
+        import warnings
+
+        # Create well exactly on the boundary x=-100
+        well = Well(x=-100.0, y=0.0, Q=0.001)
+        config = DewateringConfig([well], -10.0, 4.0, 1)
+        grid = create_grid(x_range=(-100, 100), y_range=(-100, 100), dx=10.0)
+
+        with pytest.warns(UserWarning, match="is located on or outside grid boundary"):
+            solve_steady_state(grid, config, flemish_profile, pit)
