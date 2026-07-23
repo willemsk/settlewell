@@ -1,15 +1,16 @@
 """Unit tests for settlewell.settlement — Terzaghi consolidation."""
 
-import pytest
 import numpy as np
+import pytest
+
 from settlewell import SoilLayer
 from settlewell.settlement import (
+    compute_degree_of_consolidation,
     compute_initial_stress_profile,
-    compute_stress_increase_from_drawdown,
     compute_layer_settlement_cc_cr,
     compute_layer_settlement_eoed,
+    compute_stress_increase_from_drawdown,
     compute_total_settlement,
-    compute_degree_of_consolidation,
 )
 
 GAMMA_W = 9.81
@@ -29,7 +30,7 @@ class TestInitialStressProfile:
         stress profile for a standard Flemish soil column. The expected result is that the difference
         between consecutive stress values is always positive (monotonic increase).
         """
-        z, sigma_eff, _ = compute_initial_stress_profile(flemish_profile)
+        _z, sigma_eff, _ = compute_initial_stress_profile(flemish_profile)
         assert np.all(np.diff(sigma_eff) > 0)
 
     def test_correct_switch_at_gwl(self, simple_profile):
@@ -41,7 +42,9 @@ class TestInitialStressProfile:
         are 8.75 kPa for the dry portion and approximately 22.595 kPa for the submerged portion.
         """
         z_pts = np.array([0.5, 1.5])
-        z, sigma_eff, _ = compute_initial_stress_profile(simple_profile, z_points=z_pts)
+        _z, sigma_eff, _ = compute_initial_stress_profile(
+            simple_profile, z_points=z_pts
+        )
         assert sigma_eff[0] == pytest.approx(17.5 * 0.5, rel=0.01)
         assert sigma_eff[1] == pytest.approx(
             17.5 * 1.0 + (20.0 - GAMMA_W) * 0.5, rel=0.01
@@ -61,7 +64,7 @@ class TestStressIncrease:
         dry soil. The test queries the stress increase at a depth of 0.5m in a profile where the GWL is at 1.0m,
         given a 2.0m drawdown. The expected result is exactly 0.0 kPa stress increase.
         """
-        z, dsigma = compute_stress_increase_from_drawdown(
+        _z, dsigma = compute_stress_increase_from_drawdown(
             simple_profile,
             drawdown=2.0,
             z_points=np.array([0.5]),
@@ -75,7 +78,7 @@ class TestStressIncrease:
         the total drawdown distance. The test queries a depth of 4.0m with a new GWL at 3.0m.
         The expected result is a stress increase equal to `9.81 * 2.0 = 19.62 kPa`.
         """
-        z, dsigma = compute_stress_increase_from_drawdown(
+        _z, dsigma = compute_stress_increase_from_drawdown(
             simple_profile,
             drawdown=2.0,
             z_points=np.array([4.0]),
@@ -89,7 +92,7 @@ class TestStressIncrease:
         the water dropped relative to that specific point. It tests a depth of 2.0m where the GWL dropped
         from 1.0m to 3.0m. The expected result is a partial stress increase of `9.81 * 1.0 = 9.81 kPa`.
         """
-        z, dsigma = compute_stress_increase_from_drawdown(
+        _z, dsigma = compute_stress_increase_from_drawdown(
             simple_profile,
             drawdown=2.0,
             z_points=np.array([2.0]),
@@ -289,7 +292,7 @@ class TestSettlementEdgeCases:
 
         # Passing z_eval=None should trigger the default calculation (center of each layer)
         drawdown = 1.0
-        delta_sigma, final_h = compute_stress_increase_from_drawdown(
+        delta_sigma, _final_h = compute_stress_increase_from_drawdown(
             flemish_profile, drawdown, None
         )
         assert len(delta_sigma) == len(flemish_profile.layers)
@@ -313,9 +316,10 @@ class TestSettlementEdgeCases:
         and computes time-based settlement. The expected result is a successfully computed, non-zero transient
         settlement trajectory.
         """
-        from settlewell.models import SoilProfile, SoilLayer
-        from settlewell.settlement import compute_settlement_vs_time
         import numpy as np
+
+        from settlewell.models import SoilLayer, SoilProfile
+        from settlewell.settlement import compute_settlement_vs_time
 
         # Profile where a clay layer is bounded by impermeable rock below (single drainage)
         profile = SoilProfile(

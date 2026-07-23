@@ -5,7 +5,6 @@ using Cc/Cr (logarithmic) or Eoed (linear) approach, as well as time-dependent c
 """
 
 import math
-from typing import List, Optional, Tuple
 
 import numpy as np
 
@@ -16,8 +15,8 @@ GAMMA_W: float = 9.81  # [kN/m³] Unit weight of water
 
 def compute_initial_stress_profile(
     profile: SoilProfile,
-    z_points: Optional[np.ndarray] = None,
-) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    z_points: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Compute initial vertical effective and total stress profiles with depth.
 
     Parameters
@@ -98,8 +97,8 @@ def compute_initial_stress_profile(
 def compute_stress_increase_from_drawdown(
     profile: SoilProfile,
     drawdown: float,
-    z_points: Optional[np.ndarray] = None,
-) -> Tuple[np.ndarray, np.ndarray]:
+    z_points: np.ndarray | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
     """Compute increase in effective vertical stress due to groundwater drawdown.
 
     Parameters
@@ -245,9 +244,9 @@ def compute_total_settlement(
     profile: SoilProfile,
     drawdown: float,
     method: str = "cc_cr",
-    sigma_v0_eff: Optional[np.ndarray] = None,
-    z_mids_arr: Optional[np.ndarray] = None,
-) -> Tuple[float, List[float]]:
+    sigma_v0_eff: np.ndarray | None = None,
+    z_mids_arr: np.ndarray | None = None,
+) -> tuple[float, list[float]]:
     """Compute total vertical surface settlement across all soil layers.
 
     Parameters
@@ -366,7 +365,7 @@ def compute_settlement_vs_time(
     numpy.ndarray
         Settlement values [m] corresponding to each time step in `times_days`.
     """
-    total_ult, layer_ult = compute_total_settlement(profile, drawdown, method=method)
+    _total_ult, layer_ult = compute_total_settlement(profile, drawdown, method=method)
     times_s = np.asarray(times_days, dtype=float) * 86400.0
     settlements = np.zeros_like(times_s, dtype=float)
 
