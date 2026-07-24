@@ -260,7 +260,7 @@ def compute_total_settlement(
     -------
     total_settlement : float
         Total surface settlement [m].
-    per_layer_settlements : List[float]
+    per_layer_settlements : list[float]
         List of settlement contributions [m] per layer.
 
     Raises

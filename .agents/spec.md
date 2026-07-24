@@ -462,9 +462,9 @@ class DewateringConfig:
     original_gwl_mtaw: float  # [mTAW] Original (undisturbed) groundwater level
     pumping_duration_days: float  # [days] Duration of pumping
     aquifer_type: AquiferType = AquiferType.UNCONFINED
-    R: Optional[float] = None  # [m] Radius of influence (computed via Sichardt if None)
-    T: Optional[float] = None  # [m²/s] Transmissivity (computed from layers if None)
-    S: Optional[float] = None  # [-] Storativity (computed from layers if None)
+    R: float | None = None  # [m] Radius of influence (computed via Sichardt if None)
+    T: float | None = None  # [m²/s] Transmissivity (computed from layers if None)
+    S: float | None = None  # [-] Storativity (computed from layers if None)
 
     @property
     def target_drawdown(self) -> float:

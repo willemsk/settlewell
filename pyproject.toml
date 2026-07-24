@@ -34,3 +34,14 @@ testpaths = ["tests"]
 markers = [
     "slow: marks tests as slow (grid refinement, convergence loops). Deselect with: pytest -m 'not slow'",
 ]
+
+[tool.ruff]
+target-version = "py311"
+exclude = [".agents"]
+
+[tool.ruff.lint]
+select = ["E", "F", "UP"]
+ignore = ["E501"]
+
+
+

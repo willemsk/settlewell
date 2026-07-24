@@ -135,7 +135,7 @@ class SoilProfile:
 
     Parameters
     ----------
-    layers : List[SoilLayer]
+    layers : list[SoilLayer]
         List of soil layers ordered from top to bottom. Must not be empty.
     gwl_mtaw : float
         Groundwater level in Belgian datum mTAW [m].
@@ -291,7 +291,7 @@ class DewateringConfig:
 
     Parameters
     ----------
-    wells : List[Well]
+    wells : list[Well]
         List of active dewatering wells.
     target_drawdown_mtaw : float
         Target lowered water level inside excavation pit [mTAW].
@@ -395,7 +395,7 @@ class Building:
 
         Returns
         -------
-        List[Tuple[float, float]]
+        list[tuple[float, float]]
             List of 4 corner coordinate pairs:
             [bottom-left, bottom-right, top-right, top-left].
         """
@@ -418,7 +418,7 @@ class Building:
 
         Returns
         -------
-        List[Tuple[float, float]]
+        list[tuple[float, float]]
             List of 5 evaluation points: [center, corner1, corner2, corner3, corner4].
         """
         return [(self.x, self.y)] + self.corner_coordinates()

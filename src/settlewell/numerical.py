@@ -55,9 +55,9 @@ def create_grid(
 
     Parameters
     ----------
-    x_range : Tuple[float, float]
+    x_range : tuple[float, float]
         (x_min, x_max) grid extents [m].
-    y_range : Tuple[float, float]
+    y_range : tuple[float, float]
         (y_min, y_max) grid extents [m].
     dx : float, default 1.0
         Uniform grid node spacing [m] (used for both dx and dy).
@@ -207,7 +207,7 @@ def extract_drawdown_at_points(
     ----------
     grid : FDGrid
         Grid containing solved hydraulic head field.
-    points : List[Tuple[float, float]]
+    points : list[tuple[float, float]]
         List of (x, y) coordinate pairs [m].
     H0 : float
         Undisturbed groundwater head [mTAW].

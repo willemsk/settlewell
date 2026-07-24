@@ -8,11 +8,7 @@ material for AI-assisted development of the `settlewell` package.
 | File | Purpose |
 |---|---|
 | `spec.md` | **Current specification** (v8) — renamed package to `settlewell` |
-| `spec_v7.md` | **Specification v7** — frozen snapshot after complete spec with 8 phased implementation stages, test suite, documentation infrastructure, and numerical convergence validation graphs. All implementation must conform to this spec. |
-| `spec_v6.md` | **Specification v6** — frozen snapshot after Phase 8 verification before SVG convergence graphs addition. |
-| `spec_v3.md` | **Specification v3** — frozen snapshot before docs integration. For reference if needed. |
-| `spec_v1.md` | **Original specification** (v1) — frozen snapshot before tests were added. For historical reference only. |
-| `phase3_plan.md` | **Phase 3 Plan Snapshot** — detailed technical design for Phase 3 (Settlement). |
+| `gui_implementation_plan.md` | **GUI Implementation Plan** — technical specifications for the PySide6 wizard GUI |
 
 ## Usage Guidelines
 
