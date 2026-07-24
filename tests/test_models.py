@@ -240,6 +240,40 @@ class TestModelsEdgeCases:
         with pytest.raises(ValueError, match="cannot exceed virgin compression index"):
             SoilLayer(**kwargs)
 
+    def test_soilprofile_validation_edges(self):
+        """
+        This test ensures the `SoilProfile` dataclass enforces physical requirements,
+        specifically refusing to instantiate with an empty list of layers and rejecting
+        a groundwater level above the surface level. The expected result is a `ValueError`
+        for each invalid configuration.
+        """
+        # Empty layers
+        with pytest.raises(
+            ValueError, match="SoilProfile must contain at least one SoilLayer."
+        ):
+            SoilProfile(layers=[], gwl_mtaw=0.0, surface_level_mtaw=2.0)
+
+        # gwl_mtaw > surface_level_mtaw
+        with pytest.raises(ValueError, match="cannot be above surface level"):
+            SoilProfile(
+                layers=[
+                    SoilLayer(
+                        name="Test",
+                        thickness=1.0,
+                        gamma=17.0,
+                        gamma_sat=19.0,
+                        k_h=1e-4,
+                        e0=0.5,
+                        Cc=0.02,
+                        Cr=0.005,
+                        Eoed=30000,
+                        Cv=1e-2,
+                    )
+                ],
+                gwl_mtaw=5.0,
+                surface_level_mtaw=2.0,
+            )
+
     def test_soilprofile_mtaw_conversions(self, flemish_profile):
         """
         This test confirms that the `SoilProfile` helper methods for converting between absolute depth
