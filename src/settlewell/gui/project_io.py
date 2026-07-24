@@ -49,7 +49,7 @@ def load_project(path: str | Path) -> dict:
     if not file_path.exists():
         raise FileNotFoundError(f"Projectbestand niet gevonden: {file_path}")
 
-    with open(file_path, "r", encoding="utf-8") as f:
+    with open(file_path, encoding="utf-8") as f:
         data = json.load(f)
 
     if "state" in data:

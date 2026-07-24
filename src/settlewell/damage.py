@@ -20,7 +20,7 @@ class DamageAssessment:
 
     Parameters
     ----------
-    settlement_at_points : Dict[str, float]
+    settlement_at_points : dict[str, float]
         Dictionary mapping point names ("center", "corner_1"..."corner_4") to settlement [m].
     max_settlement : float
         Maximum settlement among evaluation points [m].
@@ -127,7 +127,7 @@ def assess_building_damage(
         Soil profile.
     config : DewateringConfig
         Dewatering configuration.
-    drawdown_func : Callable[[List[Tuple[float, float]]], np.ndarray]
+    drawdown_func : Callable[[list[tuple[float, float]]], np.ndarray]
         Function mapping list of (x, y) coordinates to drawdown array [m].
     settlement_method : str, default "cc_cr"
         Settlement method (`"cc_cr"` or `"eoed"`).

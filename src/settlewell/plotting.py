@@ -387,7 +387,7 @@ def plot_time_settlement(
     ----------
     times_days : numpy.ndarray
         Time array [days].
-    settlements_at_corners : Dict[str, numpy.ndarray]
+    settlements_at_corners : dict[str, np.ndarray]
         Dictionary mapping point names to settlement arrays [m] over time.
     pumping_duration_days : float
         Pumping duration in days.

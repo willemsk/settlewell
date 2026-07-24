@@ -258,7 +258,7 @@ def compute_drawdown_at_points(
 
     Parameters
     ----------
-    points : List[Tuple[float, float]]
+    points : list[tuple[float, float]]
         List of (x, y) coordinate pairs [m].
     config : DewateringConfig
         Dewatering configuration with well coordinates and rates.
@@ -331,9 +331,9 @@ def compute_drawdown_grid(
 
     Parameters
     ----------
-    x_range : Tuple[float, float]
+    x_range : tuple[float, float]
         (x_min, x_max) grid extents [m].
-    y_range : Tuple[float, float]
+    y_range : tuple[float, float]
         (y_min, y_max) grid extents [m].
     nx : int
         Number of grid divisions in x-direction.
@@ -348,7 +348,7 @@ def compute_drawdown_grid(
 
     Returns
     -------
-    Tuple[numpy.ndarray, numpy.ndarray, numpy.ndarray]
+    tuple[np.ndarray, np.ndarray, np.ndarray]
         (X, Y, S) meshgrid arrays of shape (ny, nx), where S is the 2D drawdown array [m].
     """
     x = np.linspace(x_range[0], x_range[1], nx)
