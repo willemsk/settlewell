@@ -354,7 +354,7 @@ def compute_drawdown_grid(
     x = np.linspace(x_range[0], x_range[1], nx)
     y = np.linspace(y_range[0], y_range[1], ny)
     X, Y = np.meshgrid(x, y)
-    points = list(zip(X.ravel(), Y.ravel()))
+    points = np.column_stack((X.ravel(), Y.ravel()))
     S_flat = compute_drawdown_at_points(points, config, profile, time_s)
     S = S_flat.reshape((ny, nx))
     return X, Y, S
