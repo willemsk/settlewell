@@ -1,11 +1,13 @@
 """Solara web application package for settlewell."""
 
+import solara
 
+
+@solara.component
 def Page():
     """Main Solara web application page entrypoint for Jupyter notebook display and web app."""
-    import solara
-
-    from .state import project_state
+    from settlewell.solara_app.components.drawer import DrawerContainer
+    from settlewell.solara_app.state import project_state
 
     state = project_state.value
     active_sc = state.get_active_scenario()
@@ -14,11 +16,9 @@ def Page():
         children=[
             solara.Markdown(f"# settlewell v{state.version} Web GUI"),
             solara.Markdown(
-                f"**Project:** {state.metadata.title} | **Engineer:** {state.metadata.engineer}"
+                f"**Project:** {state.metadata.title} | **Engineer:** {state.metadata.engineer} | **Scenario:** {active_sc.name}"
             ),
-            solara.Markdown(
-                f"**Active Scenario:** {active_sc.name} ({len(active_sc.stratigraphy)} layers, {len(active_sc.loads)} loads)"
-            ),
+            DrawerContainer(),
         ],
         style={"padding": "24px"},
     )

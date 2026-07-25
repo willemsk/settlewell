@@ -4,7 +4,7 @@ from pathlib import Path
 
 import solara
 
-from .schemas import (
+from settlewell.solara_app.schemas import (
     LoadGeometrySchema,
     LoadType,
     ProjectMetadataSchema,
@@ -238,3 +238,112 @@ def add_scenario(name: str) -> str:
     current_state.active_scenario_id = new_id
     project_state.set(current_state)
     return new_id
+
+
+def update_metadata(
+    title: str | None = None,
+    engineer: str | None = None,
+    date: str | None = None,
+    comments: str | None = None,
+) -> None:
+    """Update project metadata attributes."""
+    current_state = project_state.value.model_copy(deep=True)
+    if title is not None:
+        current_state.metadata.title = title
+    if engineer is not None:
+        current_state.metadata.engineer = engineer
+    if date is not None:
+        current_state.metadata.date = date
+    if comments is not None:
+        current_state.metadata.comments = comments
+    project_state.set(current_state)
+
+
+def update_water_table(depth_z: float) -> None:
+    """Update groundwater depth z_gw in active scenario."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+    active_sc.water_table.depth_z = max(0.0, float(depth_z))
+    project_state.set(current_state)
+
+
+def update_solver_settings(
+    stress_method: str | None = None,
+    z_max: float | None = None,
+    delta_z: float | None = None,
+    x_min: float | None = None,
+    x_max: float | None = None,
+    t_start_days: float | None = None,
+    t_end_years: float | None = None,
+    calculate_creep: bool | None = None,
+) -> None:
+    """Update calculation mesh and solver settings in active scenario."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+    settings = active_sc.solver_settings
+
+    if stress_method is not None:
+        settings.stress_method = stress_method
+    if z_max is not None:
+        settings.z_max = max(0.1, float(z_max))
+    if delta_z is not None:
+        settings.delta_z = max(0.01, float(delta_z))
+    if x_min is not None:
+        settings.x_min = float(x_min)
+    if x_max is not None:
+        settings.x_max = float(x_max)
+    if t_start_days is not None:
+        settings.t_start_days = max(1.0, float(t_start_days))
+    if t_end_years is not None:
+        settings.t_end_years = max(0.1, float(t_end_years))
+    if calculate_creep is not None:
+        settings.calculate_creep = bool(calculate_creep)
+
+    project_state.set(current_state)
+
+
+def duplicate_soil_layer(layer_id: str) -> None:
+    """Duplicate an existing soil layer by ID."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    for idx, layer in enumerate(active_sc.stratigraphy):
+        if layer.id == layer_id:
+            dup_id = f"layer_{len(active_sc.stratigraphy) + 1}"
+            dup_layer = layer.model_copy(deep=True)
+            dup_layer.id = dup_id
+            dup_layer.name = f"{layer.name} (Copy)"
+            active_sc.stratigraphy.insert(idx + 1, dup_layer)
+            break
+
+    project_state.set(current_state)
+
+
+def update_load(load_id: str, updated_load: LoadGeometrySchema) -> None:
+    """Update an existing surface load definition by ID."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    for idx, load in enumerate(active_sc.loads):
+        if load.id == load_id:
+            active_sc.loads[idx] = updated_load
+            break
+
+    project_state.set(current_state)
+
+
+def duplicate_load(load_id: str) -> None:
+    """Duplicate an existing load definition by ID."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    for idx, load in enumerate(active_sc.loads):
+        if load.id == load_id:
+            dup_id = f"load_{len(active_sc.loads) + 1}"
+            dup_load = load.model_copy(deep=True)
+            dup_load.id = dup_id
+            dup_load.name = f"{load.name} (Copy)"
+            active_sc.loads.insert(idx + 1, dup_load)
+            break
+
+    project_state.set(current_state)
