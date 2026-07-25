@@ -7,3 +7,7 @@
 *   **Solution:** Replaced inner loops with `scipy.sparse.diags`. Boundary conditions were mapped to a 1D boolean array (`is_boundary`) to efficiently zero out matrix connections across Dirichlet boundaries without loop iteration.
 *   **Edge Case:** When vectorizing source/sink additions (wells), multiple sinks can map to the exact same grid node. A naive slice assignment `b[kws] += Q` results in a "lost update" bug due to how NumPy handles repeated indices during array slicing.
 *   **Fix:** Always use `np.add.at(array, indices, values)` for safely accumulating overlapping values in unbuffered operations.
+
+## 2024-05-25 - Vectorized Settlement vs Time Calculation
+**Learning:** The `compute_settlement_vs_time` function in `src/settlewell/settlement.py` originally used a python `for` loop to compute the settlement over time, calling `compute_degree_of_consolidation` individually for each time step. This caused a bottleneck when evaluating a large number of time steps (e.g. 1M points).
+**Action:** When computing degree of consolidation, vectorize the `compute_degree_of_consolidation` function using NumPy arrays and boolean masks (e.g. `np.where`, `np.clip`) to eliminate the python loop overhead in `compute_settlement_vs_time`. Make sure to maintain the API contract by supporting both scalar and numpy array inputs.
