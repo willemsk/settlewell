@@ -7,3 +7,6 @@
 *   **Solution:** Replaced inner loops with `scipy.sparse.diags`. Boundary conditions were mapped to a 1D boolean array (`is_boundary`) to efficiently zero out matrix connections across Dirichlet boundaries without loop iteration.
 *   **Edge Case:** When vectorizing source/sink additions (wells), multiple sinks can map to the exact same grid node. A naive slice assignment `b[kws] += Q` results in a "lost update" bug due to how NumPy handles repeated indices during array slicing.
 *   **Fix:** Always use `np.add.at(array, indices, values)` for safely accumulating overlapping values in unbuffered operations.
+## 2026-07-26 - Vectorized Grid Points Generation
+**Learning:** `compute_drawdown_grid` used `list(zip(X.ravel(), Y.ravel()))` to generate `points`. This operation was creating a list of tuples which was exceedingly slow for large meshes (e.g. 500x500 grid taking 1.5 seconds instead of 0.1 seconds), and `compute_drawdown_at_points` was converting it back into a NumPy array immediately.
+**Action:** When passing data between grid generation and vectorized numerical computation functions, avoid generating large standard Python lists (such as `list(zip(...))`). Instead, use NumPy stack/concatenation functions like `np.column_stack` and type hint downstream functions to accept `np.ndarray` types.
