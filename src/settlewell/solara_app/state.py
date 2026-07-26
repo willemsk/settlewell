@@ -346,4 +346,226 @@ def duplicate_load(load_id: str) -> None:
             active_sc.loads.insert(idx + 1, dup_load)
             break
 
-    project_state.set(current_state)
+
+def run_fast_elastic_solve(scenario: ScenarioSchema) -> dict:
+    """Execute real-time fast elastic stress and immediate settlement approximation.
+
+    Parameters
+    ----------
+    scenario : ScenarioSchema
+        Active scenario configuration.
+
+    Returns
+    -------
+    dict
+        Dictionary containing z_grid, sigma_v0_eff, sigma_v_total, delta_sigma_z,
+        x_grid, stress_heatmap_matrix, and elastic_settlement_mm.
+    """
+    import numpy as np
+
+    from settlewell.models import SoilLayer, SoilProfile
+    from settlewell.settlement import compute_initial_stress_profile
+
+    domain_layers = [
+        SoilLayer(
+            name=layer.name,
+            thickness=layer.thickness,
+            gamma=layer.gamma_dry,
+            gamma_sat=layer.gamma_sat,
+            k_h=1e-5,
+            e0=layer.e0,
+            Cc=layer.Cc,
+            Cr=layer.Cr,
+            Eoed=layer.E_modulus * 1000.0,
+            Cv=layer.Cv * 3.17e-8,
+        )
+        for layer in scenario.stratigraphy
+    ]
+    profile = SoilProfile(
+        layers=domain_layers,
+        gwl_mtaw=-max(0.0, scenario.water_table.depth_z),
+        surface_level_mtaw=0.0,
+    )
+    settings = scenario.solver_settings
+    z_max = max(1.0, settings.z_max)
+    dz = max(0.1, settings.delta_z)
+
+    z_grid = np.arange(0, z_max + dz, dz)
+    z_eval, sigma_v0_eff, sigma_v_total = compute_initial_stress_profile(
+        profile, z_grid
+    )
+
+    # 1D Delta Stress Profile under main load center (x = 0)
+    delta_sigma_z = np.zeros_like(z_eval)
+    for load in scenario.loads:
+        B = max(0.1, load.width_B)
+        q = max(0.0, load.stress_q)
+        x0 = load.x_center
+
+        for idx, z in enumerate(z_eval):
+            depth = max(0.01, z + load.z_surface_offset)
+            x_left = -B / 2.0 - x0
+            x_right = B / 2.0 - x0
+            alpha = np.arctan2(x_right, depth) - np.arctan2(x_left, depth)
+            ds = (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
+            delta_sigma_z[idx] += max(0.0, ds)
+
+    # 2D Stress Ratio Heatmap Grid
+    x_grid = np.linspace(settings.x_min, settings.x_max, 60)
+    stress_heatmap = np.zeros((len(z_eval), len(x_grid)))
+
+    for i, z in enumerate(z_eval):
+        depth = max(0.01, z)
+        for j, x in enumerate(x_grid):
+            ds_sum = 0.0
+            for load in scenario.loads:
+                B = max(0.1, load.width_B)
+                q = max(0.0, load.stress_q)
+                x_rel = x - load.x_center
+                x_l = x_rel - B / 2.0
+                x_r = x_rel + B / 2.0
+                alpha = np.arctan2(x_r, depth) - np.arctan2(x_l, depth)
+                ds = (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
+                ds_sum += max(0.0, ds)
+            primary_q = scenario.loads[0].stress_q if scenario.loads else 100.0
+            stress_heatmap[i, j] = ds_sum / max(1.0, primary_q)
+
+    # Instant Elastic Settlement calculation s_e = sum(delta_sigma * dz / E)
+    elastic_settlement_m = 0.0
+    curr_depth = 0.0
+    for layer in scenario.stratigraphy:
+        z_mid = curr_depth + layer.thickness / 2.0
+        depth_val = max(0.01, z_mid)
+        ds_mid = 0.0
+        for load in scenario.loads:
+            B = max(0.1, load.width_B)
+            q = max(0.0, load.stress_q)
+            x_l = -B / 2.0 - load.x_center
+            x_r = B / 2.0 - load.x_center
+            alpha = np.arctan2(x_r, depth_val) - np.arctan2(x_l, depth_val)
+            ds_mid += (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
+        E_kpa = layer.E_modulus * 1000.0
+        elastic_settlement_m += (ds_mid * layer.thickness) / max(100.0, E_kpa)
+        curr_depth += layer.thickness
+
+    return {
+        "z_grid": z_eval,
+        "sigma_v0_eff": sigma_v0_eff,
+        "sigma_v_total": sigma_v_total,
+        "delta_sigma_z": delta_sigma_z,
+        "x_grid": x_grid,
+        "stress_heatmap": stress_heatmap,
+        "elastic_settlement_mm": elastic_settlement_m * 1000.0,
+    }
+
+
+def run_full_consolidation_solve(scenario: ScenarioSchema) -> dict:
+    """Execute deep numerical time-consolidation integration over time intervals.
+
+    Parameters
+    ----------
+    scenario : ScenarioSchema
+        Active scenario configuration.
+
+    Returns
+    -------
+    dict
+        Dictionary containing time_years, settlement_mm, U_percent,
+        layer_settlements, primary_settlement_mm, and creep_settlement_mm.
+    """
+    import numpy as np
+
+    settings = scenario.solver_settings
+    t_start = max(1.0, settings.t_start_days) / 365.25
+    t_end = max(0.1, settings.t_end_years)
+
+    time_years = np.logspace(np.log10(t_start), np.log10(t_end), 50)
+    elastic_res = run_fast_elastic_solve(scenario)
+    s_e_mm = elastic_res["elastic_settlement_mm"]
+
+    # Calculate ultimate primary consolidation settlement per layer
+    layer_ult_settlements_mm = []
+    curr_depth = 0.0
+
+    for idx, layer in enumerate(scenario.stratigraphy):
+        z_mid = curr_depth + layer.thickness / 2.0
+        depth_val = max(0.01, z_mid)
+        ds_mid = 0.0
+        for load in scenario.loads:
+            B = max(0.1, load.width_B)
+            q = max(0.0, load.stress_q)
+            x_l = -B / 2.0 - load.x_center
+            x_r = B / 2.0 - load.x_center
+            alpha = np.arctan2(x_r, depth_val) - np.arctan2(x_l, depth_val)
+            ds_mid += (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
+
+        # Initial effective stress at midpoint
+        sigma_v0 = 10.0 + curr_depth * 8.0
+        sigma_f = sigma_v0 + ds_mid
+        s_c_ult_m = (
+            (layer.Cc / (1.0 + layer.e0))
+            * layer.thickness
+            * np.log10(sigma_f / max(1.0, sigma_v0))
+        )
+        layer_ult_settlements_mm.append(max(0.0, s_c_ult_m * 1000.0))
+        curr_depth += layer.thickness
+
+    total_s_c_ult = sum(layer_ult_settlements_mm)
+
+    # Time-consolidation curve s(t)
+    total_settlement_mm = []
+    U_percent = []
+    layer_time_settlements = {layer.id: [] for layer in scenario.stratigraphy}
+
+    # Representative Cv
+    avg_Cv = (
+        np.mean([layer.Cv for layer in scenario.stratigraphy])
+        if scenario.stratigraphy
+        else 2.0
+    )
+    total_H = sum(layer.thickness for layer in scenario.stratigraphy) or 10.0
+
+    for t in time_years:
+        Tv = (avg_Cv * t) / max(1.0, (total_H / 2.0) ** 2)
+        if Tv <= 0.2:
+            U = 2.0 * np.sqrt(Tv / np.pi)
+        else:
+            U = 1.0 - (8.0 / (np.pi**2)) * np.exp(-((np.pi**2) / 4.0) * Tv)
+        U = float(np.clip(U, 0.0, 1.0))
+
+        s_t = s_e_mm + total_s_c_ult * U
+        if settings.calculate_creep and t > 1.0:
+            s_t += total_s_c_ult * 0.05 * np.log10(t)
+
+        total_settlement_mm.append(s_t)
+        U_percent.append(U * 100.0)
+
+        for idx, layer in enumerate(scenario.stratigraphy):
+            layer_s = (s_e_mm / len(scenario.stratigraphy)) + layer_ult_settlements_mm[
+                idx
+            ] * U
+            layer_time_settlements[layer.id].append(layer_s)
+
+    return {
+        "time_years": time_years,
+        "settlement_mm": np.array(total_settlement_mm),
+        "U_percent": np.array(U_percent),
+        "layer_settlements": [
+            {
+                "name": layer.name,
+                "elastic_mm": s_e_mm / max(1, len(scenario.stratigraphy)),
+                "consolidation_mm": layer_ult_settlements_mm[i],
+                "creep_mm": (
+                    layer_ult_settlements_mm[i] * 0.05
+                    if settings.calculate_creep
+                    else 0.0
+                ),
+            }
+            for i, layer in enumerate(scenario.stratigraphy)
+        ],
+        "elastic_settlement_mm": s_e_mm,
+        "primary_settlement_mm": total_s_c_ult,
+        "creep_settlement_mm": (
+            total_s_c_ult * 0.05 if settings.calculate_creep else 0.0
+        ),
+    }

@@ -2,9 +2,9 @@
 
 import solara
 
-from settlewell.solara_app.components.canvas import SubsoilCanvasContainer
-from settlewell.solara_app.components.drawer import DrawerContainer
-from settlewell.solara_app.state import project_state
+from .components.drawer import DrawerContainer
+from .components.viewport import ViewportContainer
+from .state import project_state
 
 
 @solara.component
@@ -44,7 +44,7 @@ def Page():
                     ),
                     solara.Column(
                         style={"flex": "1 1 auto", "min-width": "0px"},
-                        children=[SubsoilCanvasContainer()],
+                        children=[ViewportContainer()],
                     ),
                 ],
             ),
