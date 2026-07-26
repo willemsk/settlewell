@@ -5,6 +5,10 @@ from pathlib import Path
 import solara
 
 from settlewell.solara_app.schemas import (
+    BuildingSchema,
+    BuildingType,
+    ConstructionPitSchema,
+    DewateringConfigSchema,
     LoadGeometrySchema,
     LoadType,
     ProjectMetadataSchema,
@@ -14,6 +18,7 @@ from settlewell.solara_app.schemas import (
     SoilTypeUSCS,
     SolverSettingsSchema,
     WaterTableSchema,
+    WellSchema,
 )
 
 
@@ -63,6 +68,30 @@ def create_default_project_state() -> ProjectState:
         )
     ]
 
+    default_wells = [
+        WellSchema(
+            id="well_1",
+            name="Dewatering Well 1",
+            x=-8.0,
+            y=0.0,
+            Q=25.0,
+            r_w=0.075,
+            screen_top_mtaw=-1.0,
+            screen_bottom_mtaw=-6.0,
+        )
+    ]
+
+    default_buildings = [
+        BuildingSchema(
+            id="bldg_1",
+            name="Adjacent Residence",
+            x_center=18.0,
+            foundation_depth=1.5,
+            length=12.0,
+            structural_type=BuildingType.MASONRY,
+        )
+    ]
+
     baseline_scenario = ScenarioSchema(
         id="baseline",
         name="Baseline Model",
@@ -70,6 +99,9 @@ def create_default_project_state() -> ProjectState:
         water_table=WaterTableSchema(depth_z=2.5),
         stratigraphy=default_layers,
         loads=default_loads,
+        construction_pit=ConstructionPitSchema(),
+        dewatering=DewateringConfigSchema(wells=default_wells),
+        buildings=default_buildings,
         solver_settings=SolverSettingsSchema(),
     )
 
@@ -544,8 +576,6 @@ def run_full_consolidation_solve(scenario: ScenarioSchema) -> dict:
             layer_s = (s_e_mm / len(scenario.stratigraphy)) + layer_ult_settlements_mm[
                 idx
             ] * U
-            layer_time_settlements[layer.id].append(layer_s)
-
     return {
         "time_years": time_years,
         "settlement_mm": np.array(total_settlement_mm),
@@ -569,3 +599,273 @@ def run_full_consolidation_solve(scenario: ScenarioSchema) -> dict:
             total_s_c_ult * 0.05 if settings.calculate_creep else 0.0
         ),
     }
+
+
+def add_well(well: WellSchema | None = None) -> None:
+    """Add a dewatering well to the active scenario."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    if well is None:
+        idx = len(active_sc.dewatering.wells) + 1
+        well = WellSchema(
+            id=f"well_{idx}",
+            name=f"Well {idx}",
+            x=-8.0 + (idx - 1) * 4.0,
+            y=0.0,
+            Q=20.0,
+            r_w=0.075,
+            screen_top_mtaw=-1.0,
+            screen_bottom_mtaw=-6.0,
+        )
+
+    active_sc.dewatering.wells.append(well)
+    project_state.set(current_state)
+
+
+def update_well(well_id: str, updated_well: WellSchema) -> None:
+    """Update a dewatering well by ID in active scenario."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    for idx, item in enumerate(active_sc.dewatering.wells):
+        if item.id == well_id:
+            active_sc.dewatering.wells[idx] = updated_well
+            break
+
+    project_state.set(current_state)
+
+
+def delete_well(well_id: str) -> None:
+    """Delete a dewatering well by ID from active scenario."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    active_sc.dewatering.wells = [
+        item for item in active_sc.dewatering.wells if item.id != well_id
+    ]
+    project_state.set(current_state)
+
+
+def duplicate_well(well_id: str) -> None:
+    """Duplicate a dewatering well by ID."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    for idx, item in enumerate(active_sc.dewatering.wells):
+        if item.id == well_id:
+            dup_id = f"well_{len(active_sc.dewatering.wells) + 1}"
+            dup_well = item.model_copy(deep=True)
+            dup_well.id = dup_id
+            dup_well.name = f"{item.name} (Copy)"
+            dup_well.x += 2.0
+            active_sc.dewatering.wells.insert(idx + 1, dup_well)
+            break
+
+    project_state.set(current_state)
+
+
+def update_construction_pit(
+    length: float | None = None,
+    width: float | None = None,
+    depth: float | None = None,
+    bottom_mtaw: float | None = None,
+) -> None:
+    """Update construction pit geometry parameters."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+    pit = active_sc.construction_pit
+
+    if length is not None:
+        pit.length = max(0.1, float(length))
+    if width is not None:
+        pit.width = max(0.1, float(width))
+    if depth is not None:
+        pit.depth = max(0.1, float(depth))
+    if bottom_mtaw is not None:
+        pit.bottom_mtaw = float(bottom_mtaw)
+
+    project_state.set(current_state)
+
+
+def add_building(building: BuildingSchema | None = None) -> None:
+    """Add a neighboring building to the active scenario."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    if building is None:
+        idx = len(active_sc.buildings) + 1
+        building = BuildingSchema(
+            id=f"bldg_{idx}",
+            name=f"Building {idx}",
+            x_center=15.0 + (idx - 1) * 10.0,
+            foundation_depth=1.5,
+            length=10.0,
+            structural_type=BuildingType.MASONRY,
+        )
+
+    active_sc.buildings.append(building)
+    project_state.set(current_state)
+
+
+def update_building(building_id: str, updated_bldg: BuildingSchema) -> None:
+    """Update a neighboring building by ID in active scenario."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    for idx, item in enumerate(active_sc.buildings):
+        if item.id == building_id:
+            active_sc.buildings[idx] = updated_bldg
+            break
+
+    project_state.set(current_state)
+
+
+def delete_building(building_id: str) -> None:
+    """Delete a neighboring building by ID from active scenario."""
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    active_sc.buildings = [
+        item for item in active_sc.buildings if item.id != building_id
+    ]
+    project_state.set(current_state)
+
+
+def run_hydraulics_solve(scenario: ScenarioSchema) -> dict:
+    """Execute steady-state Dupuit-Thiem drawdown calculations for well array.
+
+    Parameters
+    ----------
+    scenario : ScenarioSchema
+        Active scenario configuration.
+
+    Returns
+    -------
+    dict
+        Dictionary containing x_grid, y_grid, drawdown_matrix, r_grid,
+        drawdown_radial, and R_influence_m.
+    """
+    import numpy as np
+
+    settings = scenario.solver_settings
+    x_grid = np.linspace(settings.x_min, settings.x_max, 50)
+    y_grid = np.linspace(-15.0, 15.0, 50)
+    X, Y = np.meshgrid(x_grid, y_grid)
+
+    wells = scenario.dewatering.wells
+    drawdown_matrix = np.zeros_like(X)
+
+    # Sichardt radius of influence R = 3000 * s * sqrt(k_h)
+    k_h = scenario.stratigraphy[0].Cv * 1e-6 if scenario.stratigraphy else 1e-4
+    target_s = max(0.5, scenario.water_table.depth_z)
+    R_influence = max(50.0, 3000.0 * target_s * np.sqrt(k_h))
+
+    for well in wells:
+        Q_m3s = max(0.1, well.Q) / 3600.0
+        r_w = max(0.01, well.r_w)
+        dist = np.sqrt((X - well.x) ** 2 + (Y - well.y) ** 2)
+        dist = np.maximum(r_w, dist)
+
+        # Dupuit-Thiem steady state drawdown s(r) = (Q / 2pi T) * ln(R / r)
+        T_transmissivity = 0.005  # m²/s
+        s_well = (Q_m3s / (2.0 * np.pi * T_transmissivity)) * np.log(
+            np.maximum(1.1, R_influence / dist)
+        )
+        drawdown_matrix += np.maximum(0.0, s_well)
+
+    # Radial profile r vs drawdown
+    r_grid = np.linspace(0.1, max(30.0, R_influence), 50)
+    if wells:
+        main_Q = max(0.1, wells[0].Q) / 3600.0
+        s_radial = (main_Q / (2.0 * np.pi * 0.005)) * np.log(
+            np.maximum(1.1, R_influence / np.maximum(wells[0].r_w, r_grid))
+        )
+    else:
+        s_radial = np.zeros_like(r_grid)
+
+    return {
+        "x_grid": x_grid,
+        "y_grid": y_grid,
+        "drawdown_matrix": drawdown_matrix,
+        "r_grid": r_grid,
+        "drawdown_radial": np.maximum(0.0, s_radial),
+        "R_influence_m": R_influence,
+    }
+
+
+def run_building_damage_solve(scenario: ScenarioSchema) -> dict:
+    """Execute building differential settlement, angular distortion, and damage classification.
+
+    Parameters
+    ----------
+    scenario : ScenarioSchema
+        Active scenario configuration.
+
+    Returns
+    -------
+    dict
+        Dictionary containing list of building risk result dictionaries.
+    """
+
+    elastic_res = run_fast_elastic_solve(scenario)
+    s_max_mm = elastic_res["elastic_settlement_mm"]
+    primary_B = scenario.loads[0].width_B if scenario.loads else 4.0
+
+    bldg_results = []
+    for bldg in scenario.buildings:
+        L_bldg = max(1.0, bldg.length)
+        x_left = bldg.x_center - L_bldg / 2.0
+        x_right = bldg.x_center + L_bldg / 2.0
+
+        s_left = s_max_mm / (1.0 + (x_left / max(0.5, primary_B / 2.0)) ** 2)
+        s_right = s_max_mm / (1.0 + (x_right / max(0.5, primary_B / 2.0)) ** 2)
+
+        diff_s_mm = abs(s_left - s_right)
+        beta_tilt = diff_s_mm / (L_bldg * 1000.0)
+        deflection_ratio = (diff_s_mm / 2.0) / (L_bldg * 1000.0)
+
+        # Burland & Wroth damage severity category
+        if beta_tilt < 1 / 500:
+            cat = 0
+            desc = "Category 0: Negligible"
+            crack = "< 0.1 mm"
+            color = "#16a34a"
+        elif beta_tilt < 1 / 300:
+            cat = 1
+            desc = "Category 1: Very Slight"
+            crack = "0.1 – 1.0 mm"
+            color = "#84cc16"
+        elif beta_tilt < 1 / 150:
+            cat = 2
+            desc = "Category 2: Slight"
+            crack = "1 – 5 mm"
+            color = "#eab308"
+        elif beta_tilt < 1 / 100:
+            cat = 3
+            desc = "Category 3: Moderate"
+            crack = "5 – 15 mm"
+            color = "#ea580c"
+        else:
+            cat = 4
+            desc = "Category 4/5: Severe / Very Severe"
+            crack = "> 15 mm"
+            color = "#dc2626"
+
+        bldg_results.append(
+            {
+                "id": bldg.id,
+                "name": bldg.name,
+                "differential_settlement_mm": diff_s_mm,
+                "angular_distortion_beta": beta_tilt,
+                "deflection_ratio": deflection_ratio,
+                "damage_category": cat,
+                "risk_category_name": desc,
+                "expected_crack_width": crack,
+                "risk_color": color,
+                "s_left_mm": s_left,
+                "s_right_mm": s_right,
+            }
+        )
+
+    return {"buildings": bldg_results}

@@ -32,6 +32,20 @@ class StressMethod(StrEnum):
     TWO_TO_ONE = "2:1"
 
 
+class AquiferType(StrEnum):
+    """Aquifer hydrogeological classification."""
+
+    UNCONFINED = "UNCONFINED"
+    CONFINED = "CONFINED"
+
+
+class BuildingType(StrEnum):
+    """Neighboring building structural type."""
+
+    MASONRY = "MASONRY"
+    CONCRETE_FRAME = "CONCRETE_FRAME"
+
+
 class SoilLayerSchema(BaseModel):
     """Pydantic schema for soil layer parameters in the GUI."""
 
@@ -131,6 +145,66 @@ class WaterTableSchema(BaseModel):
     )
 
 
+class WellSchema(BaseModel):
+    """Pydantic schema for a dewatering well."""
+
+    id: str = Field(description="Unique well identifier")
+    name: str = Field(default="Well 1", description="Well name")
+    x: float = Field(default=-8.0, description="X coordinate of well [m]")
+    y: float = Field(default=0.0, description="Y coordinate of well [m]")
+    Q: float = Field(gt=0, default=25.0, description="Pumping rate Q [m³/h]")
+    r_w: float = Field(gt=0, default=0.075, description="Casing radius r_w [m]")
+    screen_top_mtaw: float = Field(
+        default=-1.0, description="Screen top elevation [mTAW]"
+    )
+    screen_bottom_mtaw: float = Field(
+        default=-6.0, description="Screen bottom elevation [mTAW]"
+    )
+
+
+class ConstructionPitSchema(BaseModel):
+    """Pydantic schema for construction excavation pit geometry."""
+
+    length: float = Field(gt=0, default=20.0, description="Pit length L [m]")
+    width: float = Field(gt=0, default=15.0, description="Pit width W [m]")
+    depth: float = Field(gt=0, default=4.0, description="Excavation depth d [m]")
+    bottom_mtaw: float = Field(default=-1.5, description="Pit bottom level [mTAW]")
+
+
+class DewateringConfigSchema(BaseModel):
+    """Pydantic schema for dewatering hydraulics configuration."""
+
+    aquifer_type: AquiferType = Field(
+        default=AquiferType.UNCONFINED, description="Aquifer hydrogeological type"
+    )
+    target_drawdown_mtaw: float = Field(
+        default=-2.0, description="Target lowered GWL [mTAW]"
+    )
+    pumping_duration_days: float = Field(
+        gt=0, default=30.0, description="Pumping duration [days]"
+    )
+    wells: list[WellSchema] = Field(
+        default_factory=list, description="Active dewatering well array"
+    )
+
+
+class BuildingSchema(BaseModel):
+    """Pydantic schema for neighboring building assessment."""
+
+    id: str = Field(description="Unique building identifier")
+    name: str = Field(default="Adjacent Building", description="Building name")
+    x_center: float = Field(
+        default=18.0, description="X coordinate of building center [m]"
+    )
+    foundation_depth: float = Field(
+        ge=0, default=1.5, description="Foundation depth [m]"
+    )
+    length: float = Field(gt=0, default=12.0, description="Building length L_bldg [m]")
+    structural_type: BuildingType = Field(
+        default=BuildingType.MASONRY, description="Structural classification type"
+    )
+
+
 class ScenarioSchema(BaseModel):
     """Pydantic schema for a calculation scenario."""
 
@@ -140,6 +214,11 @@ class ScenarioSchema(BaseModel):
     water_table: WaterTableSchema = Field(default_factory=WaterTableSchema)
     stratigraphy: list[SoilLayerSchema] = Field(default_factory=list)
     loads: list[LoadGeometrySchema] = Field(default_factory=list)
+    construction_pit: ConstructionPitSchema = Field(
+        default_factory=ConstructionPitSchema
+    )
+    dewatering: DewateringConfigSchema = Field(default_factory=DewateringConfigSchema)
+    buildings: list[BuildingSchema] = Field(default_factory=list)
     solver_settings: SolverSettingsSchema = Field(default_factory=SolverSettingsSchema)
 
 

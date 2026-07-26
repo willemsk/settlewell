@@ -1,7 +1,9 @@
-"""Persistent left drawer container assembling all 4 input accordion cards."""
+"""Persistent left drawer container assembling all 6 input accordion cards."""
 
 import solara
 
+from settlewell.solara_app.components.drawer.building_card import BuildingCard
+from settlewell.solara_app.components.drawer.dewatering_card import DewateringCard
 from settlewell.solara_app.components.drawer.loads_table import LoadsTable
 from settlewell.solara_app.components.drawer.metadata_card import MetadataCard
 from settlewell.solara_app.components.drawer.solver_mesh_card import SolverMeshCard
@@ -17,7 +19,7 @@ def DrawerContainer() -> solara.Element:
         children=[
             solara.v.ExpansionPanels(
                 multiple=True,
-                v_model=[0, 1, 2, 3],  # All cards expanded by default
+                v_model=[0, 1, 2, 3, 4, 5],
                 children=[
                     solara.v.ExpansionPanel(
                         children=[
@@ -48,6 +50,22 @@ def DrawerContainer() -> solara.Element:
                     solara.v.ExpansionPanel(
                         children=[
                             solara.v.ExpansionPanelHeader(
+                                children=["Dewatering Pit & Well Array"]
+                            ),
+                            solara.v.ExpansionPanelContent(children=[DewateringCard()]),
+                        ]
+                    ),
+                    solara.v.ExpansionPanel(
+                        children=[
+                            solara.v.ExpansionPanelHeader(
+                                children=["Neighboring Building Assessment"]
+                            ),
+                            solara.v.ExpansionPanelContent(children=[BuildingCard()]),
+                        ]
+                    ),
+                    solara.v.ExpansionPanel(
+                        children=[
+                            solara.v.ExpansionPanelHeader(
                                 children=["Calculation Mesh & Solver Settings"]
                             ),
                             solara.v.ExpansionPanelContent(children=[SolverMeshCard()]),
@@ -64,5 +82,7 @@ __all__ = [
     "MetadataCard",
     "StratigraphyTable",
     "LoadsTable",
+    "DewateringCard",
+    "BuildingCard",
     "SolverMeshCard",
 ]

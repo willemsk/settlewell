@@ -5,6 +5,16 @@ import time
 import solara
 
 from settlewell.solara_app.components.canvas import SubsoilCanvasContainer
+from settlewell.solara_app.components.viewport.damage_plots import (
+    DamagePlotsView,
+    build_building_settlement_profile_fig,
+    build_burland_risk_chart_fig,
+)
+from settlewell.solara_app.components.viewport.hydraulics_plots import (
+    HydraulicsPlotsView,
+    build_2d_drawdown_heatmap_fig,
+    build_radial_drawdown_fig,
+)
 from settlewell.solara_app.components.viewport.scenario_benchmark import (
     ScenarioBenchmarkView,
     build_scenario_comparison_fig,
@@ -62,6 +72,8 @@ def ViewportContainer() -> solara.Element:
                     solara.v.Tab(children=["📐 2D Subsoil Canvas"]),
                     solara.v.Tab(children=["📊 Stress Profiles & Bulbs"]),
                     solara.v.Tab(children=["📉 Settlement & Consolidation"]),
+                    solara.v.Tab(children=["💧 Dewatering Hydraulics"]),
+                    solara.v.Tab(children=["🏚️ Building Damage"]),
                     solara.v.Tab(children=["🔀 Scenario Benchmarks"]),
                 ],
             ),
@@ -79,8 +91,10 @@ def ViewportContainer() -> solara.Element:
                     else solara.Column(),
                     StressPlotsView() if active_tab.value == 1 else solara.Column(),
                     SettlementPlotsView() if active_tab.value == 2 else solara.Column(),
+                    HydraulicsPlotsView() if active_tab.value == 3 else solara.Column(),
+                    DamagePlotsView() if active_tab.value == 4 else solara.Column(),
                     ScenarioBenchmarkView()
-                    if active_tab.value == 3
+                    if active_tab.value == 5
                     else solara.Column(),
                 ],
             ),
@@ -119,11 +133,17 @@ __all__ = [
     "ViewportContainer",
     "StressPlotsView",
     "SettlementPlotsView",
+    "HydraulicsPlotsView",
+    "DamagePlotsView",
     "ScenarioBenchmarkView",
     "build_1d_stress_profile_fig",
     "build_2d_stress_heatmap_fig",
     "build_surface_settlement_bowl_fig",
     "build_layer_breakdown_fig",
     "build_time_consolidation_fig",
+    "build_2d_drawdown_heatmap_fig",
+    "build_radial_drawdown_fig",
+    "build_burland_risk_chart_fig",
+    "build_building_settlement_profile_fig",
     "build_scenario_comparison_fig",
 ]
