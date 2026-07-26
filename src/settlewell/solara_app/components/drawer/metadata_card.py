@@ -11,7 +11,7 @@ from settlewell.solara_app.state import (
 
 @solara.component
 def MetadataCard() -> solara.Element:
-    """Render Project Metadata and Groundwater table input card."""
+    """Render Project Metadata and Groundwater table input fields."""
     state = project_state.value
     meta = state.metadata
     active_sc = state.get_active_scenario()
@@ -28,41 +28,59 @@ def MetadataCard() -> solara.Element:
     def on_water_depth_change(val: float) -> None:
         update_water_table(val)
 
-    return solara.Card(
-        title="Project Metadata & Groundwater",
-        elevation=2,
+    return solara.Column(
+        gap="16px",
+        style={"padding": "8px 4px"},
         children=[
-            solara.Column(
+            solara.InputText(
+                label="Project Title",
+                value=meta.title,
+                on_value=on_title_change,
+            ),
+            solara.Row(
                 gap="12px",
                 children=[
-                    solara.InputText(
-                        label="Project Title",
-                        value=meta.title,
-                        on_value=on_title_change,
-                    ),
-                    solara.Row(
+                    solara.Column(
+                        style={"flex": "1"},
                         children=[
                             solara.InputText(
                                 label="Engineer ID",
                                 value=meta.engineer,
                                 on_value=on_engineer_change,
-                            ),
+                            )
+                        ],
+                    ),
+                    solara.Column(
+                        style={"flex": "1"},
+                        children=[
                             solara.InputText(
                                 label="Date",
                                 value=meta.date,
                                 on_value=on_date_change,
-                            ),
-                        ]
+                            )
+                        ],
                     ),
-                    solara.Markdown("---"),
-                    solara.Markdown("#### Groundwater Table ($z_{gw}$)"),
-                    solara.Row(
+                ],
+            ),
+            solara.Markdown("---"),
+            solara.Markdown("##### Groundwater Table (z_gw)"),
+            solara.Row(
+                gap="12px",
+                style={"align-items": "center"},
+                children=[
+                    solara.Column(
+                        style={"flex": "0 0 120px"},
                         children=[
                             solara.InputFloat(
-                                label="Depth z_gw [m]",
+                                label="z_gw [m]",
                                 value=active_sc.water_table.depth_z,
                                 on_value=on_water_depth_change,
-                            ),
+                            )
+                        ],
+                    ),
+                    solara.Column(
+                        style={"flex": "1"},
+                        children=[
                             solara.SliderFloat(
                                 label="Water Level Slider",
                                 value=active_sc.water_table.depth_z,
@@ -70,10 +88,10 @@ def MetadataCard() -> solara.Element:
                                 max=20.0,
                                 step=0.1,
                                 on_value=on_water_depth_change,
-                            ),
-                        ]
+                            )
+                        ],
                     ),
                 ],
-            )
+            ),
         ],
     )

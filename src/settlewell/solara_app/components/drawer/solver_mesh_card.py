@@ -1,4 +1,4 @@
-"""Calculation Mesh & Solver Parameters accordion card component."""
+"""Calculation Mesh & Solver Parameters component."""
 
 import solara
 
@@ -13,51 +13,74 @@ def SolverMeshCard() -> solara.Element:
     active_sc = state.get_active_scenario()
     settings = active_sc.solver_settings
 
-    return solara.Card(
-        title="Calculation Mesh & Solver Settings",
-        elevation=2,
+    return solara.Column(
+        gap="16px",
+        style={"padding": "8px 4px"},
         children=[
-            solara.Column(
+            solara.Select(
+                label="Stress Distribution Method",
+                value=settings.stress_method.value,
+                values=[m.value for m in StressMethod],
+                on_value=lambda v: update_solver_settings(stress_method=v),
+            ),
+            solara.Markdown("##### Vertical Depth Mesh Parameters"),
+            solara.Row(
                 gap="12px",
                 children=[
-                    solara.Select(
-                        label="Stress Distribution Method",
-                        value=settings.stress_method.value,
-                        values=[m.value for m in StressMethod],
-                        on_value=lambda v: update_solver_settings(stress_method=v),
-                    ),
-                    solara.Markdown("#### Vertical Depth Mesh Parameters"),
-                    solara.Row(
+                    solara.Column(
+                        style={"flex": "1"},
                         children=[
                             solara.InputFloat(
                                 label="Max Depth z_max [m]",
                                 value=settings.z_max,
                                 on_value=lambda v: update_solver_settings(z_max=v),
-                            ),
+                            )
+                        ],
+                    ),
+                    solara.Column(
+                        style={"flex": "1"},
+                        children=[
                             solara.InputFloat(
                                 label="Step Size delta_z [m]",
                                 value=settings.delta_z,
                                 on_value=lambda v: update_solver_settings(delta_z=v),
-                            ),
-                        ]
+                            )
+                        ],
                     ),
-                    solara.Markdown("#### Horizontal Grid Boundaries"),
-                    solara.Row(
+                ],
+            ),
+            solara.Markdown("##### Horizontal Grid Boundaries"),
+            solara.Row(
+                gap="12px",
+                children=[
+                    solara.Column(
+                        style={"flex": "1"},
                         children=[
                             solara.InputFloat(
                                 label="Left Bound x_min [m]",
                                 value=settings.x_min,
                                 on_value=lambda v: update_solver_settings(x_min=v),
-                            ),
+                            )
+                        ],
+                    ),
+                    solara.Column(
+                        style={"flex": "1"},
+                        children=[
                             solara.InputFloat(
                                 label="Right Bound x_max [m]",
                                 value=settings.x_max,
                                 on_value=lambda v: update_solver_settings(x_max=v),
-                            ),
-                        ]
+                            )
+                        ],
                     ),
-                    solara.Markdown("#### Time-Consolidation Range"),
-                    solara.Row(
+                ],
+            ),
+            solara.Markdown("##### Time-Consolidation Range"),
+            solara.Row(
+                gap="12px",
+                children=[
+                    solara.Column(
+                        style={"flex": "1"},
                         children=[
                             solara.InputFloat(
                                 label="Start Time t_start [days]",
@@ -65,22 +88,27 @@ def SolverMeshCard() -> solara.Element:
                                 on_value=lambda v: update_solver_settings(
                                     t_start_days=v
                                 ),
-                            ),
+                            )
+                        ],
+                    ),
+                    solara.Column(
+                        style={"flex": "1"},
+                        children=[
                             solara.InputFloat(
                                 label="End Time t_end [years]",
                                 value=settings.t_end_years,
                                 on_value=lambda v: update_solver_settings(
                                     t_end_years=v
                                 ),
-                            ),
-                        ]
-                    ),
-                    solara.Checkbox(
-                        label="Calculate Secondary Creep (C_alpha)",
-                        value=settings.calculate_creep,
-                        on_value=lambda v: update_solver_settings(calculate_creep=v),
+                            )
+                        ],
                     ),
                 ],
-            )
+            ),
+            solara.Checkbox(
+                label="Calculate Secondary Creep (C_alpha)",
+                value=settings.calculate_creep,
+                on_value=lambda v: update_solver_settings(calculate_creep=v),
+            ),
         ],
     )
