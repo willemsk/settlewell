@@ -2,8 +2,11 @@
 
 from pathlib import Path
 
+import numpy as np
 import solara
 
+from settlewell.models import SoilProfile
+from settlewell.settlement import compute_initial_stress_profile
 from settlewell.solara_app.schemas import (
     BuildingSchema,
     BuildingType,
@@ -19,6 +22,7 @@ from settlewell.solara_app.schemas import (
     SolverSettingsSchema,
     WaterTableSchema,
     WellSchema,
+    to_domain_soil_layer,
 )
 
 
@@ -210,6 +214,9 @@ def load_project_json(json_content: str) -> bool:
         project_state.set(new_state)
         return True
     except Exception:
+        import logging
+
+        logging.exception("Failed to parse .settle project JSON content")
         return False
 
 
@@ -388,6 +395,7 @@ def update_water_table(depth_z: float) -> None:
 
 def update_solver_settings(
     stress_method: str | None = None,
+    drainage: str | None = None,
     z_max: float | None = None,
     delta_z: float | None = None,
     x_min: float | None = None,
@@ -403,6 +411,10 @@ def update_solver_settings(
 
     if stress_method is not None:
         settings.stress_method = stress_method
+    if drainage is not None:
+        from settlewell.solara_app.schemas import DrainageType
+
+        settings.drainage = DrainageType(drainage)
     if z_max is not None:
         settings.z_max = max(0.1, float(z_max))
     if delta_z is not None:
@@ -466,8 +478,59 @@ def duplicate_load(load_id: str) -> None:
             break
 
 
+def _fadum_corner(b: float, l_dim: float, z: float) -> float:
+    """Calculate Fadum corner stress influence value Iz for rectangle b x l_dim at depth z."""
+    if z <= 1e-6 or b <= 1e-6 or l_dim <= 1e-6:
+        return 0.25
+    m = b / z
+    n = l_dim / z
+    m2 = m**2
+    n2 = n**2
+    v = m2 + n2 + 1.0
+    v_mn = m2 * n2
+    term1 = (2.0 * m * n * np.sqrt(v) / (v + v_mn)) * ((v + 1.0) / v)
+    arg2 = (2.0 * m * n * np.sqrt(v)) / (v - v_mn)
+    if v - v_mn < 0:
+        arg2_val = np.arctan(arg2) + np.pi
+    else:
+        arg2_val = np.arctan(arg2)
+    return float((1.0 / (4.0 * np.pi)) * (term1 + arg2_val))
+
+
+def _compute_load_delta_sigma(
+    load: LoadGeometrySchema, x_rel: float, z: float
+) -> float:
+    """Compute vertical stress increment delta_sigma_z under a surface load geometry."""
+    q = max(0.0, load.stress_q)
+    B = max(0.1, load.width_B)
+    depth = max(0.01, z + load.z_surface_offset)
+
+    if load.type == LoadType.STRIP:
+        x_l = x_rel - B / 2.0
+        x_r = x_rel + B / 2.0
+        alpha = np.arctan2(x_r, depth) - np.arctan2(x_l, depth)
+        return max(0.0, (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha)))
+    else:  # RECTANGULAR, EMBANKMENT, POINT
+        L = max(0.1, load.length_L)
+        y_half = L / 2.0
+        if abs(x_rel) <= B / 2.0:
+            b1 = B / 2.0 - x_rel
+            b2 = B / 2.0 + x_rel
+            iz = 2.0 * (
+                _fadum_corner(b1, y_half, depth) + _fadum_corner(b2, y_half, depth)
+            )
+        else:
+            b_far = abs(x_rel) + B / 2.0
+            b_near = abs(x_rel) - B / 2.0
+            iz = 2.0 * (
+                _fadum_corner(b_far, y_half, depth)
+                - _fadum_corner(b_near, y_half, depth)
+            )
+        return max(0.0, q * iz)
+
+
 def run_fast_elastic_solve(scenario: ScenarioSchema) -> dict:
-    """Execute real-time fast elastic stress and immediate settlement approximation.
+    """Execute fast 1D stress distribution and elastic settlement calculation.
 
     Parameters
     ----------
@@ -477,26 +540,14 @@ def run_fast_elastic_solve(scenario: ScenarioSchema) -> dict:
     Returns
     -------
     dict
-        Dictionary containing z_grid, sigma_v0_eff, sigma_v_total, delta_sigma_z,
-        x_grid, stress_heatmap_matrix, and elastic_settlement_mm.
+        Dictionary containing z_grid, sigma_v0_eff, delta_sigma_z, x_grid,
+        stress_heatmap, and elastic_settlement_mm.
     """
-    import numpy as np
-
-    from settlewell.models import SoilLayer, SoilProfile
-    from settlewell.settlement import compute_initial_stress_profile
-
     domain_layers = [
-        SoilLayer(
-            name=layer.name,
-            thickness=layer.thickness,
-            gamma=layer.gamma_dry,
-            gamma_sat=layer.gamma_sat,
-            k_h=1e-5,
-            e0=layer.e0,
-            Cc=layer.Cc,
-            Cr=layer.Cr,
-            Eoed=layer.E_modulus * 1000.0,
-            Cv=layer.Cv * 3.17e-8,
+        to_domain_soil_layer(
+            layer,
+            k_h=layer.k_h,
+            ocr=layer.ocr,
         )
         for layer in scenario.stratigraphy
     ]
@@ -517,35 +568,20 @@ def run_fast_elastic_solve(scenario: ScenarioSchema) -> dict:
     # 1D Delta Stress Profile under main load center (x = 0)
     delta_sigma_z = np.zeros_like(z_eval)
     for load in scenario.loads:
-        B = max(0.1, load.width_B)
-        q = max(0.0, load.stress_q)
-        x0 = load.x_center
-
+        x_rel = 0.0 - load.x_center
         for idx, z in enumerate(z_eval):
-            depth = max(0.01, z + load.z_surface_offset)
-            x_left = -B / 2.0 - x0
-            x_right = B / 2.0 - x0
-            alpha = np.arctan2(x_right, depth) - np.arctan2(x_left, depth)
-            ds = (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
-            delta_sigma_z[idx] += max(0.0, ds)
+            delta_sigma_z[idx] += _compute_load_delta_sigma(load, x_rel, z)
 
     # 2D Stress Ratio Heatmap Grid
     x_grid = np.linspace(settings.x_min, settings.x_max, 60)
     stress_heatmap = np.zeros((len(z_eval), len(x_grid)))
 
     for i, z in enumerate(z_eval):
-        depth = max(0.01, z)
         for j, x in enumerate(x_grid):
             ds_sum = 0.0
             for load in scenario.loads:
-                B = max(0.1, load.width_B)
-                q = max(0.0, load.stress_q)
                 x_rel = x - load.x_center
-                x_l = x_rel - B / 2.0
-                x_r = x_rel + B / 2.0
-                alpha = np.arctan2(x_r, depth) - np.arctan2(x_l, depth)
-                ds = (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
-                ds_sum += max(0.0, ds)
+                ds_sum += _compute_load_delta_sigma(load, x_rel, z)
             primary_q = scenario.loads[0].stress_q if scenario.loads else 100.0
             stress_heatmap[i, j] = ds_sum / max(1.0, primary_q)
 
@@ -554,15 +590,10 @@ def run_fast_elastic_solve(scenario: ScenarioSchema) -> dict:
     curr_depth = 0.0
     for layer in scenario.stratigraphy:
         z_mid = curr_depth + layer.thickness / 2.0
-        depth_val = max(0.01, z_mid)
         ds_mid = 0.0
         for load in scenario.loads:
-            B = max(0.1, load.width_B)
-            q = max(0.0, load.stress_q)
-            x_l = -B / 2.0 - load.x_center
-            x_r = B / 2.0 - load.x_center
-            alpha = np.arctan2(x_r, depth_val) - np.arctan2(x_l, depth_val)
-            ds_mid += (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
+            x_rel = 0.0 - load.x_center
+            ds_mid += _compute_load_delta_sigma(load, x_rel, z_mid)
         E_kpa = layer.E_modulus * 1000.0
         elastic_settlement_m += (ds_mid * layer.thickness) / max(100.0, E_kpa)
         curr_depth += layer.thickness
@@ -592,8 +623,6 @@ def run_full_consolidation_solve(scenario: ScenarioSchema) -> dict:
         Dictionary containing time_years, settlement_mm, U_percent,
         layer_settlements, primary_settlement_mm, and creep_settlement_mm.
     """
-    import numpy as np
-
     settings = scenario.solver_settings
     t_start = max(1.0, settings.t_start_days) / 365.25
     t_end = max(0.1, settings.t_end_years)
@@ -608,24 +637,27 @@ def run_full_consolidation_solve(scenario: ScenarioSchema) -> dict:
 
     for idx, layer in enumerate(scenario.stratigraphy):
         z_mid = curr_depth + layer.thickness / 2.0
-        depth_val = max(0.01, z_mid)
         ds_mid = 0.0
         for load in scenario.loads:
-            B = max(0.1, load.width_B)
-            q = max(0.0, load.stress_q)
-            x_l = -B / 2.0 - load.x_center
-            x_r = B / 2.0 - load.x_center
-            alpha = np.arctan2(x_r, depth_val) - np.arctan2(x_l, depth_val)
-            ds_mid += (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
+            x_rel = 0.0 - load.x_center
+            ds_mid += _compute_load_delta_sigma(load, x_rel, z_mid)
 
-        # Initial effective stress at midpoint
-        sigma_v0 = 10.0 + curr_depth * 8.0
+        # Initial effective stress at midpoint & preconsolidation stress
+        sigma_v0 = max(1.0, 10.0 + curr_depth * 8.0)
+        sigma_p = sigma_v0 * max(1.0, layer.ocr)
         sigma_f = sigma_v0 + ds_mid
-        s_c_ult_m = (
-            (layer.Cc / (1.0 + layer.e0))
-            * layer.thickness
-            * np.log10(sigma_f / max(1.0, sigma_v0))
-        )
+        H = layer.thickness
+        e0 = max(0.01, layer.e0)
+
+        if sigma_f <= sigma_p:
+            # Recompression range only
+            s_c_ult_m = (layer.Cr / (1.0 + e0)) * H * np.log10(sigma_f / sigma_v0)
+        else:
+            # Recompression up to sigma_p + virgin compression above sigma_p
+            s_recomp = (layer.Cr / (1.0 + e0)) * H * np.log10(sigma_p / sigma_v0)
+            s_virgin = (layer.Cc / (1.0 + e0)) * H * np.log10(sigma_f / sigma_p)
+            s_c_ult_m = s_recomp + s_virgin
+
         layer_ult_settlements_mm.append(max(0.0, s_c_ult_m * 1000.0))
         curr_depth += layer.thickness
 
@@ -635,16 +667,24 @@ def run_full_consolidation_solve(scenario: ScenarioSchema) -> dict:
     total_settlement_mm = []
     U_percent = []
 
-    # Representative Cv
-    avg_Cv = (
-        np.mean([layer.Cv for layer in scenario.stratigraphy])
-        if scenario.stratigraphy
-        else 2.0
-    )
+    # Equivalent Cv for layered strata: Cv_eq = H_total^2 / (sum(h_i / sqrt(Cv_i)))^2
     total_H = sum(layer.thickness for layer in scenario.stratigraphy) or 10.0
+    denom = sum(
+        layer.thickness / np.sqrt(max(1e-4, layer.Cv))
+        for layer in scenario.stratigraphy
+    )
+    eq_Cv = (total_H**2) / max(1e-4, denom**2)
+
+    # Drainage path length
+    from settlewell.solara_app.schemas import DrainageType
+
+    if settings.drainage == DrainageType.SINGLE:
+        H_dr = total_H
+    else:
+        H_dr = total_H / 2.0
 
     for t in time_years:
-        Tv = (avg_Cv * t) / max(1.0, (total_H / 2.0) ** 2)
+        Tv = (eq_Cv * t) / max(1e-4, H_dr**2)
         if Tv <= 0.2:
             U = 2.0 * np.sqrt(Tv / np.pi)
         else:
@@ -828,8 +868,6 @@ def run_hydraulics_solve(scenario: ScenarioSchema) -> dict:
         Dictionary containing x_grid, y_grid, drawdown_matrix, r_grid,
         drawdown_radial, and R_influence_m.
     """
-    import numpy as np
-
     settings = scenario.solver_settings
     x_grid = np.linspace(settings.x_min, settings.x_max, 50)
     y_grid = np.linspace(-15.0, 15.0, 50)
@@ -839,9 +877,22 @@ def run_hydraulics_solve(scenario: ScenarioSchema) -> dict:
     drawdown_matrix = np.zeros_like(X)
 
     # Sichardt radius of influence R = 3000 * s * sqrt(k_h)
-    k_h = scenario.stratigraphy[0].Cv * 1e-6 if scenario.stratigraphy else 1e-4
+    k_h = (
+        np.mean([layer.k_h for layer in scenario.stratigraphy])
+        if scenario.stratigraphy
+        else 1e-4
+    )
     target_s = max(0.5, scenario.water_table.depth_z)
     R_influence = max(50.0, 3000.0 * target_s * np.sqrt(k_h))
+
+    # Saturated aquifer thickness & transmissivity T = k_h * D_sat
+    total_H = (
+        sum(layer.thickness for layer in scenario.stratigraphy)
+        if scenario.stratigraphy
+        else 10.0
+    )
+    D_sat = max(1.0, total_H - scenario.water_table.depth_z)
+    T_transmissivity = max(1e-6, k_h * D_sat)
 
     for well in wells:
         Q_m3s = max(0.1, well.Q) / 3600.0
@@ -850,7 +901,6 @@ def run_hydraulics_solve(scenario: ScenarioSchema) -> dict:
         dist = np.maximum(r_w, dist)
 
         # Dupuit-Thiem steady state drawdown s(r) = (Q / 2pi T) * ln(R / r)
-        T_transmissivity = 0.005  # m²/s
         s_well = (Q_m3s / (2.0 * np.pi * T_transmissivity)) * np.log(
             np.maximum(1.1, R_influence / dist)
         )
@@ -860,7 +910,7 @@ def run_hydraulics_solve(scenario: ScenarioSchema) -> dict:
     r_grid = np.linspace(0.1, max(30.0, R_influence), 50)
     if wells:
         main_Q = max(0.1, wells[0].Q) / 3600.0
-        s_radial = (main_Q / (2.0 * np.pi * 0.005)) * np.log(
+        s_radial = (main_Q / (2.0 * np.pi * T_transmissivity)) * np.log(
             np.maximum(1.1, R_influence / np.maximum(wells[0].r_w, r_grid))
         )
     else:
@@ -889,10 +939,18 @@ def run_building_damage_solve(scenario: ScenarioSchema) -> dict:
     dict
         Dictionary containing list of building risk result dictionaries.
     """
-
     elastic_res = run_fast_elastic_solve(scenario)
     s_max_mm = elastic_res["elastic_settlement_mm"]
     primary_B = scenario.loads[0].width_B if scenario.loads else 4.0
+    primary_x0 = scenario.loads[0].x_center if scenario.loads else 0.0
+
+    # Grid for surface settlement bowl s(x)
+    x_eval = np.linspace(
+        scenario.solver_settings.x_min, scenario.solver_settings.x_max, 120
+    )
+    s_eval_mm = s_max_mm / (
+        1.0 + ((x_eval - primary_x0) / max(0.5, primary_B / 2.0)) ** 2
+    )
 
     bldg_results = []
     for bldg in scenario.buildings:
@@ -900,8 +958,8 @@ def run_building_damage_solve(scenario: ScenarioSchema) -> dict:
         x_left = bldg.x_center - L_bldg / 2.0
         x_right = bldg.x_center + L_bldg / 2.0
 
-        s_left = s_max_mm / (1.0 + (x_left / max(0.5, primary_B / 2.0)) ** 2)
-        s_right = s_max_mm / (1.0 + (x_right / max(0.5, primary_B / 2.0)) ** 2)
+        s_left = float(np.interp(x_left, x_eval, s_eval_mm))
+        s_right = float(np.interp(x_right, x_eval, s_eval_mm))
 
         diff_s_mm = abs(s_left - s_right)
         beta_tilt = diff_s_mm / (L_bldg * 1000.0)

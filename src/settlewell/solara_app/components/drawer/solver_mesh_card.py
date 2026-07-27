@@ -2,7 +2,7 @@
 
 import solara
 
-from settlewell.solara_app.schemas import StressMethod
+from settlewell.solara_app.schemas import DrainageType, StressMethod
 from settlewell.solara_app.state import project_state, update_solver_settings
 
 
@@ -22,6 +22,12 @@ def SolverMeshCard() -> solara.Element:
                 value=settings.stress_method.value,
                 values=[m.value for m in StressMethod],
                 on_value=lambda v: update_solver_settings(stress_method=v),
+            ),
+            solara.Select(
+                label="Drainage Boundary Condition",
+                value=settings.drainage.value,
+                values=[d.value for d in DrainageType],
+                on_value=lambda v: update_solver_settings(drainage=v),
             ),
             solara.Markdown("##### Vertical Depth Mesh Parameters"),
             solara.Row(

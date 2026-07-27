@@ -20,6 +20,17 @@ def StratigraphyLayerCard(index: int, layer: SoilLayerSchema) -> solara.Element:
         updated = layer.model_copy(update=kwargs)
         update_soil_layer(layer.id, updated)
 
+    def on_uscs_change(uscs_val: str) -> None:
+        uscs_enum = SoilTypeUSCS(uscs_val)
+        default_kh_map = {
+            SoilTypeUSCS.SAND: 1e-4,
+            SoilTypeUSCS.CLAY: 1e-8,
+            SoilTypeUSCS.GRAVEL: 1e-2,
+            SoilTypeUSCS.PEAT: 1e-5,
+        }
+        new_kh = default_kh_map.get(uscs_enum, layer.k_h)
+        on_field_update(uscs_type=uscs_enum, k_h=new_kh)
+
     return solara.Column(
         style={
             "padding": "12px",
@@ -56,9 +67,7 @@ def StratigraphyLayerCard(index: int, layer: SoilLayerSchema) -> solara.Element:
                                         label="USCS",
                                         value=layer.uscs_type.value,
                                         values=[t.value for t in SoilTypeUSCS],
-                                        on_value=lambda v: on_field_update(
-                                            uscs_type=SoilTypeUSCS(v)
-                                        ),
+                                        on_value=on_uscs_change,
                                     )
                                 ],
                             ),
@@ -68,17 +77,18 @@ def StratigraphyLayerCard(index: int, layer: SoilLayerSchema) -> solara.Element:
                         gap="4px",
                         children=[
                             solara.Button(
-                                label="📋",
-                                on_click=lambda: duplicate_soil_layer(layer.id),
-                                outlined=True,
                                 icon_name="mdi-content-copy",
+                                color="secondary",
+                                text=True,
+                                outlined=True,
+                                on_click=lambda: duplicate_soil_layer(layer.id),
                             ),
                             solara.Button(
-                                label="🗑️",
-                                on_click=lambda: delete_soil_layer(layer.id),
-                                color="error",
-                                outlined=True,
                                 icon_name="mdi-delete",
+                                color="error",
+                                text=True,
+                                outlined=True,
+                                on_click=lambda: delete_soil_layer(layer.id),
                             ),
                         ],
                     ),
@@ -186,6 +196,36 @@ def StratigraphyLayerCard(index: int, layer: SoilLayerSchema) -> solara.Element:
                                 value=layer.Cv,
                                 on_value=lambda v: on_field_update(
                                     Cv=max(0.0, float(v))
+                                ),
+                            )
+                        ],
+                    ),
+                ],
+            ),
+            # Row 3: OCR and Hydraulic Conductivity k_h
+            solara.Row(
+                gap="8px",
+                children=[
+                    solara.Column(
+                        style={"flex": "1"},
+                        children=[
+                            solara.InputFloat(
+                                label="OCR [-]",
+                                value=layer.ocr,
+                                on_value=lambda v: on_field_update(
+                                    ocr=max(1.0, float(v))
+                                ),
+                            )
+                        ],
+                    ),
+                    solara.Column(
+                        style={"flex": "1"},
+                        children=[
+                            solara.InputFloat(
+                                label="k_h [m/s]",
+                                value=layer.k_h,
+                                on_value=lambda v: on_field_update(
+                                    k_h=max(1e-12, float(v))
                                 ),
                             )
                         ],

@@ -32,6 +32,13 @@ class StressMethod(StrEnum):
     TWO_TO_ONE = "2:1"
 
 
+class DrainageType(StrEnum):
+    """Boundary drainage condition for primary consolidation."""
+
+    DOUBLE = "DOUBLE"
+    SINGLE = "SINGLE"
+
+
 class AquiferType(StrEnum):
     """Aquifer hydrogeological classification."""
 
@@ -65,6 +72,8 @@ class SoilLayerSchema(BaseModel):
     Cv: float = Field(
         ge=0, default=5.0, description="Coefficient of consolidation [m²/yr]"
     )
+    ocr: float = Field(ge=1.0, default=1.0, description="Overconsolidation ratio [-]")
+    k_h: float = Field(gt=0, default=1e-4, description="Hydraulic conductivity [m/s]")
     uscs_type: SoilTypeUSCS = Field(
         default=SoilTypeUSCS.SAND, description="USCS soil classification"
     )
@@ -107,6 +116,9 @@ class SolverSettingsSchema(BaseModel):
 
     stress_method: StressMethod = Field(
         default=StressMethod.BOUSSINESQ, description="Stress distribution method"
+    )
+    drainage: DrainageType = Field(
+        default=DrainageType.DOUBLE, description="Drainage boundary condition"
     )
     z_max: float = Field(
         gt=0, default=20.0, description="Maximum calculation depth [m]"
@@ -250,7 +262,9 @@ SECONDS_PER_YEAR = 365.25 * 86400.0
 
 
 def to_domain_soil_layer(
-    schema: SoilLayerSchema, k_h: float = 1e-6, ocr: float = 1.0
+    schema: SoilLayerSchema,
+    k_h: float | None = None,
+    ocr: float | None = None,
 ) -> SoilLayer:
     """Convert a SoilLayerSchema GUI model into a settlewell.models.SoilLayer domain object.
 
@@ -258,28 +272,31 @@ def to_domain_soil_layer(
     ----------
     schema : SoilLayerSchema
         GUI soil layer schema instance.
-    k_h : float, default 1e-6
-        Horizontal hydraulic conductivity [m/s].
-    ocr : float, default 1.0
-        Overconsolidation ratio [-].
+    k_h : float | None, default None
+        Horizontal hydraulic conductivity [m/s]. If None, schema.k_h is used.
+    ocr : float | None, default None
+        Overconsolidation ratio [-]. If None, schema.ocr is used.
 
     Returns
     -------
     SoilLayer
         Domain dataclass instance.
     """
+    actual_k_h = schema.k_h if k_h is None else k_h
+    actual_ocr = schema.ocr if ocr is None else ocr
+
     return SoilLayer(
         name=schema.name,
         thickness=schema.thickness,
         gamma=schema.gamma_dry,
         gamma_sat=schema.gamma_sat,
-        k_h=k_h,
+        k_h=actual_k_h,
         e0=schema.e0,
         Cc=schema.Cc,
         Cr=schema.Cr,
         Eoed=schema.E_modulus * 1000.0,  # Convert MPa to kPa
         Cv=schema.Cv / SECONDS_PER_YEAR,  # Convert m²/yr to m²/s
-        OCR=ocr,
+        OCR=actual_ocr,
     )
 
 
@@ -318,6 +335,8 @@ def from_domain_soil_layer(
         Cc=layer.Cc,
         Cr=layer.Cr,
         Cv=layer.Cv * SECONDS_PER_YEAR,  # Convert m²/s to m²/yr
+        ocr=layer.OCR,
+        k_h=layer.k_h,
         uscs_type=uscs_type,
         color=color,
     )

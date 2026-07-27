@@ -8,6 +8,7 @@ from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from settlewell.solara_app.schemas import ScenarioSchema
+from settlewell.solara_app.state import project_state
 
 
 def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
@@ -69,13 +70,21 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
 
     story = []
 
+    from datetime import datetime
+
+    report_date = (
+        project_state.value.metadata.date
+        if hasattr(project_state.value.metadata, "date")
+        else datetime.now().strftime("%Y-%m-%d")
+    )
+
     # Title Banner
     story.append(
         Paragraph("settlewell v2.0 — Geotechnical Calculation Report", title_style)
     )
     story.append(
         Paragraph(
-            f"<b>Project:</b> {scenario.name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Date:</b> 2026-07-27",
+            f"<b>Project:</b> {scenario.name} &nbsp;&nbsp;|&nbsp;&nbsp; <b>Date:</b> {report_date}",
             body_style,
         )
     )
@@ -106,7 +115,8 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
             "E [MPa]",
             "Cc",
             "Cr",
-            "Cv [m²/yr]",
+            "OCR",
+            "k_h [m/s]",
         ]
     ]
     for layer in scenario.stratigraphy:
@@ -121,12 +131,13 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
                 f"{layer.E_modulus:.1f}",
                 f"{layer.Cc:.2f}",
                 f"{layer.Cr:.3f}",
-                f"{layer.Cv:.1f}",
+                f"{layer.ocr:.1f}",
+                f"{layer.k_h:.1e}",
             ]
         )
 
     t_strat = Table(
-        strat_table_data, colWidths=[110, 45, 40, 40, 40, 35, 45, 35, 35, 55]
+        strat_table_data, colWidths=[90, 40, 35, 35, 35, 30, 40, 30, 30, 35, 55]
     )
     t_strat.setStyle(
         TableStyle(
