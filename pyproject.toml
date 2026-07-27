@@ -13,7 +13,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-gui = ["PySide6>=6.5"]
 notebook = ["jupyter>=1.0", "ipykernel>=6.0"]
 test = ["pytest>=7.0"]
 web = [
@@ -33,7 +32,6 @@ docs = [
 ]
 
 [project.gui-scripts]
-settlewell-gui = "settlewell.gui:main"
 settlewell-web = "settlewell.solara_app:main"
 
 [build-system]

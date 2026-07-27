@@ -17,7 +17,6 @@ This package provides standard Flemish/Dutch geotechnical engineering models for
 ## Navigation
 
 - [Getting Started](getting-started.md): Installation and quick start guide.
-- [Desktop GUI Guide](gui.md): Standalone dark-themed PySide6 desktop application walkthrough.
 - [Validation & Physics](validation.md): Limiting-case numerical convergence graphs and physics benchmarks.
 - **API Reference**: Complete reference for all modules:
     - [Models](api/models.md) — Input data classes
@@ -26,4 +25,3 @@ This package provides standard Flemish/Dutch geotechnical engineering models for
     - [Damage](api/damage.md) — Building damage classification
     - [Numerical](api/numerical.md) — Finite-difference solver
     - [Plotting](api/plotting.md) — Visualization functions
-    - [GUI](api/gui.md) — Desktop application components
