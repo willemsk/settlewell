@@ -16,6 +16,16 @@ dependencies = [
 gui = ["PySide6>=6.5"]
 notebook = ["jupyter>=1.0", "ipykernel>=6.0"]
 test = ["pytest>=7.0"]
+web = [
+    "solara>=1.60.3",
+    "pydantic>=2.13.4",
+    "ipycanvas>=0.14.3",
+    "anywidget>=0.9.0",
+    "reportlab>=5.0.0",
+    "ezdxf>=1.4.4",
+    "openpyxl>=3.1.5",
+    "pandas>=2.0.0",
+]
 docs = [
     "mkdocs>=1.5",
     "mkdocs-material>=9.5",
@@ -24,10 +34,14 @@ docs = [
 
 [project.gui-scripts]
 settlewell-gui = "settlewell.gui:main"
+settlewell-web = "settlewell.solara_app:main"
 
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/settlewell"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
