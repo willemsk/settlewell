@@ -18,11 +18,14 @@ WORKDIR /app
 # Copy dependency specifications
 COPY pyproject.toml uv.lock README.md /app/
 
-# Install dependencies using uv
-RUN uv sync --frozen --extra web --no-dev
+# Install dependencies using uv without installing local project first (for Docker caching)
+RUN uv sync --frozen --no-install-project --extra web --no-dev
 
 # Copy source code
 COPY src /app/src
+
+# Install project package into environment
+RUN uv sync --frozen --extra web --no-dev
 
 # Expose default Solara port
 EXPOSE 8765
