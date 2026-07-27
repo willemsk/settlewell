@@ -547,7 +547,6 @@ def run_full_consolidation_solve(scenario: ScenarioSchema) -> dict:
     # Time-consolidation curve s(t)
     total_settlement_mm = []
     U_percent = []
-    layer_time_settlements = {layer.id: [] for layer in scenario.stratigraphy}
 
     # Representative Cv
     avg_Cv = (
@@ -572,10 +571,6 @@ def run_full_consolidation_solve(scenario: ScenarioSchema) -> dict:
         total_settlement_mm.append(s_t)
         U_percent.append(U * 100.0)
 
-        for idx, layer in enumerate(scenario.stratigraphy):
-            layer_s = (s_e_mm / len(scenario.stratigraphy)) + layer_ult_settlements_mm[
-                idx
-            ] * U
     return {
         "time_years": time_years,
         "settlement_mm": np.array(total_settlement_mm),

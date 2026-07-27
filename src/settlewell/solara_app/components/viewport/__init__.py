@@ -10,6 +10,7 @@ from settlewell.solara_app.components.viewport.damage_plots import (
     build_building_settlement_profile_fig,
     build_burland_risk_chart_fig,
 )
+from settlewell.solara_app.components.viewport.export_view import ExportView
 from settlewell.solara_app.components.viewport.hydraulics_plots import (
     HydraulicsPlotsView,
     build_2d_drawdown_heatmap_fig,
@@ -75,6 +76,7 @@ def ViewportContainer() -> solara.Element:
                     solara.v.Tab(children=["💧 Dewatering Hydraulics"]),
                     solara.v.Tab(children=["🏚️ Building Damage"]),
                     solara.v.Tab(children=["🔀 Scenario Benchmarks"]),
+                    solara.v.Tab(children=["📄 PDF, DXF & Data Export"]),
                 ],
             ),
             # Progress Linear Bar
@@ -96,6 +98,7 @@ def ViewportContainer() -> solara.Element:
                     ScenarioBenchmarkView()
                     if active_tab.value == 5
                     else solara.Column(),
+                    ExportView() if active_tab.value == 6 else solara.Column(),
                 ],
             ),
             # Bottom Solver Status Bar
@@ -136,6 +139,7 @@ __all__ = [
     "HydraulicsPlotsView",
     "DamagePlotsView",
     "ScenarioBenchmarkView",
+    "ExportView",
     "build_1d_stress_profile_fig",
     "build_2d_stress_heatmap_fig",
     "build_surface_settlement_bowl_fig",
