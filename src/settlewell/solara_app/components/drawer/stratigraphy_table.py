@@ -7,8 +7,14 @@ from settlewell.solara_app.state import (
     add_soil_layer,
     delete_soil_layer,
     duplicate_soil_layer,
+    load_flemish_profile_template,
     project_state,
     update_soil_layer,
+)
+from settlewell.soils import (
+    FLEMISH_PROFILE_TEMPLATES,
+    FLEMISH_SOIL_PRESETS,
+    FlemishSoilType,
 )
 
 
@@ -31,6 +37,28 @@ def StratigraphyLayerCard(index: int, layer: SoilLayerSchema) -> solara.Element:
         new_kh = default_kh_map.get(uscs_enum, layer.k_h)
         on_field_update(uscs_type=uscs_enum, k_h=new_kh)
 
+    def on_flemish_change(flemish_val: str) -> None:
+        flemish_enum = FlemishSoilType(flemish_val)
+        preset = FLEMISH_SOIL_PRESETS.get(flemish_enum)
+        if preset:
+            on_field_update(
+                flemish_type=flemish_enum,
+                name=preset["name"],
+                gamma_dry=preset["gamma_dry"],
+                gamma_sat=preset["gamma_sat"],
+                e0=preset["e0"],
+                E_modulus=preset["E_modulus"],
+                Cc=preset["Cc"],
+                Cr=preset["Cr"],
+                Cv=preset["Cv"],
+                ocr=preset["ocr"],
+                k_h=preset["k_h"],
+                uscs_type=preset["uscs_type"],
+                color=preset["color"],
+            )
+        else:
+            on_field_update(flemish_type=flemish_enum)
+
     return solara.Column(
         style={
             "padding": "12px",
@@ -40,7 +68,7 @@ def StratigraphyLayerCard(index: int, layer: SoilLayerSchema) -> solara.Element:
             "background-color": "rgba(128, 128, 128, 0.03)",
         },
         children=[
-            # Top Bar: Name, USCS Classification & Actions
+            # Top Bar: Name, Flemish Classification, USCS & Actions
             solara.Row(
                 justify="space-between",
                 style={"align-items": "center", "margin-bottom": "8px"},
@@ -61,7 +89,18 @@ def StratigraphyLayerCard(index: int, layer: SoilLayerSchema) -> solara.Element:
                                 ],
                             ),
                             solara.Column(
-                                style={"flex": "0 0 120px"},
+                                style={"flex": "2"},
+                                children=[
+                                    solara.Select(
+                                        label="Flemish Soil (EC7)",
+                                        value=layer.flemish_type.value,
+                                        values=[t.value for t in FlemishSoilType],
+                                        on_value=on_flemish_change,
+                                    )
+                                ],
+                            ),
+                            solara.Column(
+                                style={"flex": "1"},
                                 children=[
                                     solara.Select(
                                         label="USCS",
@@ -252,10 +291,23 @@ def StratigraphyTable() -> solara.Element:
                     solara.Markdown(
                         f"**Layers:** {len(layers)} | **Total Depth:** {sum(layer.thickness for layer in layers):.1f} m"
                     ),
-                    solara.Button(
-                        label="➕ Add Soil Layer",
-                        on_click=lambda: add_soil_layer(),
-                        color="primary",
+                    solara.Row(
+                        gap="8px",
+                        children=[
+                            solara.Select(
+                                label="🇧🇪 Flemish Profile Template",
+                                value=None,
+                                values=list(FLEMISH_PROFILE_TEMPLATES.keys()),
+                                on_value=lambda t: (
+                                    load_flemish_profile_template(t) if t else None
+                                ),
+                            ),
+                            solara.Button(
+                                label="➕ Add Soil Layer",
+                                on_click=lambda: add_soil_layer(),
+                                color="primary",
+                            ),
+                        ],
                     ),
                 ],
             ),

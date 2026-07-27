@@ -2,7 +2,7 @@
 
 import solara
 
-from settlewell.solara_app.schemas import DrainageType, StressMethod
+from settlewell.solara_app.schemas import DesignApproach, DrainageType, StressMethod
 from settlewell.solara_app.state import project_state, update_solver_settings
 
 
@@ -28,6 +28,12 @@ def SolverMeshCard() -> solara.Element:
                 value=settings.drainage.value,
                 values=[d.value for d in DrainageType],
                 on_value=lambda v: update_solver_settings(drainage=v),
+            ),
+            solara.Select(
+                label="Eurocode 7 Design Limit State",
+                value=settings.design_approach.value,
+                values=[da.value for da in DesignApproach],
+                on_value=lambda v: update_solver_settings(design_approach=v),
             ),
             solara.Markdown("##### Vertical Depth Mesh Parameters"),
             solara.Row(

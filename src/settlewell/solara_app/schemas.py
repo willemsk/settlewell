@@ -4,15 +4,7 @@ from enum import StrEnum
 from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from settlewell.models import SoilLayer
-
-
-class SoilTypeUSCS(StrEnum):
-    """USCS Soil Classification types for visualization and hatching."""
-
-    SAND = "SAND"
-    CLAY = "CLAY"
-    GRAVEL = "GRAVEL"
-    PEAT = "PEAT"
+from settlewell.soils import FlemishSoilType, SoilTypeUSCS
 
 
 class LoadType(StrEnum):
@@ -37,6 +29,14 @@ class DrainageType(StrEnum):
 
     DOUBLE = "DOUBLE"
     SINGLE = "SINGLE"
+
+
+class DesignApproach(StrEnum):
+    """Eurocode 7 Design Limit State approach."""
+
+    SLS_CHARACTERISTIC = "SLS_CHARACTERISTIC"
+    EC7_DA1_M1 = "EC7_DA1_M1"
+    EC7_DA1_M2 = "EC7_DA1_M2"
 
 
 class AquiferType(StrEnum):
@@ -74,6 +74,10 @@ class SoilLayerSchema(BaseModel):
     )
     ocr: float = Field(ge=1.0, default=1.0, description="Overconsolidation ratio [-]")
     k_h: float = Field(gt=0, default=1e-4, description="Hydraulic conductivity [m/s]")
+    flemish_type: FlemishSoilType = Field(
+        default=FlemishSoilType.PLEISTOCEEN_ZAND,
+        description="Flemish Eurocode 7 soil classification",
+    )
     uscs_type: SoilTypeUSCS = Field(
         default=SoilTypeUSCS.SAND, description="USCS soil classification"
     )
@@ -119,6 +123,10 @@ class SolverSettingsSchema(BaseModel):
     )
     drainage: DrainageType = Field(
         default=DrainageType.DOUBLE, description="Drainage boundary condition"
+    )
+    design_approach: DesignApproach = Field(
+        default=DesignApproach.SLS_CHARACTERISTIC,
+        description="Eurocode 7 design limit state approach",
     )
     z_max: float = Field(
         gt=0, default=20.0, description="Maximum calculation depth [m]"

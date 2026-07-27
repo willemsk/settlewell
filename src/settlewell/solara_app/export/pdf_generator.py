@@ -102,11 +102,15 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
 
     # Soil Stratigraphy Table
     story.append(
-        Paragraph("2. Subsoil Stratigraphy & Geotechnical Parameters", h1_style)
+        Paragraph(
+            "2. Subsoil Stratigraphy & Geotechnical Parameters (Belgian NBN EN 1997-1 ANB)",
+            h1_style,
+        )
     )
     strat_table_data = [
         [
             "Layer Name",
+            "Flemish Soil (EC7)",
             "USCS",
             "h [m]",
             "γ_dry",
@@ -123,6 +127,7 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
         strat_table_data.append(
             [
                 layer.name,
+                layer.flemish_type.value,
                 layer.uscs_type.value,
                 f"{layer.thickness:.2f}",
                 f"{layer.gamma_dry:.1f}",
@@ -137,7 +142,7 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
         )
 
     t_strat = Table(
-        strat_table_data, colWidths=[90, 40, 35, 35, 35, 30, 40, 30, 30, 35, 55]
+        strat_table_data, colWidths=[80, 85, 35, 30, 30, 30, 25, 35, 25, 25, 30, 45]
     )
     t_strat.setStyle(
         TableStyle(

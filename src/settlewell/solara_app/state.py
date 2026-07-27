@@ -396,6 +396,7 @@ def update_water_table(depth_z: float) -> None:
 def update_solver_settings(
     stress_method: str | None = None,
     drainage: str | None = None,
+    design_approach: str | None = None,
     z_max: float | None = None,
     delta_z: float | None = None,
     x_min: float | None = None,
@@ -415,6 +416,10 @@ def update_solver_settings(
         from settlewell.solara_app.schemas import DrainageType
 
         settings.drainage = DrainageType(drainage)
+    if design_approach is not None:
+        from settlewell.solara_app.schemas import DesignApproach
+
+        settings.design_approach = DesignApproach(design_approach)
     if z_max is not None:
         settings.z_max = max(0.1, float(z_max))
     if delta_z is not None:
@@ -430,6 +435,46 @@ def update_solver_settings(
     if calculate_creep is not None:
         settings.calculate_creep = bool(calculate_creep)
 
+    project_state.set(current_state)
+
+
+def load_flemish_profile_template(template_name: str) -> None:
+    """Load a predefined Flemish stratigraphy profile template into the active scenario."""
+    from settlewell.soils import FLEMISH_PROFILE_TEMPLATES, FLEMISH_SOIL_PRESETS
+
+    if template_name not in FLEMISH_PROFILE_TEMPLATES:
+        return
+
+    current_state = project_state.value.model_copy(deep=True)
+    active_sc = current_state.get_active_scenario()
+
+    template_layers = FLEMISH_PROFILE_TEMPLATES[template_name]
+    new_stratigraphy = []
+    for idx, (layer_name, flemish_type, thickness) in enumerate(
+        template_layers, start=1
+    ):
+        preset = FLEMISH_SOIL_PRESETS[flemish_type]
+        new_stratigraphy.append(
+            SoilLayerSchema(
+                id=f"layer_{idx}",
+                name=layer_name,
+                thickness=thickness,
+                gamma_dry=preset["gamma_dry"],
+                gamma_sat=preset["gamma_sat"],
+                e0=preset["e0"],
+                E_modulus=preset["E_modulus"],
+                Cc=preset["Cc"],
+                Cr=preset["Cr"],
+                Cv=preset["Cv"],
+                ocr=preset["ocr"],
+                k_h=preset["k_h"],
+                flemish_type=flemish_type,
+                uscs_type=preset["uscs_type"],
+                color=preset["color"],
+            )
+        )
+
+    active_sc.stratigraphy = new_stratigraphy
     project_state.set(current_state)
 
 
