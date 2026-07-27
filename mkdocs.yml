@@ -41,7 +41,6 @@ markdown_extensions:
 nav:
 - Home: index.md
 - Getting Started: getting-started.md
-- Desktop GUI Guide: gui.md
 - Validation & Physics: validation.md
 - Theory: theory.md
 - API Reference:
@@ -51,4 +50,3 @@ nav:
   - Damage: api/damage.md
   - Numerical: api/numerical.md
   - Plotting: api/plotting.md
-  - GUI: api/gui.md

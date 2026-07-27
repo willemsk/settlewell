@@ -1,1 +1,0 @@
-"""Settlewell GUI custom widgets."""

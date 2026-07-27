@@ -10,19 +10,9 @@
 git clone https://github.com/willemsk/settlewell.git
 cd settlewell
 
-# Install with testing, documentation, and GUI extras
+# Install with all extras (web, testing, documentation)
 uv sync --all-extras
 ```
-
-### Launching Desktop GUI
-
-`settlewell` includes an interactive PySide6 desktop wizard application:
-
-```bash
-uv run settlewell-gui
-```
-
-For full desktop application workflow details, see the [Desktop GUI Guide](gui.md).
 
 ### Running Tests
 
