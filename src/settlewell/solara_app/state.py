@@ -120,10 +120,97 @@ def create_default_project_state() -> ProjectState:
     )
 
 
-# Global Reactive State Instance
-project_state: solara.Reactive[ProjectState] = solara.reactive(
-    create_default_project_state()
-)
+# Global reactive state store
+project_state = solara.reactive(create_default_project_state())
+display_elevation_mtaw = solara.reactive(False)
+
+
+def set_elevation_display_mode(mtaw_enabled: bool) -> None:
+    """Set global elevation display mode (Depth m vs Elevation mTAW)."""
+    display_elevation_mtaw.set(mtaw_enabled)
+
+
+def create_new_scenario(name: str = "New Scenario") -> None:
+    """Create and activate a new scenario."""
+    current_state = project_state.value.model_copy(deep=True)
+    idx = len(current_state.scenarios) + 1
+    new_sc = ScenarioSchema(
+        id=f"scenario_{idx}",
+        name=name,
+        is_active=True,
+    )
+    for sc in current_state.scenarios:
+        sc.is_active = False
+
+    current_state.scenarios.append(new_sc)
+    current_state.active_scenario_id = new_sc.id
+    project_state.set(current_state)
+
+
+def duplicate_scenario(scenario_id: str) -> None:
+    """Duplicate an existing scenario by ID and activate the copy."""
+    current_state = project_state.value.model_copy(deep=True)
+    target_sc = None
+    for sc in current_state.scenarios:
+        if sc.id == scenario_id:
+            target_sc = sc
+            break
+
+    if target_sc is not None:
+        idx = len(current_state.scenarios) + 1
+        dup_sc = target_sc.model_copy(deep=True)
+        dup_sc.id = f"scenario_{idx}"
+        dup_sc.name = f"{target_sc.name} (Copy)"
+
+        for sc in current_state.scenarios:
+            sc.is_active = False
+
+        dup_sc.is_active = True
+        current_state.scenarios.append(dup_sc)
+        current_state.active_scenario_id = dup_sc.id
+        project_state.set(current_state)
+
+
+def switch_active_scenario(scenario_id: str) -> None:
+    """Switch active scenario by ID."""
+    current_state = project_state.value.model_copy(deep=True)
+    found = False
+    for sc in current_state.scenarios:
+        if sc.id == scenario_id:
+            sc.is_active = True
+            found = True
+        else:
+            sc.is_active = False
+
+    if found:
+        current_state.active_scenario_id = scenario_id
+        project_state.set(current_state)
+
+
+def save_project_json() -> str:
+    """Serialize project state to .settle JSON format string."""
+    return project_state.value.model_dump_json(indent=2)
+
+
+def load_project_json(json_content: str) -> bool:
+    """Load project state from .settle JSON string.
+
+    Parameters
+    ----------
+    json_content : str
+        JSON formatted string.
+
+    Returns
+    -------
+    bool
+        True if loaded successfully, False otherwise.
+    """
+    try:
+        new_state = ProjectState.model_validate_json(json_content)
+        project_state.set(new_state)
+        return True
+    except Exception:
+        return False
 
 
 def load_project_from_file(file_path: Path | str) -> None:
