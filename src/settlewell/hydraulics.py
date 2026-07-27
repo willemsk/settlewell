@@ -258,8 +258,8 @@ def compute_drawdown_at_points(
 
     Parameters
     ----------
-    points : list[tuple[float, float]]
-        List of (x, y) coordinate pairs [m].
+    points : list[tuple[float, float]] or numpy.ndarray
+        List of (x, y) coordinate pairs [m] or a NumPy array of shape (N, 2).
     config : DewateringConfig
         Dewatering configuration with well coordinates and rates.
     profile : SoilProfile
