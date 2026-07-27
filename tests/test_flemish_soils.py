@@ -1,0 +1,76 @@
+"""Unit tests for NBN EN 1997-1 ANB Eurocode 7 Flemish soil library and design approaches."""
+
+from settlewell.solara_app.schemas import (
+    DesignApproach,
+    ScenarioSchema,
+    SoilLayerSchema,
+    SolverSettingsSchema,
+)
+from settlewell.soils import FLEMISH_SOIL_PRESETS, FlemishSoilType
+from settlewell.solara_app.state import (
+    load_flemish_profile_template,
+    project_state,
+    run_full_consolidation_solve,
+)
+
+
+def test_flemish_soil_presets_completeness() -> None:
+    """Verify all Flemish soil types exist in preset dictionary with valid parameters."""
+    for soil_type in FlemishSoilType:
+        assert soil_type in FLEMISH_SOIL_PRESETS
+        preset = FLEMISH_SOIL_PRESETS[soil_type]
+        assert preset["gamma_sat"] >= preset["gamma_dry"] > 0
+        assert preset["E_modulus"] > 0
+        assert preset["k_h"] > 0
+        assert preset["ocr"] >= 1.0
+
+
+def test_flemish_profile_template_loading() -> None:
+    """Verify loading Flemish profile templates into global reactive state."""
+    load_flemish_profile_template("Antwerp Boom Clay Formation")
+
+    active_sc = project_state.value.get_active_scenario()
+    assert len(active_sc.stratigraphy) == 3
+    assert active_sc.stratigraphy[2].flemish_type == FlemishSoilType.BOOMSE_KLEI
+    assert active_sc.stratigraphy[2].ocr == 3.0
+
+
+def test_eurocode_7_design_approach_safety_factors() -> None:
+    """Verify Eurocode 7 partial safety factor scaling under ULS DA1-2 / GEO Set M2."""
+    sc_sls = ScenarioSchema(
+        id="sls",
+        solver_settings=SolverSettingsSchema(
+            design_approach=DesignApproach.SLS_CHARACTERISTIC
+        ),
+        stratigraphy=[
+            SoilLayerSchema(
+                id="l1",
+                flemish_type=FlemishSoilType.BOOMSE_KLEI,
+                thickness=5.0,
+                Cc=0.35,
+                Cr=0.06,
+                ocr=1.0,
+            )
+        ],
+    )
+
+    sc_uls = ScenarioSchema(
+        id="uls",
+        solver_settings=SolverSettingsSchema(design_approach=DesignApproach.EC7_DA1_M2),
+        stratigraphy=[
+            SoilLayerSchema(
+                id="l1",
+                flemish_type=FlemishSoilType.BOOMSE_KLEI,
+                thickness=5.0,
+                Cc=0.35,
+                Cr=0.06,
+                ocr=1.0,
+            )
+        ],
+    )
+
+    res_sls = run_full_consolidation_solve(sc_sls)
+    res_uls = run_full_consolidation_solve(sc_uls)
+
+    # ULS design mode with partial safety factors increases elastic settlement & primary consolidation
+    assert res_uls["primary_settlement_mm"] >= res_sls["primary_settlement_mm"]
