@@ -10,6 +10,7 @@ dependencies = [
     "scipy>=1.10",
     "matplotlib>=3.7",
     "plotly>=5.15",
+    "pydantic>=2.0",
 ]
 
 [project.optional-dependencies]
@@ -17,7 +18,6 @@ notebook = ["jupyter>=1.0", "ipykernel>=6.0"]
 test = ["pytest>=7.0"]
 web = [
     "solara>=1.60.3",
-    "pydantic>=2.13.4",
     "ipycanvas>=0.14.3",
     "anywidget>=0.9.0",
     "reportlab>=5.0.0",
