@@ -7,7 +7,31 @@ and neighboring buildings.
 
 import math
 from dataclasses import dataclass
-from enum import Enum
+from enum import Enum, StrEnum
+
+
+class SoilTypeUSCS(StrEnum):
+    """USCS Soil Classification types for visualization and hatching."""
+
+    SAND = "SAND"
+    CLAY = "CLAY"
+    GRAVEL = "GRAVEL"
+    PEAT = "PEAT"
+
+
+class FlemishSoilType(StrEnum):
+    """NBN EN 1997-1 ANB Flemish standard soil classification types."""
+
+    BOOMSE_KLEI = "BOOMSE_KLEI"
+    IEPERSE_KLEI = "IEPERSE_KLEI"
+    ALLUVIALE_KLEI = "ALLUVIALE_KLEI"
+    BRABANTSE_LEEM = "BRABANTSE_LEEM"
+    PLEISTOCEEN_ZAND = "PLEISTOCEEN_ZAND"
+    DIESTIAAN_ZAND = "DIESTIAAN_ZAND"
+    BRUSSELIAAN_ZAND = "BRUSSELIAAN_ZAND"
+    MAASGRIND = "MAASGRIND"
+    HOLOCEEN_VEEN = "HOLOCEEN_VEEN"
+    ANTROPOGEEN = "ANTROPOGEEN"
 
 
 class AquiferType(Enum):
