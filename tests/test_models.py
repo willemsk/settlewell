@@ -1,6 +1,7 @@
 """Unit tests for settlewell.models — dataclass properties and validation."""
 
 import pytest
+from pydantic import ValidationError
 
 from settlewell.models import (
     Building,
@@ -42,7 +43,7 @@ class TestSoilProfile:
         `gwl_mtaw` (6.0) is higher than `surface_level_mtaw` (5.0). The expected result is that
         a `ValueError` is raised upon initialization.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             SoilProfile(
                 layers=[
                     SoilLayer("X", 1.0, 17.0, 19.0, 1e-4, 0.5, 0.02, 0.005, 30000, 1e-2)
@@ -57,7 +58,7 @@ class TestSoilProfile:
         which would crash downstream math. It attempts to create a profile passing an empty list
         to `layers`. The expected result is that a `ValueError` is raised.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             SoilProfile(layers=[], gwl_mtaw=4.0, surface_level_mtaw=5.0)
 
 
@@ -100,7 +101,7 @@ class TestSoilLayerValidation:
             "OCR": 1.0,
         }
         kwargs[field] = value
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             SoilLayer(**kwargs)
 
     def test_rejects_gamma_sat_less_than_gamma(self):
@@ -109,7 +110,7 @@ class TestSoilLayerValidation:
         must always be greater than or equal to its dry unit weight (`gamma`). It attempts to create a
         layer violating this rule. The expected result is a `ValueError`.
         """
-        with pytest.raises(ValueError):
+        with pytest.raises(ValidationError):
             SoilLayer(
                 name="X",
                 thickness=1.0,
@@ -220,24 +221,28 @@ class TestModelsEdgeCases:
 
         # e0 < 0
         kwargs["e0"] = -0.1
-        with pytest.raises(ValueError, match="Initial void ratio e0"):
+        with pytest.raises(ValidationError, match="Initial void ratio e0"):
             SoilLayer(**kwargs)
 
         # Cc < 0
         kwargs["e0"] = 0.5
         kwargs["Cc"] = -0.1
-        with pytest.raises(ValueError, match="Compression index Cc"):
+        with pytest.raises(ValidationError, match="Compression index Cc"):
             SoilLayer(**kwargs)
 
         # Cr < 0
         kwargs["Cc"] = 0.02
         kwargs["Cr"] = -0.1
-        with pytest.raises(ValueError, match="Recompression index Cr must be >= 0"):
+        with pytest.raises(
+            ValidationError, match="Recompression index Cr must be >= 0"
+        ):
             SoilLayer(**kwargs)
 
         # Cr > Cc
         kwargs["Cr"] = 0.05
-        with pytest.raises(ValueError, match="cannot exceed virgin compression index"):
+        with pytest.raises(
+            ValidationError, match="cannot exceed virgin compression index"
+        ):
             SoilLayer(**kwargs)
 
     def test_soilprofile_validation_edges(self):
@@ -249,12 +254,12 @@ class TestModelsEdgeCases:
         """
         # Empty layers
         with pytest.raises(
-            ValueError, match="SoilProfile must contain at least one SoilLayer."
+            ValidationError, match="SoilProfile must contain at least one SoilLayer."
         ):
             SoilProfile(layers=[], gwl_mtaw=0.0, surface_level_mtaw=2.0)
 
         # gwl_mtaw > surface_level_mtaw
-        with pytest.raises(ValueError, match="cannot be above surface level"):
+        with pytest.raises(ValidationError, match="cannot be above surface level"):
             SoilProfile(
                 layers=[
                     SoilLayer(
@@ -291,11 +296,11 @@ class TestModelsEdgeCases:
         The expected result is that a `ValueError` is raised for each case.
         """
         # r_w <= 0
-        with pytest.raises(ValueError, match="Well radius"):
+        with pytest.raises(ValidationError, match="Well radius"):
             Well(x=0, y=0, Q=0.001, r_w=0.0)
 
         # screen_top < screen_bottom
-        with pytest.raises(ValueError, match="cannot be below screen_bottom_mtaw"):
+        with pytest.raises(ValidationError, match="cannot be below screen_bottom_mtaw"):
             Well(x=0, y=0, Q=0.001, screen_top_mtaw=-10.0, screen_bottom_mtaw=-5.0)
 
     def test_constructionpit_validation_edges(self):
@@ -305,13 +310,13 @@ class TestModelsEdgeCases:
         The expected result is that a `ValueError` is raised for each invalid dimension.
         """
         # length <= 0
-        with pytest.raises(ValueError, match="length must be"):
+        with pytest.raises(ValidationError, match="length must be"):
             ConstructionPit(length=0.0, width=10.0, depth=5.0)
         # width <= 0
-        with pytest.raises(ValueError, match="width must be"):
+        with pytest.raises(ValidationError, match="width must be"):
             ConstructionPit(length=10.0, width=0.0, depth=5.0)
         # depth <= 0
-        with pytest.raises(ValueError, match="depth must be"):
+        with pytest.raises(ValidationError, match="depth must be"):
             ConstructionPit(length=10.0, width=10.0, depth=0.0)
 
     def test_dewateringconfig_validation_edges(self):
@@ -322,7 +327,7 @@ class TestModelsEdgeCases:
         """
         well = Well(x=0, y=0, Q=0.001)
         # target_drawdown_mtaw > original_gwl_mtaw
-        with pytest.raises(ValueError, match="cannot be above"):
+        with pytest.raises(ValidationError, match="cannot be above"):
             DewateringConfig(
                 wells=[well],
                 target_drawdown_mtaw=5.0,
@@ -331,7 +336,7 @@ class TestModelsEdgeCases:
             )
 
         # pumping_duration_days <= 0
-        with pytest.raises(ValueError, match="pumping_duration_days must be"):
+        with pytest.raises(ValidationError, match="pumping_duration_days must be"):
             DewateringConfig(
                 wells=[well],
                 target_drawdown_mtaw=2.0,
@@ -340,7 +345,7 @@ class TestModelsEdgeCases:
             )
 
         # R <= 0
-        with pytest.raises(ValueError, match="Radius of influence R"):
+        with pytest.raises(ValidationError, match="Radius of influence R"):
             DewateringConfig(
                 wells=[well],
                 target_drawdown_mtaw=2.0,
@@ -350,7 +355,7 @@ class TestModelsEdgeCases:
             )
 
         # T <= 0
-        with pytest.raises(ValueError, match="Transmissivity T"):
+        with pytest.raises(ValidationError, match="Transmissivity T"):
             DewateringConfig(
                 wells=[well],
                 target_drawdown_mtaw=2.0,
@@ -360,7 +365,7 @@ class TestModelsEdgeCases:
             )
 
         # S <= 0
-        with pytest.raises(ValueError, match="Storativity S"):
+        with pytest.raises(ValidationError, match="Storativity S"):
             DewateringConfig(
                 wells=[well],
                 target_drawdown_mtaw=2.0,
@@ -376,13 +381,13 @@ class TestModelsEdgeCases:
         The expected result is that `ValueError` exceptions are raised appropriately.
         """
         # length <= 0
-        with pytest.raises(ValueError, match="Building length"):
+        with pytest.raises(ValidationError, match="Building length"):
             Building(x=0, y=0, length=0.0, width=10.0)
         # width <= 0
-        with pytest.raises(ValueError, match="Building width"):
+        with pytest.raises(ValidationError, match="Building width"):
             Building(x=0, y=0, length=10.0, width=0.0)
         # foundation_depth < 0
-        with pytest.raises(ValueError, match="Building foundation_depth"):
+        with pytest.raises(ValidationError, match="Building foundation_depth"):
             Building(x=0, y=0, length=10.0, width=10.0, foundation_depth=-1.0)
 
     def test_soillayer_cv_edge(self):
@@ -404,5 +409,7 @@ class TestModelsEdgeCases:
             "Cv": -1.0,
             "OCR": 1.0,
         }
-        with pytest.raises(ValueError, match="Coefficient of consolidation Cv must be"):
+        with pytest.raises(
+            ValidationError, match="Coefficient of consolidation Cv must be"
+        ):
             SoilLayer(**kwargs)
