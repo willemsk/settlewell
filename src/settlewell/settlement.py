@@ -245,6 +245,7 @@ def compute_total_settlement(
     profile: SoilProfile,
     drawdown: float,
     method: str = "cc_cr",
+    additional_stress: np.ndarray | None = None,
 ) -> tuple[float, list[float]]:
     """Compute total vertical surface settlement across all soil layers.
 
@@ -280,6 +281,8 @@ def compute_total_settlement(
     _, delta_sigma_v = compute_stress_increase_from_drawdown(
         profile, drawdown, z_points=z_mids_arr
     )
+    if additional_stress is not None:
+        delta_sigma_v += additional_stress
 
     per_layer = []
     for i, layer in enumerate(profile.layers):

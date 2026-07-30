@@ -206,11 +206,11 @@ def plot_cross_section(
 def plot_plan_view(
     pit: ConstructionPit,
     config: DewateringConfig,
-    building: Building,
+    building: Building | None,
     X_grid: np.ndarray,
     Y_grid: np.ndarray,
     drawdown_grid: np.ndarray,
-    assessment: DamageAssessment,
+    assessment: DamageAssessment | None,
 ) -> plt.Figure:
     """Plan view with pit, wells, drawdown contours, and building footprint.
 
@@ -271,25 +271,28 @@ def plot_plan_view(
         )
 
     # 4. Building footprint
-    corners = building.corner_coordinates()
-    polygon = plt.Polygon(
-        corners,
-        closed=True,
-        facecolor=assessment.risk_color,
-        edgecolor="black",
-        linewidth=2,
-        alpha=0.8,
-        label=f"Gebouw (Risico: {assessment.damage_description})",
-    )
-    ax.add_patch(polygon)
+    if building is not None and assessment is not None:
+        corners = building.corner_coordinates()
+        polygon = plt.Polygon(
+            corners,
+            closed=True,
+            facecolor=assessment.risk_color,
+            edgecolor="black",
+            linewidth=2,
+            alpha=0.8,
+            label=f"Gebouw (Risico: {assessment.damage_description})",
+        )
+        ax.add_patch(polygon)
 
-    # Annotate building corners with settlement values
-    building.evaluation_points()  # [center, c1, c2, c3, c4]
-    corner_keys = ["corner_1", "corner_2", "corner_3", "corner_4"]
-    for idx, (cx, cy) in enumerate(corners):
-        key = corner_keys[idx]
-        s_mm = assessment.settlement_at_points.get(key, 0.0) * 1000.0
-        ax.text(cx, cy, f" {s_mm:.1f}mm", fontsize=9, weight="bold", color="darkred")
+        # Annotate building corners with settlement values
+        building.evaluation_points()  # [center, c1, c2, c3, c4]
+        corner_keys = ["corner_1", "corner_2", "corner_3", "corner_4"]
+        for idx, (cx, cy) in enumerate(corners):
+            key = corner_keys[idx]
+            s_mm = assessment.settlement_at_points.get(key, 0.0) * 1000.0
+            ax.text(
+                cx, cy, f" {s_mm:.1f}mm", fontsize=9, weight="bold", color="darkred"
+            )
 
     ax.set_xlabel("X-coördinaat [m]", fontsize=12)
     ax.set_ylabel("Y-coördinaat [m]", fontsize=12)
@@ -509,7 +512,7 @@ def plot_3d_drawdown(
     Y_grid: np.ndarray,
     drawdown_grid: np.ndarray,
     pit: ConstructionPit,
-    building: Building,
+    building: Building | None = None,
 ) -> go.Figure:
     """Interactive 3D surface plot of the drawdown cone using Plotly.
 

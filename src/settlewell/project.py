@@ -156,9 +156,14 @@ class Project:
 
     @soil.setter
     def soil(self, value: SoilProfile | None) -> None:
-        self._soil = value
-        self._validate_cross_dependencies()
-        self._invalidate_results()
+        old_val = self._soil
+        try:
+            self._soil = value
+            self._validate_cross_dependencies()
+            self._invalidate_results()
+        except ValueError:
+            self._soil = old_val
+            raise
 
     @property
     def pit(self) -> ConstructionPit | None:
@@ -166,9 +171,14 @@ class Project:
 
     @pit.setter
     def pit(self, value: ConstructionPit | None) -> None:
-        self._pit = value
-        self._validate_cross_dependencies()
-        self._invalidate_results()
+        old_val = self._pit
+        try:
+            self._pit = value
+            self._validate_cross_dependencies()
+            self._invalidate_results()
+        except ValueError:
+            self._pit = old_val
+            raise
 
     @property
     def dewatering(self) -> DewateringConfig | None:
@@ -176,9 +186,14 @@ class Project:
 
     @dewatering.setter
     def dewatering(self, value: DewateringConfig | None) -> None:
-        self._dewatering = value
-        self._validate_cross_dependencies()
-        self._invalidate_results()
+        old_val = self._dewatering
+        try:
+            self._dewatering = value
+            self._validate_cross_dependencies()
+            self._invalidate_results()
+        except ValueError:
+            self._dewatering = old_val
+            raise
 
     @property
     def buildings(self) -> list[Building]:
@@ -309,6 +324,23 @@ class Project:
                 "must be set before calling solve()."
             )
 
+    def _get_building_optional(self, building_idx: int) -> Building | None:
+        """Get building by index. Returns None if project has no buildings."""
+        if not self.buildings:
+            return None
+        if building_idx < 0 or building_idx >= len(self.buildings):
+            raise IndexError(
+                f"Building index {building_idx} out of range for {len(self.buildings)} buildings."
+            )
+        return self.buildings[building_idx]
+
+    def _get_building_required(self, building_idx: int) -> Building:
+        """Get building by index. Raises ValueError if project has no buildings."""
+        b = self._get_building_optional(building_idx)
+        if b is None:
+            raise ValueError("This plot requires at least one building in the project.")
+        return b
+
     def solve_hydraulics(self) -> HydraulicsResults:
         """Solve hydraulic drawdown distribution across the calculation domain."""
         self._validate_ready_to_solve()
@@ -407,7 +439,10 @@ class Project:
         )[0]
 
         total_settlement, per_layer = compute_total_settlement(
-            self.soil, drawdown_center, method=self.settings.settlement_method
+            self.soil,
+            drawdown_center,
+            method=self.settings.settlement_method,
+            additional_stress=str_res.delta_sigma_v,
         )
 
         if self.settings.calculate_creep:
@@ -491,15 +526,7 @@ class Project:
         assert self.soil is not None
         assert self.pit is not None
         assert self.dewatering is not None
-        b = (
-            self.buildings[building_idx]
-            if building_idx < len(self.buildings)
-            else (
-                self.buildings[0]
-                if self.buildings
-                else Building(x=10.0, y=0.0, length=10.0, width=10.0)
-            )
-        )
+        b = self._get_building_required(building_idx)
         dd_b = compute_drawdown_at_points(
             np.array([[b.x, b.y]]), self.dewatering, self.soil
         )[0]
@@ -521,19 +548,17 @@ class Project:
         assert self.results.hydraulics is not None
         assert self.results.damage is not None
 
-        b = (
-            self.buildings[building_idx]
-            if building_idx < len(self.buildings)
-            else (
-                self.buildings[0]
-                if self.buildings
-                else Building(x=10.0, y=0.0, length=10.0, width=10.0)
+        b = self._get_building_optional(building_idx)
+        if b is not None:
+            b_key = b.id if b.id else b.name or f"Building_{building_idx}"
+            assessment = self.results.damage.assessments.get(
+                b_key,
+                list(self.results.damage.assessments.values())[0]
+                if self.results.damage.assessments
+                else None,
             )
-        )
-        b_key = b.id if b.id else b.name or f"Building_{building_idx}"
-        assessment = self.results.damage.assessments.get(
-            b_key, list(self.results.damage.assessments.values())[0]
-        )
+        else:
+            assessment = None
 
         return plotting.plot_plan_view(
             self.pit,
@@ -553,15 +578,7 @@ class Project:
         assert self.pit is not None
         assert self.dewatering is not None
 
-        b = (
-            self.buildings[building_idx]
-            if building_idx < len(self.buildings)
-            else (
-                self.buildings[0]
-                if self.buildings
-                else Building(x=15.0, y=0.0, length=10.0, width=10.0)
-            )
-        )
+        b = self._get_building_required(building_idx)
         x_transect = np.linspace(-self.pit.length, b.x + b.length, 50)
         pts = np.column_stack((x_transect, np.zeros_like(x_transect)))
         drawdowns = compute_drawdown_at_points(pts, self.dewatering, self.soil)
@@ -634,15 +651,7 @@ class Project:
         assert self.results is not None
         assert self.results.hydraulics is not None
 
-        b = (
-            self.buildings[building_idx]
-            if building_idx < len(self.buildings)
-            else (
-                self.buildings[0]
-                if self.buildings
-                else Building(x=10.0, y=0.0, length=10.0, width=10.0)
-            )
-        )
+        b = self._get_building_optional(building_idx)
         return plotting.plot_3d_drawdown(
             self.results.hydraulics.X_grid,
             self.results.hydraulics.Y_grid,
@@ -681,12 +690,15 @@ class Project:
 
         assert self.results is not None
         assert self.results.damage is not None
-
-        b = self.buildings[building_idx] if building_idx < len(self.buildings) else None
-        b_key = (b.id if b.id else b.name) if b else None
-        assessment = (
-            self.results.damage.assessments.get(b_key)
-            if b_key and b_key in self.results.damage.assessments
-            else list(self.results.damage.assessments.values())[0]
+        b = self._get_building_required(building_idx)
+        b_key = b.id if b.id else b.name or f"Building_{building_idx}"
+        assessment = self.results.damage.assessments.get(
+            b_key,
+            list(self.results.damage.assessments.values())[0]
+            if self.results.damage.assessments
+            else None,
         )
+        if assessment is None:
+            raise ValueError(f"No damage assessment found for building {b_key}.")
+
         return plotting.plot_damage_summary(assessment, **kwargs)
