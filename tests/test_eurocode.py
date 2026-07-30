@@ -47,3 +47,10 @@ class TestEurocodePartialFactors:
         assert scaled_layer.Eoed == pytest.approx(orig_layer.Eoed / 1.25)
         assert scaled_layer.Cc == pytest.approx(orig_layer.Cc * 1.25)
         assert scaled_layer.Cr == pytest.approx(orig_layer.Cr * 1.25)
+
+    def test_unsupported_design_approach_raises_value_error(
+        self, sample_profile: SoilProfile
+    ):
+        """Test invalid design approach raises ValueError."""
+        with pytest.raises(ValueError, match="Unsupported design approach"):
+            apply_partial_factors(sample_profile, "INVALID_APPROACH")  # type: ignore

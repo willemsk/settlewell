@@ -23,8 +23,10 @@ def fadum_corner_stress(b: float, l_dim: float, z: float) -> float:
     float
         Vertical stress influence factor Iz [-].
     """
-    if z <= 1e-6 or b <= 1e-6 or l_dim <= 1e-6:
+    if z <= 1e-6:
         return 0.25
+    if b <= 1e-6 or l_dim <= 1e-6:
+        return 0.0
 
     m = b / z
     n = l_dim / z
@@ -141,6 +143,13 @@ def compute_load_stress_increment(
     -------
     float
         Vertical stress increment [kPa].
+
+    Raises
+    ------
+    NotImplementedError
+        If `method` is `StressMethod.WESTERGAARD`.
+    ValueError
+        If `method` is not a recognized `StressMethod`.
     """
     q = max(0.0, float(load.stress_q))
     B = max(0.1, float(load.width_B))

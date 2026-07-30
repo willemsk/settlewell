@@ -14,10 +14,10 @@ from settlewell.stress import (
 
 class TestFadumCornerStress:
     def test_surface_edge_case(self):
-        """Test Fadum corner stress returns 0.25 when z, b, or l is near zero."""
+        """Test Fadum corner stress returns 0.25 at surface and 0.0 for zero dimensions."""
         assert fadum_corner_stress(b=1.0, l_dim=1.0, z=1e-7) == pytest.approx(0.25)
-        assert fadum_corner_stress(b=0.0, l_dim=1.0, z=2.0) == pytest.approx(0.25)
-        assert fadum_corner_stress(b=1.0, l_dim=0.0, z=2.0) == pytest.approx(0.25)
+        assert fadum_corner_stress(b=0.0, l_dim=1.0, z=2.0) == pytest.approx(0.0)
+        assert fadum_corner_stress(b=1.0, l_dim=0.0, z=2.0) == pytest.approx(0.0)
 
     def test_poulos_and_davis_known_value(self):
         """Test Fadum corner stress for m=1, n=1 (b=1, l=1, z=1) matches ~0.1752."""

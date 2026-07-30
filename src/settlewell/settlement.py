@@ -7,6 +7,7 @@ using Cc/Cr (logarithmic) or Eoed (linear) approach, as well as time-dependent c
 import math
 
 import numpy as np
+from numpy.typing import NDArray
 
 from .models import SoilLayer, SoilProfile
 
@@ -387,7 +388,7 @@ def compute_settlement_vs_time(
 
 
 def compute_elastic_settlement(
-    profile: SoilProfile, delta_sigma_z: np.ndarray
+    profile: SoilProfile, delta_sigma_z: NDArray[np.float64]
 ) -> float:
     """Compute instant elastic settlement of the soil profile.
 
@@ -395,7 +396,7 @@ def compute_elastic_settlement(
     ----------
     profile : SoilProfile
         The soil profile.
-    delta_sigma_z : np.ndarray
+    delta_sigma_z : NDArray[np.float64]
         The stress increase at the midpoint of each layer [kPa]. Length must match profile.layers.
 
     Returns
@@ -474,10 +475,10 @@ def compute_full_consolidation_curve(
     s_primary_ult: float,
     cv_eq: float,
     h_dr: float,
-    times_days: np.ndarray,
+    times_days: NDArray[np.float64],
     c_alpha_to_cc: float = 0.05,
     t_p_days: float = 365.0,
-) -> np.ndarray:
+) -> NDArray[np.float64]:
     """Compute full time-consolidation settlement curve (elastic + primary + creep).
 
     Parameters

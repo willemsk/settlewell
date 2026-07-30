@@ -20,6 +20,11 @@ def apply_partial_factors(
     -------
     SoilProfile
         A new SoilProfile with scaled soil parameters.
+
+    Raises
+    ------
+    ValueError
+        If `approach` is not a recognized `DesignApproach`.
     """
     if (
         approach == DesignApproach.SLS_CHARACTERISTIC
@@ -41,4 +46,4 @@ def apply_partial_factors(
 
         return profile.model_copy(update={"layers": new_layers}, deep=True)
 
-    return profile.model_copy(deep=True)
+    raise ValueError(f"Unsupported design approach: {approach}")
