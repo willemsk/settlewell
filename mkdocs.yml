@@ -45,6 +45,7 @@ nav:
 - Theory: theory.md
 - API Reference:
   - Models: api/models.md
+  - Stress: api/stress.md
   - Hydraulics: api/hydraulics.md
   - Settlement: api/settlement.md
   - Damage: api/damage.md

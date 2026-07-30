@@ -61,6 +61,14 @@ from .settlement import (
     compute_stress_increase_from_drawdown,
     compute_total_settlement,
 )
+from .stress import (
+    boussinesq_rectangular_stress,
+    boussinesq_strip_stress,
+    compute_load_stress_increment,
+    compute_stress_heatmap,
+    compute_stress_profile_under_loads,
+    fadum_corner_stress,
+)
 
 __version__ = "0.1.0"
 
@@ -86,6 +94,8 @@ __all__ = [
     "Well",
     "__version__",
     "assess_building_damage",
+    "boussinesq_rectangular_stress",
+    "boussinesq_strip_stress",
     "classify_damage",
     "compute_degree_of_consolidation",
     "compute_drawdown_at_points",
@@ -93,14 +103,18 @@ __all__ = [
     "compute_initial_stress_profile",
     "compute_layer_settlement_cc_cr",
     "compute_layer_settlement_eoed",
+    "compute_load_stress_increment",
     "compute_radius_of_influence",
     "compute_settlement_vs_time",
     "compute_storativity",
+    "compute_stress_heatmap",
     "compute_stress_increase_from_drawdown",
+    "compute_stress_profile_under_loads",
     "compute_total_settlement",
     "compute_transmissivity",
     "create_grid",
     "extract_drawdown_at_points",
+    "fadum_corner_stress",
     "plot_3d_drawdown",
     "plot_3d_drawdown_mpl",
     "plot_cross_section",
