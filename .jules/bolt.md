@@ -16,3 +16,7 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+
+## 2026-07-26 - Vectorized Grid Point Slicing for Interpolators
+**Learning:** `extract_drawdown_at_points` in `src/settlewell/numerical.py` used a slow list comprehension `np.array([(py, px) for px, py in points], dtype=float)` to swap coordinates for `RegularGridInterpolator`. This caused overhead when calling interpolation on massive numerical meshes.
+**Action:** When preparing evaluation arrays for `RegularGridInterpolator` where dimensions need swapping, use `np.asarray` combined with vectorized column slicing (e.g. `pts[:, [1, 0]]`) instead of a list comprehension to avoid Python iteration overhead and maintain high performance.

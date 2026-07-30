@@ -198,7 +198,7 @@ def solve_steady_state(
 
 def extract_drawdown_at_points(
     grid: FDGrid,
-    points: list[tuple[float, float]],
+    points: list[tuple[float, float]] | np.ndarray,
     H0: float,
 ) -> np.ndarray:
     """Extract drawdown at arbitrary (x, y) coordinates using bilinear interpolation.
@@ -207,8 +207,8 @@ def extract_drawdown_at_points(
     ----------
     grid : FDGrid
         Grid containing solved hydraulic head field.
-    points : list[tuple[float, float]]
-        List of (x, y) coordinate pairs [m].
+    points : list[tuple[float, float]] or numpy.ndarray
+        List of (x, y) coordinate pairs [m] or a NumPy array of shape (N, 2).
     H0 : float
         Undisturbed groundwater head [mTAW].
 
@@ -229,7 +229,11 @@ def extract_drawdown_at_points(
         fill_value=H0,
     )
 
-    eval_pts = np.array([(py, px) for px, py in points], dtype=float)
+    pts = np.asarray(points, dtype=float)
+    if pts.size == 0:
+        return np.array([], dtype=float)
+
+    eval_pts = pts[:, [1, 0]]  # Swap x and y for interpolator
     h_interp = interpolator(eval_pts)
     s = H0 - h_interp
     return np.maximum(0.0, s)
