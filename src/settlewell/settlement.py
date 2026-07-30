@@ -406,7 +406,7 @@ def compute_elastic_settlement(
     """
     s_e = 0.0
     for layer, dsigma in zip(profile.layers, delta_sigma_z):
-        if layer.Eoed > 0 and dsigma > 0:
+        if layer.Eoed > 1e-3 and dsigma > 0:
             s_e += (dsigma / layer.Eoed) * layer.thickness
     return s_e
 

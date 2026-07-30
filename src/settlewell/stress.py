@@ -38,7 +38,9 @@ def fadum_corner_stress(b: float, l_dim: float, z: float) -> float:
     term1 = (2.0 * m * n * math.sqrt(v) / (v + v_mn)) * ((v + 1.0) / v)
     arg2 = (2.0 * m * n * math.sqrt(v)) / (v - v_mn)
 
-    if v - v_mn < 0:
+    if abs(v - v_mn) < 1e-12:
+        arg2_val = math.pi / 2.0
+    elif v - v_mn < 0:
         arg2_val = math.atan(arg2) + math.pi
     else:
         arg2_val = math.atan(arg2)
@@ -240,6 +242,9 @@ def compute_stress_heatmap(
     heatmap = np.zeros((len(z_points), len(x_points)), dtype=np.float64)
     primary_q = loads[0].stress_q if loads else 100.0
 
+    # TODO: Optimize this loop via vectorization.
+    # A double loop over scalar physics functions is a performance bottleneck for large grids.
+    # Future sprints should vectorize boussinesq/fadum equations to accept NumPy arrays.
     for i, z in enumerate(z_points):
         for j, x in enumerate(x_points):
             ds_sum = 0.0
