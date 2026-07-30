@@ -9,6 +9,7 @@ from .damage import (
     assess_building_damage,
     classify_damage,
 )
+from .eurocode import apply_partial_factors
 from .hydraulics import (
     compute_drawdown_at_points,
     compute_drawdown_grid,
@@ -54,9 +55,13 @@ from .plotting import (
 )
 from .settlement import (
     compute_degree_of_consolidation,
+    compute_elastic_settlement,
+    compute_equivalent_cv,
+    compute_full_consolidation_curve,
     compute_initial_stress_profile,
     compute_layer_settlement_cc_cr,
     compute_layer_settlement_eoed,
+    compute_secondary_creep,
     compute_settlement_vs_time,
     compute_stress_increase_from_drawdown,
     compute_total_settlement,
@@ -93,6 +98,7 @@ __all__ = [
     "StressMethod",
     "Well",
     "__version__",
+    "apply_partial_factors",
     "assess_building_damage",
     "boussinesq_rectangular_stress",
     "boussinesq_strip_stress",
@@ -100,11 +106,15 @@ __all__ = [
     "compute_degree_of_consolidation",
     "compute_drawdown_at_points",
     "compute_drawdown_grid",
+    "compute_elastic_settlement",
+    "compute_equivalent_cv",
+    "compute_full_consolidation_curve",
     "compute_initial_stress_profile",
     "compute_layer_settlement_cc_cr",
     "compute_layer_settlement_eoed",
     "compute_load_stress_increment",
     "compute_radius_of_influence",
+    "compute_secondary_creep",
     "compute_settlement_vs_time",
     "compute_storativity",
     "compute_stress_heatmap",

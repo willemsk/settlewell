@@ -384,3 +384,143 @@ def compute_settlement_vs_time(
             settlements += layer_ult[i]
 
     return settlements
+
+
+def compute_elastic_settlement(
+    profile: SoilProfile, delta_sigma_z: np.ndarray
+) -> float:
+    """Compute instant elastic settlement of the soil profile.
+
+    Parameters
+    ----------
+    profile : SoilProfile
+        The soil profile.
+    delta_sigma_z : np.ndarray
+        The stress increase at the midpoint of each layer [kPa]. Length must match profile.layers.
+
+    Returns
+    -------
+    float
+        Total elastic settlement [m].
+    """
+    s_e = 0.0
+    for layer, dsigma in zip(profile.layers, delta_sigma_z):
+        if layer.Eoed > 0 and dsigma > 0:
+            s_e += (dsigma / layer.Eoed) * layer.thickness
+    return s_e
+
+
+def compute_secondary_creep(
+    s_primary: float,
+    c_alpha_to_cc: float,
+    t_days: float,
+    t_p_days: float = 365.0,
+) -> float:
+    """Compute secondary compression (creep) settlement.
+
+    Parameters
+    ----------
+    s_primary : float
+        Ultimate primary consolidation settlement [m].
+    c_alpha_to_cc : float
+        Ratio of secondary compression index to primary compression index (C_alpha / C_c).
+    t_days : float
+        Elapsed time [days].
+    t_p_days : float, default 365.0
+        Time for completion of primary consolidation [days].
+
+    Returns
+    -------
+    float
+        Creep settlement [m].
+    """
+    if t_days <= t_p_days or t_p_days <= 0 or s_primary <= 0:
+        return 0.0
+
+    s_creep = s_primary * c_alpha_to_cc * math.log10(t_days / t_p_days)
+    return max(0.0, s_creep)
+
+
+def compute_equivalent_cv(profile: SoilProfile) -> float:
+    """Compute equivalent coefficient of consolidation (Cv_eq) for layered strata.
+
+    Parameters
+    ----------
+    profile : SoilProfile
+        The soil profile.
+
+    Returns
+    -------
+    float
+        Equivalent Cv [m^2/s].
+    """
+    H_total = sum(layer.thickness for layer in profile.layers)
+    if H_total <= 0:
+        return 0.0
+
+    denom = 0.0
+    for layer in profile.layers:
+        cv_val = layer.Cv if layer.Cv > 0 else 1e-7
+        denom += layer.thickness / math.sqrt(cv_val)
+
+    if denom <= 0:
+        return 0.0
+
+    return (H_total**2) / (denom**2)
+
+
+def compute_full_consolidation_curve(
+    s_elastic: float,
+    s_primary_ult: float,
+    cv_eq: float,
+    h_dr: float,
+    times_days: np.ndarray,
+    c_alpha_to_cc: float = 0.05,
+    t_p_days: float = 365.0,
+) -> np.ndarray:
+    """Compute full time-consolidation settlement curve (elastic + primary + creep).
+
+    Parameters
+    ----------
+    s_elastic : float
+        Instant elastic settlement [m].
+    s_primary_ult : float
+        Ultimate primary consolidation settlement [m].
+    cv_eq : float
+        Equivalent coefficient of consolidation [m^2/s].
+    h_dr : float
+        Drainage path length [m].
+    times_days : np.ndarray
+        Array of elapsed times [days].
+    c_alpha_to_cc : float, default 0.05
+        Ratio of secondary compression index C_alpha to primary compression index C_c.
+    t_p_days : float, default 365.0
+        Time to end of primary consolidation [days].
+
+    Returns
+    -------
+    np.ndarray
+        Total settlement at each time step [m].
+    """
+    times_arr = np.asarray(times_days, dtype=float)
+    settlement_curve = np.zeros_like(times_arr, dtype=float)
+
+    for i, t_days in enumerate(times_arr):
+        if t_days <= 0:
+            settlement_curve[i] = max(0.0, s_elastic)
+            continue
+
+        t_sec = t_days * 86400.0
+        if h_dr <= 0:
+            U = 1.0
+        else:
+            Tv = (cv_eq * t_sec) / (h_dr**2)
+            U = compute_degree_of_consolidation(Tv)
+
+        s_primary = s_primary_ult * U
+        s_creep = compute_secondary_creep(
+            s_primary_ult, c_alpha_to_cc, t_days, t_p_days
+        )
+        settlement_curve[i] = max(0.0, s_elastic + s_primary + s_creep)
+
+    return settlement_curve

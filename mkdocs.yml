@@ -1,6 +1,5 @@
 site_name: Settlewell Documentation
-site_description: Ground Settlement Calculation During Dewatering of Construction
-  Pits
+site_description: Ground Settlement Calculation During Dewatering of Construction Pits
 site_author: Kherim Willems
 theme:
   name: material
@@ -48,6 +47,7 @@ nav:
   - Stress: api/stress.md
   - Hydraulics: api/hydraulics.md
   - Settlement: api/settlement.md
+  - Eurocode: api/eurocode.md
   - Damage: api/damage.md
   - Numerical: api/numerical.md
   - Plotting: api/plotting.md
