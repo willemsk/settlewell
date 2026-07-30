@@ -427,8 +427,12 @@ class SolverSettings(BaseDomainModel):
     stress_method: StressMethod = Field(default=StressMethod.BOUSSINESQ)
     drainage: DrainageType = Field(default=DrainageType.DOUBLE)
     design_approach: DesignApproach = Field(default=DesignApproach.SLS_CHARACTERISTIC)
+    hydraulics_solver: str = Field(default="analytical")
+    settlement_method: str = Field(default="cc_cr")
     z_max: float = Field(gt=0.0, default=20.0)
     delta_z: float = Field(gt=0.0, default=0.25)
+    grid_dx: float = Field(gt=0.0, default=1.0)
+    grid_padding: float = Field(gt=0.0, default=50.0)
     x_min: float = -15.0
     x_max: float = 15.0
     t_start_days: float = Field(ge=1.0, default=1.0)

@@ -43,6 +43,7 @@ nav:
 - Validation & Physics: validation.md
 - Theory: theory.md
 - API Reference:
+  - Project: api/project.md
   - Models: api/models.md
   - Stress: api/stress.md
   - Hydraulics: api/hydraulics.md
