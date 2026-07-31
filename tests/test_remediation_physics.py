@@ -184,3 +184,42 @@ def test_single_vs_double_drainage() -> None:
     # Double drainage reaches 50% degree of consolidation faster than single drainage
     idx_mid = 15
     assert res_double["U_percent"][idx_mid] > res_single["U_percent"][idx_mid]
+
+
+def test_project_remediation_physics_via_orchestrator() -> None:
+    """Verify Project orchestrator handles explicit permeability and influence radius correctly."""
+    from settlewell import (
+        AquiferType,
+        ConstructionPit,
+        DewateringConfig,
+        Project,
+        SoilLayer,
+        SoilProfile,
+    )
+
+    l_sand = SoilLayer(
+        "Coarse Sand", 10.0, 18.0, 20.0, 1e-3, 0.5, 0.0, 0.0, 10000.0, 1e-2
+    )
+    l_clay = SoilLayer(
+        "Silty Clay", 10.0, 16.0, 18.5, 1e-7, 1.0, 0.3, 0.06, 3000.0, 1e-7
+    )
+
+    prof_sand = SoilProfile(layers=[l_sand], gwl_mtaw=4.0, surface_level_mtaw=5.0)
+    prof_clay = SoilProfile(layers=[l_clay], gwl_mtaw=4.0, surface_level_mtaw=5.0)
+
+    config = DewateringConfig(
+        wells=[],
+        target_drawdown_mtaw=1.5,
+        original_gwl_mtaw=4.0,
+        pumping_duration_days=10,
+        aquifer_type=AquiferType.UNCONFINED,
+    )
+    pit = ConstructionPit(length=10.0, width=8.0, depth=3.0)
+
+    p_sand = Project(soil=prof_sand, dewatering=config, pit=pit)
+    p_clay = Project(soil=prof_clay, dewatering=config, pit=pit)
+
+    res_sand = p_sand.solve_hydraulics()
+    res_clay = p_clay.solve_hydraulics()
+
+    assert res_sand.R > res_clay.R

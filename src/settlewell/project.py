@@ -366,19 +366,18 @@ class Project:
             else compute_radius_of_influence(self.dewatering, T, H0)
         )
 
+        x_min = -self.pit.length / 2.0 - self.settings.grid_padding
+        x_max = self.pit.length / 2.0 + self.settings.grid_padding
+        y_min = -self.pit.width / 2.0 - self.settings.grid_padding
+        y_max = self.pit.width / 2.0 + self.settings.grid_padding
+
         mode = self.settings.hydraulics_solver.lower()
         if mode == "numerical":
-            grid = create_grid(
-                self.pit, dx=self.settings.grid_dx, padding=self.settings.grid_padding
-            )
+            grid = create_grid((x_min, x_max), (y_min, y_max), dx=self.settings.grid_dx)
             solve_steady_state(grid, self.dewatering, self.soil, self.pit)
             X_grid, Y_grid = np.meshgrid(grid.x, grid.y)
             drawdown_grid = H0 - grid.head
         else:
-            x_min = -self.pit.length / 2.0 - self.settings.grid_padding
-            x_max = self.pit.length / 2.0 + self.settings.grid_padding
-            y_min = -self.pit.width / 2.0 - self.settings.grid_padding
-            y_max = self.pit.width / 2.0 + self.settings.grid_padding
             nx = max(10, int((x_max - x_min) / self.settings.grid_dx))
             ny = max(10, int((y_max - y_min) / self.settings.grid_dx))
             X_grid, Y_grid, drawdown_grid = compute_drawdown_grid(

@@ -350,3 +350,18 @@ class TestHydraulicsEdgeCases:
         # t <= 0 case
         s = theis_drawdown_single_well(10.0, 0.0, 0.001, 5e-4, 1e-4)
         assert np.all(s == 0.0)
+
+
+class TestProjectHydraulicsIntegration:
+    """Test hydraulics solving using the Project orchestrator API."""
+
+    def test_project_solve_hydraulics(self, standard_project):
+        """Test Project.solve_hydraulics populates HydraulicsResults."""
+        res = standard_project.solve_hydraulics()
+        assert res.T > 0
+        assert res.S > 0
+        assert res.R > 0
+        assert res.drawdown_grid is not None
+        assert res.X_grid is not None
+        assert res.Y_grid is not None
+        assert res.drawdown_grid.shape == res.X_grid.shape

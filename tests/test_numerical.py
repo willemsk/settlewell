@@ -138,3 +138,17 @@ class TestExtractDrawdown:
 
         with pytest.warns(UserWarning, match="is located on or outside grid boundary"):
             solve_steady_state(grid, config, flemish_profile, pit)
+
+
+class TestProjectNumericalIntegration:
+    """Test numerical solver via Project orchestrator API."""
+
+    def test_project_numerical_solve(self, standard_project):
+        """Test Project.solve_hydraulics with numerical solver mode."""
+        standard_project.settings = standard_project.settings.model_copy(
+            update={"hydraulics_solver": "numerical"}
+        )
+        res = standard_project.solve_hydraulics()
+        assert res.drawdown_grid is not None
+        assert res.X_grid is not None
+        assert res.Y_grid is not None

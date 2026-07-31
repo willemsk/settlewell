@@ -198,3 +198,38 @@ class TestPlotContent:
         # Soil name not in dictionary (e.g., "unknown_material") should return fallback hex #B0C4DE
         color = get_soil_color("unknown_material")
         assert color == "#B0C4DE"
+
+
+class TestProjectPlottingIntegration:
+    """Test plot wrappers using the Project orchestrator API."""
+
+    def test_project_plot_wrappers(self, standard_project):
+        """Test calling plot wrappers on a solved Project instance."""
+        standard_project.solve()
+
+        fig1 = standard_project.plot_cross_section()
+        assert isinstance(fig1, plt.Figure)
+        plt.close(fig1)
+
+        fig2 = standard_project.plot_plan_view()
+        assert isinstance(fig2, plt.Figure)
+        plt.close(fig2)
+
+        fig3 = standard_project.plot_settlement_trough()
+        assert isinstance(fig3, plt.Figure)
+        plt.close(fig3)
+
+        fig4 = standard_project.plot_time_settlement()
+        assert isinstance(fig4, plt.Figure)
+        plt.close(fig4)
+
+        fig5 = standard_project.plot_effective_stress_profile()
+        assert isinstance(fig5, plt.Figure)
+        plt.close(fig5)
+
+        fig6 = standard_project.plot_3d_drawdown()
+        assert isinstance(fig6, go.Figure)
+
+        fig7 = standard_project.plot_damage_summary()
+        assert isinstance(fig7, plt.Figure)
+        plt.close(fig7)

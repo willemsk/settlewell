@@ -343,3 +343,18 @@ class TestSettlementEdgeCases:
         # Verify it calculates a result correctly for single drainage
         assert len(settlements_t) == 3
         assert settlements_t[1] > 0
+
+
+class TestProjectSettlementIntegration:
+    """Test settlement solving using the Project orchestrator API."""
+
+    def test_project_solve_settlement(self, standard_project):
+        """Test Project.solve_settlement populates SettlementResults."""
+        hyd = standard_project.solve_hydraulics()
+        str_res = standard_project.solve_stress()
+        set_res = standard_project.solve_settlement(hyd, str_res)
+
+        assert set_res.total_settlement > 0
+        assert len(set_res.per_layer_settlements) == len(standard_project.soil.layers)
+        assert set_res.time_settlement_curve is not None
+        assert set_res.times_days is not None

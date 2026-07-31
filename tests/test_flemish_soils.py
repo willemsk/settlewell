@@ -74,3 +74,17 @@ def test_eurocode_7_design_approach_safety_factors() -> None:
 
     # ULS design mode with partial safety factors increases elastic settlement & primary consolidation
     assert res_uls["primary_settlement_mm"] >= res_sls["primary_settlement_mm"]
+
+
+def test_project_from_template() -> None:
+    """Verify loading Flemish profile templates into a Project instance."""
+    from settlewell import Project
+
+    project = Project.from_template(
+        "Antwerp Boom Clay Formation", gwl_mtaw=4.0, surface_level_mtaw=5.0
+    )
+
+    assert project.soil is not None
+    assert len(project.soil.layers) == 3
+    assert "Klei" in project.soil.layers[2].name
+    assert project.soil.layers[2].OCR >= 1.0

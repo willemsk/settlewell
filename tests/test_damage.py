@@ -213,3 +213,22 @@ class TestAssessBuildingDamage:
         cat, desc, _crack, _color = damage.classify_damage(0.010, BuildingType.MASONRY)
         assert cat == 1
         assert desc == "Slight"
+
+
+class TestProjectDamageIntegration:
+    """Test building damage assessment using the Project orchestrator API."""
+
+    def test_project_solve_damage(self, standard_project):
+        """Test Project.solve_damage populates DamageResults."""
+        hyd = standard_project.solve_hydraulics()
+        set_res = standard_project.solve_settlement(
+            hyd, standard_project.solve_stress()
+        )
+        dam_res = standard_project.solve_damage(hyd, set_res)
+
+        b_key = standard_project.buildings[0].name
+        assert b_key in dam_res.assessments
+        assessment = dam_res.assessments[b_key]
+        assert assessment.differential_settlement >= 0
+        assert assessment.angular_distortion >= 0
+        assert 0 <= assessment.damage_category <= 5
