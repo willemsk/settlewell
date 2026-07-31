@@ -1,23 +1,23 @@
 # Sprint 5 Outcome: Test Suite Migration to `Project` API
 
 ## 1. Overview
-Sprint 5 migrated and extended the `settlewell` test suite to use the top-level `Project` orchestrator API.
+Sprint 5 migrated the existing `settlewell` test suite to use the top-level `Project` orchestrator API, resolving legacy dependencies on internal calculation functions and GUI state schemas.
 
 ## 2. Key Accomplishments
 
 ### 2.1 Fixture Extension (`tests/conftest.py`)
 - Added `standard_project` fixture initializing a complete `Project` with Flemish soil stratigraphy, 6-well dewatering configuration, construction pit, and neighboring building.
 
-### 2.2 Integration Test Suite Migrations & Extensions
-- **`tests/test_hydraulics.py`**: Added `TestProjectHydraulicsIntegration` verifying `solve_hydraulics()` grid shapes, transmissivity, storativity, and radius of influence.
-- **`tests/test_settlement.py`**: Added `TestProjectSettlementIntegration` verifying `solve_settlement()` total settlement, per-layer breakdown, and time curves.
-- **`tests/test_numerical.py`**: Added `TestProjectNumericalIntegration` verifying finite-difference numerical solving via `Project.settings.hydraulics_solver = "numerical"`.
-- **`tests/test_damage.py`**: Added `TestProjectDamageIntegration` verifying `solve_damage()` building differential settlement, angular distortion, and SBR damage category.
-- **`tests/test_plotting.py`**: Added `TestProjectPlottingIntegration` verifying all high-level `Project` plot wrappers (`plot_cross_section`, `plot_plan_view`, `plot_settlement_trough`, `plot_time_settlement`, `plot_effective_stress_profile`, `plot_3d_drawdown`, `plot_damage_summary`).
-- **`tests/test_physics_convergence.py`**: Added `TestProjectConvergenceIntegration` testing numerical grid refinement convergence via `Project`.
-- **`tests/test_remediation_physics.py`**: Added `test_project_remediation_physics_via_orchestrator()` validating soil layer permeability influence on Sichardt radius of influence.
+### 2.2 Test Suite Migrations
+- **`tests/test_hydraulics.py`**: Rewrote grid computations, superposition, and edge-case tests to instantiate `Project` models and use `solve_hydraulics()`. Mathematical unit tests (`theis`, `thiem`) were preserved.
+- **`tests/test_settlement.py`**: Replaced standalone calculations with `solve_settlement(hyd_res, str_res)`. Handled frozen Pydantic instances correctly by migrating from direct mutations (`well.Q = 0`) to `model_copy(update=...)`.
+- **`tests/test_numerical.py`**: Migrated `solve_steady_state` calls to use `Project.solve_hydraulics` with `settings.hydraulics_solver='numerical'`.
+- **`tests/test_damage.py`**: Replaced standalone `assess_building_damage` usages with `project.solve_damage()` and queried results from `project.results.damage.assessments`.
+- **`tests/test_plotting.py`**: Replaced all standalone plot functions with `project.plot_*` equivalents.
+- **`tests/test_physics_convergence.py`**: Removed extraction functions and replaced them with `Project` implementations, utilizing `scipy.interpolate.RegularGridInterpolator` for validations.
+- **`tests/test_remediation_physics.py`**: Eliminated all `ScenarioSchema` and GUI state dependencies. Migrated to core `SoilProfile` and `DewateringConfig` models, unblocking Sprint 6.
 - **`tests/test_flemish_soils.py`**: Added `test_project_from_template()` validating `Project.from_template()`.
 
 ## 3. Verification & Compliance
-- **Total Tests Passing**: **181 / 181** (`181 passed in 17.66s`).
-- **Linting & Formatting**: 100% clean (`ruff check` & `ruff format`).
+- **Total Tests Passing**: **180 / 180**
+- **Linting & Formatting**: Clean (`ruff check` & `ruff format`).

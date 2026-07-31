@@ -178,26 +178,42 @@ class TestTotalSettlement:
     total settlement value for the entire soil profile.
     """
 
-    def test_zero_drawdown_zero_settlement(self, flemish_profile):
+    def test_zero_drawdown_zero_settlement(self, standard_project):
         """
         This test performs a basic validation: if there is no drawdown applied to the profile,
         the total resulting settlement must be precisely zero. It computes total settlement on a
         standard profile with `drawdown=0.0`. The expected result is exactly 0.0 total settlement
         and 0.0 for every individual layer.
         """
-        total, per_layer = compute_total_settlement(flemish_profile, drawdown=0.0)
-        assert total == pytest.approx(0.0, abs=1e-12)
-        assert all(s == pytest.approx(0.0, abs=1e-12) for s in per_layer)
+        new_wells = [
+            w.model_copy(update={"Q": 0.0}) for w in standard_project.dewatering.wells
+        ]
+        standard_project.dewatering = standard_project.dewatering.model_copy(
+            update={"wells": new_wells}
+        )
 
-    def test_sum_matches_total(self, flemish_profile):
+        hyd_res = standard_project.solve_hydraulics()
+        str_res = standard_project.solve_stress()
+        set_res = standard_project.solve_settlement(hyd_res, str_res)
+
+        assert set_res.total_settlement == pytest.approx(0.0, abs=1e-12)
+        assert all(
+            s == pytest.approx(0.0, abs=1e-12) for s in set_res.per_layer_settlements
+        )
+
+    def test_sum_matches_total(self, standard_project):
         """
         This test verifies the accounting mechanism of the total settlement function.
         It ensures the reported total value is exactly equal to the mathematical sum of the returned list
         of individual layer settlements. The test calculates a 2.0m drawdown scenario. The expected
         result is that `total == sum(per_layer)` within floating-point tolerance.
         """
-        total, per_layer = compute_total_settlement(flemish_profile, drawdown=2.0)
-        assert total == pytest.approx(sum(per_layer), rel=1e-10)
+        hyd_res = standard_project.solve_hydraulics()
+        str_res = standard_project.solve_stress()
+        set_res = standard_project.solve_settlement(hyd_res, str_res)
+        assert set_res.total_settlement == pytest.approx(
+            sum(set_res.per_layer_settlements), rel=1e-10
+        )
 
 
 class TestDegreeOfConsolidation:
@@ -297,16 +313,19 @@ class TestSettlementEdgeCases:
         )
         assert len(delta_sigma) == len(flemish_profile.layers)
 
-    def test_unknown_settlement_method(self, flemish_profile):
+    def test_unknown_settlement_method(self, standard_project):
         """
         This test ensures that requesting an invalid or unsupported settlement calculation method
         ("unknown") explicitly raises a clear `ValueError`, preventing silent failures. It calls
         `compute_total_settlement` with the bad method string. The expected result is a caught `ValueError`.
         """
-        from settlewell.settlement import compute_total_settlement
-
+        standard_project.settings = standard_project.settings.model_copy(
+            update={"settlement_method": "unknown"}
+        )
         with pytest.raises(ValueError, match="Unknown settlement method 'unknown'"):
-            compute_total_settlement(flemish_profile, 1.0, method="unknown")
+            hyd_res = standard_project.solve_hydraulics()
+            str_res = standard_project.solve_stress()
+            standard_project.solve_settlement(hyd_res, str_res)
 
     def test_single_drainage_condition(self):
         """
