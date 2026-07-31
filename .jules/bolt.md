@@ -16,3 +16,7 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+
+## 2026-07-31 - NumPy overhead on pure scalar values
+**Learning:** In the `_fadum_corner` and `_compute_load_delta_sigma` functions (called thousands of times during fast elastic solves), the use of `numpy` functions (`np.sqrt`, `np.arctan`, etc.) on individual scalar floats resulted in immense overhead, taking >3 seconds for operations that should take milliseconds. The dispatch overhead for a NumPy operation on a Python scalar is surprisingly large compared to the native Python C-module `math`.
+**Action:** Always use the standard library `math` module instead of `numpy` for calculations executed frequently within loops when operating purely on single scalar values.
