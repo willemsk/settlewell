@@ -297,17 +297,17 @@ def compute_total_settlement(
     return sum(per_layer), per_layer
 
 
-def compute_degree_of_consolidation(Tv: float) -> float:
+def compute_degree_of_consolidation(Tv: float | np.ndarray) -> float | np.ndarray:
     """Compute Terzaghi average degree of consolidation U(Tv).
 
     Parameters
     ----------
-    Tv : float
+    Tv : float or numpy.ndarray
         Dimensionless time factor $T_v = \\frac{C_v t}{H_{\\text{dr}}^2}$.
 
     Returns
     -------
-    float
+    float or numpy.ndarray
         Average degree of consolidation $U \\in [0, 1]$.
 
     Notes
@@ -319,15 +319,28 @@ def compute_degree_of_consolidation(Tv: float) -> float:
     For $T_v > 0.2827$ ($U \\ge 60\\%$):
         $$U = 1 - \\frac{8}{\\pi^2} \\exp\\left(-\\frac{\\pi^2 T_v}{4}\\right)$$
     """
-    if Tv <= 0:
-        return 0.0
+    if np.isscalar(Tv):
+        if Tv <= 0:
+            return 0.0
+        if Tv <= 0.2827:
+            U = math.sqrt(4.0 * float(Tv) / math.pi)
+        else:
+            U = 1.0 - (8.0 / (math.pi**2)) * math.exp(-(math.pi**2) * float(Tv) / 4.0)
+        return float(min(1.0, max(0.0, U)))
 
-    if Tv <= 0.2827:
-        U = math.sqrt(4.0 * Tv / math.pi)
-    else:
-        U = 1.0 - (8.0 / (math.pi**2)) * math.exp(-(math.pi**2) * Tv / 4.0)
+    Tv_arr = np.asarray(Tv, dtype=float)
+    U_arr = np.zeros_like(Tv_arr)
+    mask_small = (Tv_arr > 0) & (Tv_arr <= 0.2827)
+    mask_large = Tv_arr > 0.2827
 
-    return min(1.0, max(0.0, U))
+    if np.any(mask_small):
+        U_arr[mask_small] = np.sqrt(4.0 * Tv_arr[mask_small] / np.pi)
+    if np.any(mask_large):
+        U_arr[mask_large] = 1.0 - (8.0 / (np.pi**2)) * np.exp(
+            -(np.pi**2) * Tv_arr[mask_large] / 4.0
+        )
+
+    return np.clip(U_arr, 0.0, 1.0)
 
 
 def compute_settlement_vs_time(
@@ -372,13 +385,11 @@ def compute_settlement_vs_time(
             else:
                 Hdr = layer.thickness  # Single drainage
 
-            for t_idx, t_sec in enumerate(times_s):
-                if t_sec > 0:
-                    Tv = layer.Cv * t_sec / (Hdr**2)
-                    U = compute_degree_of_consolidation(Tv)
-                    settlements[t_idx] += U * layer_ult[i]
-                else:
-                    settlements[t_idx] += 0.0
+            Tv_arr = layer.Cv * times_s / (Hdr**2)
+            U_arr = compute_degree_of_consolidation(Tv_arr)
+            # Ensure time 0 has zero consolidation (prevent any edge cases with Tv=0 float precision)
+            U_arr = np.where(times_s > 0, U_arr, 0.0)
+            settlements += U_arr * layer_ult[i]
         else:
             # Immediate settlement in permeable sand/fill layers
             settlements += layer_ult[i]
