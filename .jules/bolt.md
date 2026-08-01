@@ -16,3 +16,7 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+
+## 2025-02-12 - Vectorizing Transient Consolidation Time Series
+**Learning:** `compute_settlement_vs_time` was computing transient consolidation using a slow Python `for` loop across every time step in an array (e.g., thousands of steps). This caused significant latency in long-duration simulations.
+**Action:** When computing time-dependent physics (like `compute_degree_of_consolidation`), ensure the underlying function is refactored to support `numpy.ndarray` inputs via type broadening (`float | np.ndarray`) and uses vectorized array operations internally. Avoid applying heavy Python-level looping constructs over large time-series arrays.
