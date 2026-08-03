@@ -1,6 +1,8 @@
 """Unit test suite for Sprint 6: PDF, DXF, and CSV Export Engine."""
 
+import pytest
 import reacton
+
 from settlewell.solara_app.components.viewport import ExportView
 from settlewell.solara_app.export import (
     generate_csv_data,
@@ -8,7 +10,13 @@ from settlewell.solara_app.export import (
     generate_excel_workbook,
     generate_pdf_report,
 )
-from settlewell.solara_app.state import project_state
+from settlewell.solara_app.state import create_default_project_state, project_state
+
+
+@pytest.fixture(autouse=True)
+def reset_state() -> None:
+    """Reset global project state to default baseline for each test."""
+    project_state.set(create_default_project_state())
 
 
 def test_pdf_report_generation() -> None:

@@ -33,8 +33,6 @@ from settlewell.solara_app.components.viewport.stress_plots import (
 )
 from settlewell.solara_app.state import (
     project_state,
-    run_fast_elastic_solve,
-    run_full_consolidation_solve,
 )
 
 # Reactive active tab selection index and progress state
@@ -48,15 +46,16 @@ def ViewportContainer() -> solara.Element:
     """Render right viewport containing top Vuetify icon tabs and bottom solver status bar."""
     state = project_state.value
     active_sc = state.get_active_scenario()
-    elastic_res = run_fast_elastic_solve(active_sc)
-    s_elastic_mm = elastic_res["elastic_settlement_mm"]
+    project = active_sc.to_project()
+    res = project.solve()
+    s_elastic_mm = (res.settlement.total_settlement * 1000.0) if res.settlement else 0.0
 
     def trigger_deep_solve() -> None:
         is_solving.set(True)
         solve_progress.set(10.0)
         time.sleep(0.05)
         solve_progress.set(50.0)
-        run_full_consolidation_solve(active_sc)
+        project.solve()
         solve_progress.set(100.0)
         time.sleep(0.05)
         is_solving.set(False)
@@ -117,12 +116,12 @@ def ViewportContainer() -> solara.Element:
                         gap="8px",
                         style={"align-items": "center"},
                         children=[
-                            solara.Markdown("⚡ **Real-Time Elastic Settlement:**"),
-                            solara.Markdown(f"`s_e = {s_elastic_mm:.1f} mm`"),
+                            solara.Markdown("⚡ **Real-Time Settlement:**"),
+                            solara.Markdown(f"`s_total = {s_elastic_mm:.1f} mm`"),
                         ],
                     ),
                     solara.Button(
-                        label="▶ Run Full Consolidation Solve",
+                        label="▶ Run Full Solve",
                         on_click=trigger_deep_solve,
                         color="primary",
                     ),

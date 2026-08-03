@@ -124,19 +124,29 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
         ]
     ]
     for layer in scenario.stratigraphy:
+        flemish_val = (
+            layer.flemish_type.value
+            if hasattr(layer.flemish_type, "value")
+            else str(layer.flemish_type)
+        )
+        uscs_val = (
+            layer.uscs_type.value
+            if hasattr(layer.uscs_type, "value")
+            else str(layer.uscs_type)
+        )
         strat_table_data.append(
             [
                 layer.name,
-                layer.flemish_type.value,
-                layer.uscs_type.value,
+                flemish_val,
+                uscs_val,
                 f"{layer.thickness:.2f}",
-                f"{layer.gamma_dry:.1f}",
+                f"{layer.gamma:.1f}",
                 f"{layer.gamma_sat:.1f}",
                 f"{layer.e0:.2f}",
-                f"{layer.E_modulus:.1f}",
+                f"{layer.Eoed / 1000.0:.1f}",
                 f"{layer.Cc:.2f}",
                 f"{layer.Cr:.3f}",
-                f"{layer.ocr:.1f}",
+                f"{layer.OCR:.1f}",
                 f"{layer.k_h:.1e}",
             ]
         )
@@ -173,10 +183,13 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
         ]
     ]
     for load in scenario.loads:
+        load_type_val = (
+            load.type.value if hasattr(load.type, "value") else str(load.type)
+        )
         load_table_data.append(
             [
                 load.name,
-                load.type.value,
+                load_type_val,
                 f"{load.x_center:.2f}",
                 f"{load.width_B:.2f}",
                 f"{load.length_L:.2f}",
@@ -205,10 +218,15 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
     )
     pit = scenario.construction_pit
     dewatering = scenario.dewatering
+    aquifer_val = (
+        dewatering.aquifer_type.value
+        if hasattr(dewatering.aquifer_type, "value")
+        else str(dewatering.aquifer_type)
+    )
     pit_info = (
         f"<b>Pit Dimensions:</b> Length L = {pit.length:.1f} m, Width W = {pit.width:.1f} m, "
         f"Excavation Depth d = {pit.depth:.1f} m.<br/>"
-        f"<b>Aquifer Classification:</b> {dewatering.aquifer_type.value} Aquifer &nbsp;&nbsp;|&nbsp;&nbsp; "
+        f"<b>Aquifer Classification:</b> {aquifer_val} Aquifer &nbsp;&nbsp;|&nbsp;&nbsp; "
         f"<b>Active Dewatering Wells:</b> {len(dewatering.wells)}"
     )
     story.append(Paragraph(pit_info, body_style))
@@ -260,13 +278,18 @@ def generate_pdf_report(scenario: ScenarioSchema) -> bytes:
             ]
         ]
         for bldg in scenario.buildings:
+            bldg_type_val = (
+                bldg.building_type.value
+                if hasattr(bldg.building_type, "value")
+                else str(bldg.building_type)
+            )
             bldg_table_data.append(
                 [
                     bldg.name,
                     f"{bldg.x_center:.2f}",
                     f"{bldg.foundation_depth:.2f}",
                     f"{bldg.length:.2f}",
-                    bldg.structural_type.value,
+                    bldg_type_val,
                 ]
             )
         t_bldg = Table(bldg_table_data, colWidths=[120, 80, 80, 80, 120])

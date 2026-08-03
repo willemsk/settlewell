@@ -101,7 +101,7 @@ class SoilLayer(BaseDomainModel):
     thickness: float = Field(gt=0.0)
     gamma: float = Field(gt=0.0)
     gamma_sat: float = Field(gt=0.0)
-    k_h: float = Field(gt=0.0)
+    k_h: float = Field(gt=0.0, default=1e-4)
     e0: float = Field(gt=0.0)
     Cc: float = Field(ge=0.0)
     Cr: float = Field(ge=0.0)
@@ -113,7 +113,21 @@ class SoilLayer(BaseDomainModel):
     uscs_type: SoilTypeUSCS = Field(default=SoilTypeUSCS.SAND)
     flemish_type: FlemishSoilType = Field(default=FlemishSoilType.PLEISTOCEEN_ZAND)
 
-    @field_validator("thickness", mode="before")
+    @property
+    def gamma_dry(self) -> float:
+        """Alias for gamma (dry unit weight) for GUI backward compatibility."""
+        return self.gamma
+
+    @property
+    def E_modulus(self) -> float:
+        """Alias for Eoed in MPa for GUI backward compatibility."""
+        return self.Eoed / 1000.0
+
+    @property
+    def ocr(self) -> float:
+        """Alias for OCR for GUI backward compatibility."""
+        return self.OCR
+
     @classmethod
     def _v_thickness(cls, v: Any) -> Any:
         if isinstance(v, (int, float)) and v <= 0:
@@ -270,9 +284,9 @@ class Well(BaseDomainModel):
 class ConstructionPit(BaseDomainModel):
     """Rectangular excavation geometry for a construction pit."""
 
-    length: float = Field(gt=0.0)
-    width: float = Field(gt=0.0)
-    depth: float = Field(gt=0.0)
+    length: float = Field(gt=0.0, default=20.0)
+    width: float = Field(gt=0.0, default=15.0)
+    depth: float = Field(gt=0.0, default=4.0)
     center_x: float = 0.0
     center_y: float = 0.0
     bottom_mtaw: float = 0.0
@@ -302,10 +316,10 @@ class ConstructionPit(BaseDomainModel):
 class DewateringConfig(BaseDomainModel):
     """Dewatering system layout and hydraulic target parameters."""
 
-    wells: list[Well]
-    target_drawdown_mtaw: float
-    original_gwl_mtaw: float
-    pumping_duration_days: float = Field(gt=0.0)
+    wells: list[Well] = Field(default_factory=list)
+    target_drawdown_mtaw: float = -2.0
+    original_gwl_mtaw: float = 4.0
+    pumping_duration_days: float = Field(gt=0.0, default=30.0)
     aquifer_type: AquiferType = AquiferType.UNCONFINED
     R: float | None = Field(gt=0.0, default=None)
     T: float | None = Field(gt=0.0, default=None)
@@ -356,15 +370,33 @@ class DewateringConfig(BaseDomainModel):
 class Building(BaseDomainModel):
     """Neighboring building structure for settlement damage assessment."""
 
-    x: float
-    y: float
-    length: float = Field(gt=0.0)
-    width: float = Field(gt=0.0)
+    x: float = 0.0
+    y: float = 0.0
+    length: float = Field(gt=0.0, default=10.0)
+    width: float = Field(gt=0.0, default=8.0)
     id: str | None = Field(default=None)
     name: str = Field(default="Building")
     orientation_deg: float = 0.0
     foundation_depth: float = Field(ge=0.0, default=0.6)
     building_type: BuildingType = BuildingType.MASONRY
+
+    @model_validator(mode="before")
+    @classmethod
+    def _remap_gui_fields(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            if "x_center" in data and "x" not in data:
+                data["x"] = data.pop("x_center")
+            if "structural_type" in data and "building_type" not in data:
+                data["building_type"] = data.pop("structural_type")
+        return data
+
+    @property
+    def x_center(self) -> float:
+        return self.x
+
+    @property
+    def structural_type(self) -> BuildingType:
+        return self.building_type
 
     @field_validator("length", mode="before")
     @classmethod

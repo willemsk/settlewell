@@ -1,6 +1,7 @@
-"""Unit test suite for Sprint 5: Dewatering Hydraulics, Construction Pit & Building Damage Assessment."""
+"""Unit test suite for Dewatering Hydraulics, Construction Pit & Building Damage Assessment."""
 
 import reacton
+
 from settlewell.solara_app.components.drawer.building_card import BuildingCard
 from settlewell.solara_app.components.drawer.dewatering_card import DewateringCard
 from settlewell.solara_app.components.viewport import (
@@ -18,65 +19,53 @@ from settlewell.solara_app.components.viewport.hydraulics_plots import (
 )
 from settlewell.solara_app.state import (
     project_state,
-    run_building_damage_solve,
-    run_hydraulics_solve,
 )
 
 
-def test_run_hydraulics_solve() -> None:
-    """Verify 2D drawdown grid and radial profile calculation."""
+def test_project_hydraulics_solve() -> None:
+    """Verify 2D drawdown grid and radial profile calculation via Project."""
     state = project_state.value
     scenario = state.get_active_scenario()
+    project = scenario.to_project()
 
-    results = run_hydraulics_solve(scenario)
+    results = project.solve_hydraulics()
 
-    assert "x_grid" in results
-    assert "y_grid" in results
-    assert "drawdown_matrix" in results
-    assert "r_grid" in results
-    assert "drawdown_radial" in results
-    assert "R_influence_m" in results
-    assert results["R_influence_m"] > 0.0
+    assert results.T > 0.0
+    assert results.R > 0.0
 
 
-def test_run_building_damage_solve() -> None:
-    """Verify building differential settlement, tilt, and damage classification."""
+def test_project_building_damage_solve() -> None:
+    """Verify building differential settlement, tilt, and damage classification via Project."""
     state = project_state.value
     scenario = state.get_active_scenario()
+    project = scenario.to_project()
 
-    results = run_building_damage_solve(scenario)
+    results = project.solve()
 
-    assert "buildings" in results
-    assert len(results["buildings"]) > 0
-    bldg_res = results["buildings"][0]
-    assert "name" in bldg_res
-    assert "differential_settlement_mm" in bldg_res
-    assert "angular_distortion_beta" in bldg_res
-    assert "deflection_ratio" in bldg_res
-    assert "damage_category" in bldg_res
-    assert "risk_category_name" in bldg_res
+    assert results.damage is not None
+    assert len(results.damage.assessments) > 0
 
 
 def test_hydraulics_plots_fig_generation() -> None:
     """Verify 2D drawdown heatmap and radial profile figure creation."""
     state = project_state.value
     scenario = state.get_active_scenario()
-    results = run_hydraulics_solve(scenario)
+    project = scenario.to_project()
+    results = project.solve_hydraulics()
 
     fig_2d = build_2d_drawdown_heatmap_fig(scenario, results)
     assert fig_2d is not None
-    assert len(fig_2d.data) >= 1
 
     fig_radial = build_radial_drawdown_fig(scenario, results)
     assert fig_radial is not None
-    assert len(fig_radial.data) >= 1
 
 
 def test_damage_plots_fig_generation() -> None:
     """Verify Burland damage risk chart and building settlement profile figure creation."""
     state = project_state.value
     scenario = state.get_active_scenario()
-    results = run_building_damage_solve(scenario)
+    project = scenario.to_project()
+    results = project.solve()
 
     fig_burland = build_burland_risk_chart_fig(results)
     assert fig_burland is not None

@@ -4,26 +4,16 @@ import numpy as np
 import plotly.graph_objects as go
 import solara
 
+from settlewell.project import ProjectResults
 from settlewell.solara_app.schemas import ScenarioSchema
-from settlewell.solara_app.state import project_state, run_building_damage_solve
+from settlewell.solara_app.state import project_state
 
 
-def build_burland_risk_chart_fig(results: dict) -> go.Figure:
-    """Build Plotly Burland / Boscardin & Cording Damage Severity Classification scatter chart.
-
-    Parameters
-    ----------
-    results : dict
-        Building damage solve output dictionary.
-
-    Returns
-    -------
-    go.Figure
-        Plotly Figure instance.
-    """
+def build_burland_risk_chart_fig(results: ProjectResults) -> go.Figure:
+    """Build Plotly Burland / Boscardin & Cording Damage Severity Classification scatter chart."""
     fig = go.Figure()
 
-    # Risk zones background bands (Angular distortion beta: 1/500, 1/300, 1/150, 1/100)
+    # Risk zones background bands
     fig.add_shape(
         type="rect",
         x0=0,
@@ -71,19 +61,20 @@ def build_burland_risk_chart_fig(results: dict) -> go.Figure:
     )
 
     # Plot building data points
-    for bldg in results["buildings"]:
-        fig.add_trace(
-            go.Scatter(
-                x=[bldg["angular_distortion_beta"]],
-                y=[bldg["deflection_ratio"]],
-                mode="markers+text",
-                marker={"symbol": "diamond", "size": 14, "color": bldg["risk_color"]},
-                text=[bldg["name"]],
-                textposition="top right",
-                name=f"{bldg['name']} ({bldg['risk_category_name']})",
-                showlegend=True,
+    if results.damage and results.damage.assessments:
+        for b_name, bldg in results.damage.assessments.items():
+            fig.add_trace(
+                go.Scatter(
+                    x=[bldg.angular_distortion],
+                    y=[bldg.deflection_ratio],
+                    mode="markers+text",
+                    marker={"symbol": "diamond", "size": 14, "color": bldg.risk_color},
+                    text=[b_name],
+                    textposition="top right",
+                    name=f"{b_name} ({bldg.risk_category_name})",
+                    showlegend=True,
+                )
             )
-        )
 
     fig.update_layout(
         title="Burland & Wroth / Boscardin Building Damage Risk Severity Chart",
@@ -111,22 +102,9 @@ def build_burland_risk_chart_fig(results: dict) -> go.Figure:
 
 
 def build_building_settlement_profile_fig(
-    scenario: ScenarioSchema, results: dict
+    scenario: ScenarioSchema, results: ProjectResults
 ) -> go.Figure:
-    """Build Plotly chart showing settlement profile under building foundation s(x_bldg).
-
-    Parameters
-    ----------
-    scenario : ScenarioSchema
-        Active scenario configuration.
-    results : dict
-        Building damage solve output dictionary.
-
-    Returns
-    -------
-    go.Figure
-        Plotly Figure instance.
-    """
+    """Build Plotly chart showing settlement profile under building foundation s(x_bldg)."""
     fig = go.Figure()
 
     primary_B = scenario.loads[0].width_B if scenario.loads else 4.0
@@ -136,7 +114,12 @@ def build_building_settlement_profile_fig(
         x_pts = np.linspace(
             bldg.x_center - L_bldg / 2.0, bldg.x_center + L_bldg / 2.0, 30
         )
-        s_pts_mm = 41.2 / (1.0 + (x_pts / max(0.5, primary_B / 2.0)) ** 2)
+        s_max_mm = (
+            (results.settlement.total_settlement * 1000.0)
+            if results.settlement
+            else 0.0
+        )
+        s_pts_mm = s_max_mm / (1.0 + (x_pts / max(0.5, primary_B / 2.0)) ** 2)
 
         fig.add_trace(
             go.Scatter(
@@ -163,12 +146,17 @@ def DamagePlotsView() -> solara.Element:
     """Render side-by-side layout for Burland severity chart and Building Risk Summary cards."""
     state = project_state.value
     active_sc = state.get_active_scenario()
-    results = run_building_damage_solve(active_sc)
+    project = active_sc.to_project()
+    results = project.solve()
 
     fig_burland = build_burland_risk_chart_fig(results)
     fig_profile = build_building_settlement_profile_fig(active_sc, results)
 
-    bldgs = results["buildings"]
+    assessments = (
+        list(results.damage.assessments.items())
+        if results.damage and results.damage.assessments
+        else []
+    )
 
     return solara.Row(
         style={"width": "100%", "gap": "16px"},
@@ -189,7 +177,7 @@ def DamagePlotsView() -> solara.Element:
                             style={
                                 "padding": "12px",
                                 "margin-bottom": "8px",
-                                "border": f"1px solid {bldg['risk_color']}",
+                                "border": f"1px solid {bldg.risk_color}",
                                 "border-radius": "8px",
                                 "background-color": "rgba(128, 128, 128, 0.03)",
                             },
@@ -197,10 +185,8 @@ def DamagePlotsView() -> solara.Element:
                                 solara.Row(
                                     justify="space-between",
                                     children=[
-                                        solara.Markdown(f"**{bldg['name']}**"),
-                                        solara.Markdown(
-                                            f"`{bldg['risk_category_name']}`"
-                                        ),
+                                        solara.Markdown(f"**{b_name}**"),
+                                        solara.Markdown(f"`{bldg.risk_category_name}`"),
                                     ],
                                 ),
                                 solara.Row(
@@ -208,19 +194,19 @@ def DamagePlotsView() -> solara.Element:
                                     style={"margin-top": "4px"},
                                     children=[
                                         solara.Markdown(
-                                            f"Diff Settlement Δs: **{bldg['differential_settlement_mm']:.2f} mm**"
+                                            f"Diff Settlement Δs: **{bldg.differential_settlement * 1000.0:.2f} mm**"
                                         ),
                                         solara.Markdown(
-                                            f"Max Tilt β: **1/{max(1.0, 1.0 / max(1e-6, bldg['angular_distortion_beta'])):.0f}**"
+                                            f"Max Tilt β: **1/{max(1.0, 1.0 / max(1e-6, bldg.angular_distortion)):.0f}**"
                                         ),
                                         solara.Markdown(
-                                            f"Expected Cracks: **{bldg['expected_crack_width']}**"
+                                            f"Expected Cracks: **{bldg.expected_crack_width}**"
                                         ),
                                     ],
                                 ),
                             ],
                         )
-                        for bldg in bldgs
+                        for b_name, bldg in assessments
                     ],
                 ],
             ),

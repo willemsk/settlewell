@@ -87,3 +87,7 @@ def test_solver_mesh_card_state_updates() -> None:
     assert settings.t_start_days == 2.0
     assert settings.t_end_years == 100.0
     assert settings.calculate_creep is False
+
+    # Reset state and solver settings to default
+    update_solver_settings(stress_method=StressMethod.BOUSSINESQ)
+    project_state.set(create_default_project_state())

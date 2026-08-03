@@ -6,27 +6,13 @@ import numpy as np
 import pandas as pd
 
 from settlewell.solara_app.schemas import ScenarioSchema
-from settlewell.solara_app.state import (
-    run_building_damage_solve,
-    run_fast_elastic_solve,
-    run_hydraulics_solve,
-)
 
 
 def generate_excel_workbook(scenario: ScenarioSchema) -> bytes:
-    """Generate a multi-tab Excel workbook (.xlsx) for a calculation scenario.
-
-    Parameters
-    ----------
-    scenario : ScenarioSchema
-        Active scenario configuration.
-
-    Returns
-    -------
-    bytes
-        Excel workbook contents as bytes.
-    """
+    """Generate a multi-tab Excel workbook (.xlsx) for a calculation scenario."""
     buffer = BytesIO()
+    project = scenario.to_project()
+    res = project.solve()
 
     # 1. Project Summary Sheet
     df_summary = pd.DataFrame(
@@ -68,50 +54,72 @@ def generate_excel_workbook(scenario: ScenarioSchema) -> bytes:
         [
             {
                 "Layer Name": layer.name,
-                "USCS": layer.uscs_type.value,
+                "USCS": layer.uscs_type.value
+                if hasattr(layer.uscs_type, "value")
+                else str(layer.uscs_type),
                 "Thickness_m": layer.thickness,
-                "Gamma_dry_kN_m3": layer.gamma_dry,
+                "Gamma_dry_kN_m3": layer.gamma,
                 "Gamma_sat_kN_m3": layer.gamma_sat,
                 "Initial_Void_Ratio_e0": layer.e0,
-                "E_modulus_MPa": layer.E_modulus,
+                "E_modulus_MPa": layer.Eoed / 1000.0,
                 "Cc": layer.Cc,
                 "Cr": layer.Cr,
-                "Cv_m2_yr": layer.Cv,
+                "Cv_m2_s": layer.Cv,
             }
             for layer in scenario.stratigraphy
         ]
     )
 
     # 3. Stress & Settlement Profile Sheet
-    elastic_res = run_fast_elastic_solve(scenario)
-    df_stress = pd.DataFrame(
-        {
-            "Depth_z_m": elastic_res["z_grid"],
-            "Effective_Overburden_kPa": elastic_res["sigma_v0_eff"],
-            "Delta_Stress_kPa": elastic_res["delta_sigma_z"],
-        }
-    )
+    if res.stress is not None:
+        df_stress = pd.DataFrame(
+            {
+                "Depth_z_m": res.stress.z,
+                "Effective_Overburden_kPa": res.stress.sigma_v0_eff,
+                "Delta_Stress_kPa": res.stress.delta_sigma_v,
+            }
+        )
+    else:
+        df_stress = pd.DataFrame()
 
     # 4. Dewatering Drawdown Sheet
-    hydraulics_res = run_hydraulics_solve(scenario)
-    df_hydraulics = pd.DataFrame(
-        {
-            "Distance_r_m": hydraulics_res["r_grid"],
-            "Drawdown_s_m": hydraulics_res["drawdown_radial"],
-        }
-    )
+    if res.hydraulics is not None and res.hydraulics.drawdown_grid is not None:
+        df_hydraulics = pd.DataFrame(
+            {
+                "Transmissivity_m2_s": [res.hydraulics.T],
+                "Storativity": [res.hydraulics.S],
+                "Radius_of_Influence_m": [res.hydraulics.R],
+            }
+        )
+    else:
+        df_hydraulics = pd.DataFrame()
+
+    import dataclasses
 
     # 5. Building Damage Results Sheet
-    damage_res = run_building_damage_solve(scenario)
-    df_damage = pd.DataFrame(damage_res["buildings"])
+    if res.damage and res.damage.assessments:
+        df_damage = pd.DataFrame(
+            [
+                dataclasses.asdict(bldg)
+                if dataclasses.is_dataclass(bldg)
+                else bldg.model_dump()
+                for bldg in res.damage.assessments.values()
+            ]
+        )
+    else:
+        df_damage = pd.DataFrame()
 
     with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
         df_summary.to_excel(writer, sheet_name="Project Summary", index=False)
         df_strat.to_excel(writer, sheet_name="Soil Stratigraphy", index=False)
-        df_stress.to_excel(
-            writer, sheet_name="Stress & Settlement Profile", index=False
-        )
-        df_hydraulics.to_excel(writer, sheet_name="Dewatering Drawdown", index=False)
+        if not df_stress.empty:
+            df_stress.to_excel(
+                writer, sheet_name="Stress & Settlement Profile", index=False
+            )
+        if not df_hydraulics.empty:
+            df_hydraulics.to_excel(
+                writer, sheet_name="Dewatering Drawdown", index=False
+            )
         if not df_damage.empty:
             df_damage.to_excel(
                 writer, sheet_name="Building Damage Results", index=False
@@ -121,35 +129,28 @@ def generate_excel_workbook(scenario: ScenarioSchema) -> bytes:
 
 
 def generate_csv_data(scenario: ScenarioSchema) -> bytes:
-    """Generate raw numerical settlement profile CSV data.
+    """Generate raw numerical settlement profile CSV data."""
+    project = scenario.to_project()
+    res = project.solve()
 
-    Parameters
-    ----------
-    scenario : ScenarioSchema
-        Active scenario configuration.
-
-    Returns
-    -------
-    bytes
-        CSV file contents as UTF-8 encoded bytes.
-    """
-    elastic_res = run_fast_elastic_solve(scenario)
-    df = pd.DataFrame(
-        {
-            "Depth_z_m": elastic_res["z_grid"],
-            "Sigma_v0_effective_kPa": elastic_res["sigma_v0_eff"],
-            "Delta_sigma_z_kPa": elastic_res["delta_sigma_z"],
-        }
-    )
+    if res.stress is not None:
+        df = pd.DataFrame(
+            {
+                "Depth_z_m": res.stress.z,
+                "Sigma_v0_effective_kPa": res.stress.sigma_v0_eff,
+                "Delta_sigma_z_kPa": res.stress.delta_sigma_v,
+            }
+        )
+    else:
+        df = pd.DataFrame()
 
     # Add surface settlement bowl profile points
     x_grid = np.linspace(
         scenario.solver_settings.x_min, scenario.solver_settings.x_max, 50
     )
     primary_B = scenario.loads[0].width_B if scenario.loads else 4.0
-    s_bowl_mm = elastic_res["elastic_settlement_mm"] / (
-        1.0 + (x_grid / max(0.5, primary_B / 2.0)) ** 2
-    )
+    s_max_mm = (res.settlement.total_settlement * 1000.0) if res.settlement else 0.0
+    s_bowl_mm = s_max_mm / (1.0 + (x_grid / max(0.5, primary_B / 2.0)) ** 2)
 
     df_bowl = pd.DataFrame(
         {"Horizontal_X_m": x_grid, "Surface_Settlement_s_mm": s_bowl_mm}

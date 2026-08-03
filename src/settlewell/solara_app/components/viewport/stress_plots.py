@@ -1,31 +1,28 @@
 """Stress Profiles & Stress Bulb Heatmap visualization view component."""
 
+import numpy as np
 import plotly.graph_objects as go
 import solara
 
+from settlewell.project import ProjectResults
 from settlewell.solara_app.schemas import ScenarioSchema
-from settlewell.solara_app.state import project_state, run_fast_elastic_solve
+from settlewell.solara_app.state import project_state
 
 
-def build_1d_stress_profile_fig(scenario: ScenarioSchema, results: dict) -> go.Figure:
-    """Build Plotly chart for 1D vertical depth stress profile curves.
-
-    Parameters
-    ----------
-    scenario : ScenarioSchema
-        Active scenario configuration.
-    results : dict
-        Fast elastic solve output dictionary.
-
-    Returns
-    -------
-    go.Figure
-        Plotly Figure instance.
-    """
-    z_grid = results["z_grid"]
-    sigma_v0_eff = results["sigma_v0_eff"]
-    sigma_v_total = results["sigma_v_total"]
-    delta_sigma_z = results["delta_sigma_z"]
+def build_1d_stress_profile_fig(
+    scenario: ScenarioSchema, results: ProjectResults
+) -> go.Figure:
+    """Build Plotly chart for 1D vertical depth stress profile curves."""
+    if results.stress is not None:
+        z_grid = results.stress.z
+        sigma_v0_eff = results.stress.sigma_v0_eff
+        delta_sigma_z = results.stress.delta_sigma_v
+        sigma_v_total = sigma_v0_eff + delta_sigma_z
+    else:
+        z_grid = np.linspace(0, 20, 50)
+        sigma_v0_eff = np.zeros_like(z_grid)
+        sigma_v_total = np.zeros_like(z_grid)
+        delta_sigma_z = np.zeros_like(z_grid)
 
     fig = go.Figure()
 
@@ -79,24 +76,24 @@ def build_1d_stress_profile_fig(scenario: ScenarioSchema, results: dict) -> go.F
     return fig
 
 
-def build_2d_stress_heatmap_fig(scenario: ScenarioSchema, results: dict) -> go.Figure:
-    """Build Plotly 2D contour heatmap of stress ratio Δσz / q.
+def build_2d_stress_heatmap_fig(
+    scenario: ScenarioSchema, results: ProjectResults
+) -> go.Figure:
+    """Build Plotly 2D contour heatmap of stress ratio Δσz / q."""
+    from settlewell.stress import compute_stress_heatmap
 
-    Parameters
-    ----------
-    scenario : ScenarioSchema
-        Active scenario configuration.
-    results : dict
-        Fast elastic solve output dictionary.
+    settings = scenario.solver_settings
+    z_max = max(1.0, settings.z_max)
+    dz = max(0.1, settings.delta_z)
+    z_grid = np.arange(0, z_max + dz, dz)
+    x_grid = np.linspace(settings.x_min, settings.x_max, 60)
 
-    Returns
-    -------
-    go.Figure
-        Plotly Figure instance.
-    """
-    z_grid = results["z_grid"]
-    x_grid = results["x_grid"]
-    heatmap = results["stress_heatmap"]
+    heatmap = compute_stress_heatmap(
+        loads=scenario.loads,
+        z_points=z_grid,
+        x_points=x_grid,
+        method=settings.stress_method,
+    )
 
     fig = go.Figure(
         data=go.Contour(
@@ -124,7 +121,8 @@ def StressPlotsView() -> solara.Element:
     """Render side-by-side dual plot layout for stress profiles and 2D contour heatmap."""
     state = project_state.value
     active_sc = state.get_active_scenario()
-    results = run_fast_elastic_solve(active_sc)
+    project = active_sc.to_project()
+    results = project.solve()
 
     fig_1d = build_1d_stress_profile_fig(active_sc, results)
     fig_2d = build_2d_stress_heatmap_fig(active_sc, results)
