@@ -1,5 +1,6 @@
 """Reactive state management and serialization for settlewell Solara web application."""
 
+import math
 from pathlib import Path
 
 import numpy as np
@@ -533,13 +534,14 @@ def _fadum_corner(b: float, l_dim: float, z: float) -> float:
     n2 = n**2
     v = m2 + n2 + 1.0
     v_mn = m2 * n2
-    term1 = (2.0 * m * n * np.sqrt(v) / (v + v_mn)) * ((v + 1.0) / v)
-    arg2 = (2.0 * m * n * np.sqrt(v)) / (v - v_mn)
+    sqrt_v = math.sqrt(v)
+    term1 = (2.0 * m * n * sqrt_v / (v + v_mn)) * ((v + 1.0) / v)
+    arg2 = (2.0 * m * n * sqrt_v) / (v - v_mn)
     if v - v_mn < 0:
-        arg2_val = np.arctan(arg2) + np.pi
+        arg2_val = math.atan(arg2) + math.pi
     else:
-        arg2_val = np.arctan(arg2)
-    return float((1.0 / (4.0 * np.pi)) * (term1 + arg2_val))
+        arg2_val = math.atan(arg2)
+    return float((1.0 / (4.0 * math.pi)) * (term1 + arg2_val))
 
 
 def _compute_load_delta_sigma(
