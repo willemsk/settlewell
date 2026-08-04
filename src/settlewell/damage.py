@@ -53,6 +53,11 @@ class DamageAssessment:
     expected_crack_width: str
     risk_color: str
 
+    @property
+    def risk_category_name(self) -> str:
+        """Alias for damage_description for GUI visualization."""
+        return self.damage_description
+
 
 # SBR damage classification thresholds
 # (threshold_beta, category, description_en, description_nl, crack_width, color)

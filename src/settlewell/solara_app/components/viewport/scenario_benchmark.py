@@ -5,30 +5,20 @@ import plotly.graph_objects as go
 import solara
 
 from settlewell.solara_app.schemas import ProjectState
-from settlewell.solara_app.state import project_state, run_fast_elastic_solve
+from settlewell.solara_app.state import project_state
 
 
 def build_scenario_comparison_fig(state: ProjectState) -> go.Figure:
-    """Build Plotly overlay chart comparing surface settlement bowls across all scenarios.
-
-    Parameters
-    ----------
-    state : ProjectState
-        Current global project state.
-
-    Returns
-    -------
-    go.Figure
-        Plotly Figure instance.
-    """
+    """Build Plotly overlay chart comparing surface settlement bowls across all scenarios."""
     fig = go.Figure()
     colors = ["#0284c7", "#f59e0b", "#16a34a", "#dc2626", "#8b5cf6"]
 
     for idx, sc in enumerate(state.scenarios):
         color = colors[idx % len(colors)]
-        res = run_fast_elastic_solve(sc)
+        project = sc.to_project()
+        res = project.solve()
         x_grid = np.linspace(sc.solver_settings.x_min, sc.solver_settings.x_max, 80)
-        s_max_mm = res["elastic_settlement_mm"]
+        s_max_mm = (res.settlement.total_settlement * 1000.0) if res.settlement else 0.0
         primary_B = sc.loads[0].width_B if sc.loads else 4.0
         primary_x0 = sc.loads[0].x_center if sc.loads else 0.0
 
@@ -70,13 +60,19 @@ def ScenarioBenchmarkView() -> solara.Element:
     fig_comp = build_scenario_comparison_fig(state)
 
     baseline_sc = state.scenarios[0] if state.scenarios else state.get_active_scenario()
-    baseline_res = run_fast_elastic_solve(baseline_sc)
-    baseline_s_mm = baseline_res["elastic_settlement_mm"]
+    baseline_res = baseline_sc.to_project().solve()
+    baseline_s_mm = (
+        (baseline_res.settlement.total_settlement * 1000.0)
+        if baseline_res.settlement
+        else 0.0
+    )
 
     rows = []
     for sc in state.scenarios:
-        sc_res = run_fast_elastic_solve(sc)
-        sc_s_mm = sc_res["elastic_settlement_mm"]
+        sc_res = sc.to_project().solve()
+        sc_s_mm = (
+            (sc_res.settlement.total_settlement * 1000.0) if sc_res.settlement else 0.0
+        )
         delta_mm = sc_s_mm - baseline_s_mm
         rows.append(
             {

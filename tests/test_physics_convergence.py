@@ -384,3 +384,34 @@ class TestThinLayerConvergence:
         assert rel_diff < 0.01, (
             f"Settlement not converged: N=12 → {results[-2]:.6f}, N=30 → {results[-1]:.6f}"
         )
+
+
+class TestProjectConvergenceIntegration:
+    """Test convergence behavior via Project orchestrator API."""
+
+    def test_project_grid_refinement_convergence(
+        self, flemish_profile, pit, six_well_config
+    ):
+        """Test numerical drawdown grid refinement convergence using Project."""
+        from settlewell import Project, SolverSettings
+
+        p_coarse = Project(
+            soil=flemish_profile,
+            dewatering=six_well_config,
+            pit=pit,
+            settings=SolverSettings(hydraulics_solver="numerical", grid_dx=4.0),
+        )
+        hyd_coarse = p_coarse.solve_hydraulics()
+
+        p_fine = Project(
+            soil=flemish_profile,
+            dewatering=six_well_config,
+            pit=pit,
+            settings=SolverSettings(hydraulics_solver="numerical", grid_dx=1.0),
+        )
+        hyd_fine = p_fine.solve_hydraulics()
+
+        assert hyd_coarse.drawdown_grid is not None
+        assert hyd_fine.drawdown_grid is not None
+        # Fine grid has higher resolution
+        assert hyd_fine.drawdown_grid.size > hyd_coarse.drawdown_grid.size

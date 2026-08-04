@@ -6,11 +6,11 @@ import pytest
 from settlewell import AquiferType, DewateringConfig, SoilLayer, SoilProfile, Well
 from settlewell.hydraulics import (
     compute_drawdown_at_points,
-    compute_drawdown_grid,
     compute_transmissivity,
     theis_drawdown_single_well,
     thiem_drawdown_single_well,
 )
+from settlewell.project import Project
 
 
 class TestTransmissivity:
@@ -159,8 +159,14 @@ class TestSuperposition:
             R=200.0,
             T=5e-4,
         )
-        s_2wells = compute_drawdown_at_points([(0.0, 0.0)], config_2, simple_profile)[0]
-        s_1well = compute_drawdown_at_points([(0.0, 0.0)], config_1, simple_profile)[0]
+        project_2 = Project(soil=simple_profile, dewatering=config_2)
+        project_1 = Project(soil=simple_profile, dewatering=config_1)
+        s_2wells = compute_drawdown_at_points(
+            [(0.0, 0.0)], project_2.dewatering, project_2.soil
+        )[0]
+        s_1well = compute_drawdown_at_points(
+            [(0.0, 0.0)], project_1.dewatering, project_1.soil
+        )[0]
         # At midpoint, r=10 for both wells; due to symmetry, s_2wells = 2 * s_1well
         assert s_2wells == pytest.approx(2 * s_1well, rel=1e-6)
 
@@ -172,41 +178,27 @@ class TestDrawdownGrid:
     receive properly structured and bounded data.
     """
 
-    def test_grid_shape(self, six_well_config, flemish_profile):
+    def test_grid_shape(self, standard_project):
         """
         This test verifies that the mesh grid generation yields coordinate and value matrices
         of the requested dimensions. It is required to prevent broadcasting errors in downstream
-        plotting or assessment functions. It calls `compute_drawdown_grid` asking for a 20x15 resolution grid.
-        The expected result is that the X, Y, and Drawdown arrays all match the shape (15, 20).
+        plotting or assessment functions.
         """
-        X, Y, S = compute_drawdown_grid(
-            x_range=(-50, 50),
-            y_range=(-50, 50),
-            nx=20,
-            ny=15,
-            config=six_well_config,
-            profile=flemish_profile,
-        )
-        assert X.shape == (15, 20)
-        assert Y.shape == (15, 20)
-        assert S.shape == (15, 20)
+        res = standard_project.solve_hydraulics()
+        assert res.X_grid.shape == res.Y_grid.shape
+        assert res.Y_grid.shape == res.drawdown_grid.shape
+        assert len(res.X_grid.shape) == 2
 
-    def test_drawdown_clipped(self, six_well_config, flemish_profile):
+    def test_drawdown_clipped(self, standard_project):
         """
         This test ensures that grid-wide drawdown values are physically realistic and appropriately bounded.
         It prevents models from predicting drawdown deeper than the aquifer bottom (which is impossible).
         The test generates a drawdown grid and compares every value against the initial saturated
         thickness (H0). The expected result is that all values are non-negative and do not exceed H0.
         """
-        H0 = flemish_profile.total_depth - flemish_profile.gwl_depth
-        _, _, S = compute_drawdown_grid(
-            x_range=(-50, 50),
-            y_range=(-50, 50),
-            nx=20,
-            ny=15,
-            config=six_well_config,
-            profile=flemish_profile,
-        )
+        H0 = standard_project.soil.total_depth - standard_project.soil.gwl_depth
+        res = standard_project.solve_hydraulics()
+        S = res.drawdown_grid
         assert np.all(S >= 0)
         assert np.all(S <= H0 + 1e-10)
 
@@ -229,11 +221,12 @@ class TestDrawdownGrid:
             R=200.0,
             T=5e-4,
         )
-        s = compute_drawdown_at_points([(0.0, 0.0)], config_unconfined, simple_profile)[
+        project = Project(soil=simple_profile, dewatering=config_unconfined)
+        s = compute_drawdown_at_points([(0.0, 0.0)], project.dewatering, project.soil)[
             0
         ]
         assert s > 0
-        H0 = simple_profile.total_depth - simple_profile.gwl_depth
+        H0 = project.soil.total_depth - project.soil.gwl_depth
         assert s < H0
 
 
@@ -262,7 +255,8 @@ class TestHydraulicsEdgeCases:
         )
         well = Well(x=0, y=0, Q=0.001)
         config = DewateringConfig([well], -10.0, 4.0, 1)
-        T = compute_transmissivity(profile, config)
+        project = Project(soil=profile, dewatering=config)
+        T = compute_transmissivity(project.soil, project.dewatering)
         assert T > 0
 
     def test_confined_steady_state_linear_superposition(self, simple_profile):
@@ -283,9 +277,10 @@ class TestHydraulicsEdgeCases:
             R=200.0,
             T=5e-4,
         )
+        project = Project(soil=simple_profile, dewatering=config)
         # Steady state calculation: time_s=None
         drawdowns = compute_drawdown_at_points(
-            [(0.0, 0.0)], config, simple_profile, time_s=None
+            [(0.0, 0.0)], project.dewatering, project.soil, time_s=None
         )
         assert drawdowns[0] > 0
 
@@ -308,9 +303,10 @@ class TestHydraulicsEdgeCases:
             T=5e-4,
             S=1e-4,
         )
+        project = Project(soil=simple_profile, dewatering=config)
         # Transient calculation: time_s > 0
         drawdowns = compute_drawdown_at_points(
-            [(0.0, 0.0)], config, simple_profile, time_s=86400.0
+            [(0.0, 0.0)], project.dewatering, project.soil, time_s=86400.0
         )
         assert drawdowns[0] > 0
 
@@ -333,7 +329,8 @@ class TestHydraulicsEdgeCases:
         config = DewateringConfig(
             [well], -10.0, 4.0, 1, aquifer_type=AquiferType.CONFINED
         )
-        T = compute_transmissivity(profile, config)
+        project = Project(soil=profile, dewatering=config)
+        T = compute_transmissivity(project.soil, project.dewatering)
         assert T > 0
 
     def test_theis_zero_time(self):
@@ -350,3 +347,18 @@ class TestHydraulicsEdgeCases:
         # t <= 0 case
         s = theis_drawdown_single_well(10.0, 0.0, 0.001, 5e-4, 1e-4)
         assert np.all(s == 0.0)
+
+
+class TestProjectHydraulicsIntegration:
+    """Test hydraulics solving using the Project orchestrator API."""
+
+    def test_project_solve_hydraulics(self, standard_project):
+        """Test Project.solve_hydraulics populates HydraulicsResults."""
+        res = standard_project.solve_hydraulics()
+        assert res.T > 0
+        assert res.S > 0
+        assert res.R > 0
+        assert res.drawdown_grid is not None
+        assert res.X_grid is not None
+        assert res.Y_grid is not None
+        assert res.drawdown_grid.shape == res.X_grid.shape

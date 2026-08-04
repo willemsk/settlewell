@@ -3,7 +3,7 @@
 import pytest
 
 from settlewell import BuildingType
-from settlewell.damage import assess_building_damage, classify_damage
+from settlewell.damage import classify_damage
 
 
 class TestClassifyDamage:
@@ -94,7 +94,7 @@ class TestAssessBuildingDamage:
     and that fallback mechanics operate correctly.
     """
 
-    def test_differential_settlement(self, building, flemish_profile, six_well_config):
+    def test_differential_settlement(self, standard_project):
         """
         This test checks that the calculated differential settlement is non-negative when
         subjected to a drawdown gradient. It guarantees that the physical constraints of the settlement
@@ -103,28 +103,13 @@ class TestAssessBuildingDamage:
         is that differential settlement and angular distortion are non-negative, and the resulting damage
         category falls within the valid range of 0 to 5.
         """
-        from functools import partial
-
-        from settlewell.hydraulics import compute_drawdown_at_points
-
-        drawdown_func = partial(
-            compute_drawdown_at_points,
-            config=six_well_config,
-            profile=flemish_profile,
-        )
-        assessment = assess_building_damage(
-            building,
-            flemish_profile,
-            six_well_config,
-            drawdown_func,
-        )
+        standard_project.solve()
+        assessment = list(standard_project.results.damage.assessments.values())[0]
         assert assessment.differential_settlement >= 0
         assert assessment.angular_distortion >= 0
         assert 0 <= assessment.damage_category <= 5
 
-    def test_angular_distortion_formula(
-        self, building, flemish_profile, six_well_config
-    ):
+    def test_angular_distortion_formula(self, standard_project):
         """
         This test verifies that the relationship between differential settlement and angular distortion
         (β = differential_settlement / distance between most-settled pair) is logically consistent.
@@ -132,47 +117,21 @@ class TestAssessBuildingDamage:
         The test assesses building damage under a standard six-well drawdown configuration. The expected
         result is that either the angular distortion is strictly positive, or the differential settlement is exactly zero.
         """
-        from functools import partial
-
-        from settlewell.hydraulics import compute_drawdown_at_points
-
-        drawdown_func = partial(
-            compute_drawdown_at_points,
-            config=six_well_config,
-            profile=flemish_profile,
-        )
-        assessment = assess_building_damage(
-            building,
-            flemish_profile,
-            six_well_config,
-            drawdown_func,
-        )
+        standard_project.solve()
+        assessment = list(standard_project.results.damage.assessments.values())[0]
         assert (
             assessment.angular_distortion > 0 or assessment.differential_settlement == 0
         )
 
-    def test_deflection_ratio(self, building, flemish_profile, six_well_config):
+    def test_deflection_ratio(self, standard_project):
         """
         This test confirms that the deflection ratio is calculated correctly and is non-negative.
         The deflection ratio is an important parameter in assessing structural bending and potential cracking.
         It executes `assess_building_damage` using typical test fixtures for building and soil properties.
         The expected result is that the resulting assessment object contains a non-negative `deflection_ratio`.
         """
-        from functools import partial
-
-        from settlewell.hydraulics import compute_drawdown_at_points
-
-        drawdown_func = partial(
-            compute_drawdown_at_points,
-            config=six_well_config,
-            profile=flemish_profile,
-        )
-        assessment = assess_building_damage(
-            building,
-            flemish_profile,
-            six_well_config,
-            drawdown_func,
-        )
+        standard_project.solve()
+        assessment = list(standard_project.results.damage.assessments.values())[0]
         assert assessment.deflection_ratio >= 0
 
     def test_damage_category_max_fallback(self):
@@ -213,3 +172,22 @@ class TestAssessBuildingDamage:
         cat, desc, _crack, _color = damage.classify_damage(0.010, BuildingType.MASONRY)
         assert cat == 1
         assert desc == "Slight"
+
+
+class TestProjectDamageIntegration:
+    """Test building damage assessment using the Project orchestrator API."""
+
+    def test_project_solve_damage(self, standard_project):
+        """Test Project.solve_damage populates DamageResults."""
+        hyd = standard_project.solve_hydraulics()
+        set_res = standard_project.solve_settlement(
+            hyd, standard_project.solve_stress()
+        )
+        dam_res = standard_project.solve_damage(hyd, set_res)
+
+        b_key = standard_project.buildings[0].name
+        assert b_key in dam_res.assessments
+        assessment = dam_res.assessments[b_key]
+        assert assessment.differential_settlement >= 0
+        assert assessment.angular_distortion >= 0
+        assert 0 <= assessment.damage_category <= 5

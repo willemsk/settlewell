@@ -1,6 +1,5 @@
 site_name: Settlewell Documentation
-site_description: Ground Settlement Calculation During Dewatering of Construction
-  Pits
+site_description: Ground Settlement Calculation During Dewatering of Construction Pits
 site_author: Kherim Willems
 theme:
   name: material
@@ -39,14 +38,31 @@ markdown_extensions:
 - pymdownx.arithmatex:
     generic: true
 nav:
-- Home: index.md
-- Getting Started: getting-started.md
-- Validation & Physics: validation.md
-- Theory: theory.md
-- API Reference:
-  - Models: api/models.md
-  - Hydraulics: api/hydraulics.md
-  - Settlement: api/settlement.md
-  - Damage: api/damage.md
-  - Numerical: api/numerical.md
-  - Plotting: api/plotting.md
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - User Guides:
+      - Project Workflows: guides/project_workflow.md
+      - Solara Web Application: guides/solara_gui.md
+      - Exporting Deliverables: guides/exporting.md
+  - Theory & Eurocode 7:
+      - Mechanics Overview: theory/index.md
+      - Eurocode 7 & Flemish ANB: theory/eurocode7.md
+      - Building Damage Risk: theory/building_damage.md
+      - Physics Validation: validation.md
+  - Case Studies:
+      - Overview: case_studies/index.md
+      - Kauwereelstraat 31 Oud-Heverlee: case_studies/kauwereelstraat.md
+      - Complex Analysis Example: case_studies/example_analysis.md
+  - API Reference:
+      - Overview: api/index.md
+      - Project Orchestrator: api/project.md
+      - Export Engine: api/export.md
+      - Domain Models: api/models.md
+      - Stress Distribution: api/stress.md
+      - Hydraulics & Drawdown: api/hydraulics.md
+      - Settlement & Creep: api/settlement.md
+      - Eurocode 7 Factors: api/eurocode.md
+      - Building Damage: api/damage.md
+      - Numerical Solver: api/numerical.md
+      - Plotting & Visualizations: api/plotting.md
+

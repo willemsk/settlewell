@@ -1,16 +1,15 @@
 """Unit tests for NBN EN 1997-1 ANB Eurocode 7 Flemish soil library and design approaches."""
 
+from settlewell import SoilLayer
 from settlewell.solara_app.schemas import (
     DesignApproach,
     ScenarioSchema,
-    SoilLayerSchema,
     SolverSettingsSchema,
 )
 from settlewell.soils import FLEMISH_SOIL_PRESETS, FlemishSoilType
 from settlewell.solara_app.state import (
     load_flemish_profile_template,
     project_state,
-    run_full_consolidation_solve,
 )
 
 
@@ -32,7 +31,7 @@ def test_flemish_profile_template_loading() -> None:
     active_sc = project_state.value.get_active_scenario()
     assert len(active_sc.stratigraphy) == 3
     assert active_sc.stratigraphy[2].flemish_type == FlemishSoilType.BOOMSE_KLEI
-    assert active_sc.stratigraphy[2].ocr == 3.0
+    assert active_sc.stratigraphy[2].OCR == 3.0
 
 
 def test_eurocode_7_design_approach_safety_factors() -> None:
@@ -43,13 +42,19 @@ def test_eurocode_7_design_approach_safety_factors() -> None:
             design_approach=DesignApproach.SLS_CHARACTERISTIC
         ),
         stratigraphy=[
-            SoilLayerSchema(
-                id="l1",
+            SoilLayer(
+                name="Boomse Klei",
                 flemish_type=FlemishSoilType.BOOMSE_KLEI,
                 thickness=5.0,
+                gamma=16.0,
+                gamma_sat=18.0,
+                k_h=1e-9,
+                e0=0.8,
+                Eoed=10000.0,
                 Cc=0.35,
                 Cr=0.06,
-                ocr=1.0,
+                Cv=1.5e-8,
+                OCR=1.0,
             )
         ],
     )
@@ -58,19 +63,39 @@ def test_eurocode_7_design_approach_safety_factors() -> None:
         id="uls",
         solver_settings=SolverSettingsSchema(design_approach=DesignApproach.EC7_DA1_M2),
         stratigraphy=[
-            SoilLayerSchema(
-                id="l1",
+            SoilLayer(
+                name="Boomse Klei",
                 flemish_type=FlemishSoilType.BOOMSE_KLEI,
                 thickness=5.0,
+                gamma=16.0,
+                gamma_sat=18.0,
+                k_h=1e-9,
+                e0=0.8,
+                Eoed=10000.0,
                 Cc=0.35,
                 Cr=0.06,
-                ocr=1.0,
+                Cv=1.5e-8,
+                OCR=1.0,
             )
         ],
     )
 
-    res_sls = run_full_consolidation_solve(sc_sls)
-    res_uls = run_full_consolidation_solve(sc_uls)
+    res_sls = sc_sls.to_project().solve()
+    res_uls = sc_uls.to_project().solve()
 
-    # ULS design mode with partial safety factors increases elastic settlement & primary consolidation
-    assert res_uls["primary_settlement_mm"] >= res_sls["primary_settlement_mm"]
+    assert res_uls.settlement is not None and res_sls.settlement is not None
+    assert res_uls.settlement.total_settlement >= res_sls.settlement.total_settlement
+
+
+def test_project_from_template() -> None:
+    """Verify loading Flemish profile templates into a Project instance."""
+    from settlewell import Project
+
+    project = Project.from_template(
+        "Antwerp Boom Clay Formation", gwl_mtaw=4.0, surface_level_mtaw=5.0
+    )
+
+    assert project.soil is not None
+    assert len(project.soil.layers) == 3
+    assert "Klei" in project.soil.layers[2].name
+    assert project.soil.layers[2].OCR >= 1.0

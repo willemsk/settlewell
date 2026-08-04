@@ -8,6 +8,7 @@ from settlewell import (
     BuildingType,
     ConstructionPit,
     DewateringConfig,
+    Project,
     SoilLayer,
     SoilProfile,
     Well,
@@ -127,4 +128,15 @@ def building() -> Building:
         width=6.0,
         foundation_depth=0.6,
         building_type=BuildingType.MASONRY,
+    )
+
+
+@pytest.fixture
+def standard_project(flemish_profile, six_well_config, pit, building) -> Project:
+    """A standard project fully initialized for testing."""
+    return Project(
+        soil=flemish_profile,
+        dewatering=six_well_config,
+        pit=pit,
+        buildings=[building],
     )

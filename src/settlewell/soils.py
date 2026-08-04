@@ -1,33 +1,8 @@
 """Eurocode 7 NBN EN 1997-1 ANB Flemish soil classification library and parameter presets."""
 
-from enum import StrEnum
 from typing import TypedDict
 
-
-class SoilTypeUSCS(StrEnum):
-    """USCS Soil Classification types for visualization and hatching."""
-
-    SAND = "SAND"
-    CLAY = "CLAY"
-    GRAVEL = "GRAVEL"
-    PEAT = "PEAT"
-
-
-class FlemishSoilType(StrEnum):
-    """NBN EN 1997-1 ANB Flemish standard soil classification types."""
-
-    BOOMSE_KLEI = "BOOMSE_KLEI"  # Boom Clay (Tertiary heavy OC clay)
-    IEPERSE_KLEI = (
-        "IEPERSE_KLEI"  # Kortrijk/Ypresian Clay (Tertiary medium/heavy OC clay)
-    )
-    ALLUVIALE_KLEI = "ALLUVIALE_KLEI"  # Holocene Alluvial Soft Clay (NC clay)
-    BRABANTSE_LEEM = "BRABANTSE_LEEM"  # Brabant Silt/Loam
-    PLEISTOCEEN_ZAND = "PLEISTOCEEN_ZAND"  # Pleistocene Sand (Medium dense)
-    DIESTIAAN_ZAND = "DIESTIAAN_ZAND"  # Diestian Glauconite Sand (Dense)
-    BRUSSELIAAN_ZAND = "BRUSSELIAAN_ZAND"  # Brussels Calciferous Sand (Dense)
-    MAASGRIND = "MAASGRIND"  # Meuse Gravel & Coarse Sand
-    HOLOCEEN_VEEN = "HOLOCEEN_VEEN"  # Holocene Organic Peat
-    ANTROPOGEEN = "ANTROPOGEEN"  # Antropogenic Fill / Aanvulling
+from settlewell.models import FlemishSoilType, SoilTypeUSCS
 
 
 class SoilPresetParams(TypedDict):

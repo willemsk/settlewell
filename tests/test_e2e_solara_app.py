@@ -1,21 +1,22 @@
 """End-to-End automated test suite for settlewell Solara Web Application."""
 
 import reacton
+
+from settlewell.models import (
+    BuildingType,
+    LoadGeometry,
+    LoadType,
+    SoilLayer,
+    SoilTypeUSCS,
+    Well,
+)
+from settlewell.solara_app.schemas import BuildingSchema
 from settlewell.solara_app import Page
-from settlewell.solara_app.export import (
+from settlewell.export import (
     generate_csv_data,
     generate_dxf_drawing,
     generate_excel_workbook,
     generate_pdf_report,
-)
-from settlewell.solara_app.schemas import (
-    BuildingSchema,
-    BuildingType,
-    LoadGeometrySchema,
-    LoadType,
-    SoilLayerSchema,
-    SoilTypeUSCS,
-    WellSchema,
 )
 from settlewell.solara_app.state import (
     add_building,
@@ -27,10 +28,6 @@ from settlewell.solara_app.state import (
     duplicate_scenario,
     load_project_json,
     project_state,
-    run_building_damage_solve,
-    run_fast_elastic_solve,
-    run_full_consolidation_solve,
-    run_hydraulics_solve,
     save_project_json,
     set_elevation_display_mode,
     switch_active_scenario,
@@ -41,7 +38,7 @@ def test_e2e_full_workflow() -> None:
     """Execute complete end-to-end user workflow integration test."""
     # 1. Verify default project state initialization
     state = project_state.value
-    assert state.version == "2.0"
+    assert state.version == "3.0"
     active_sc = state.get_active_scenario()
     assert active_sc.id == "baseline"
     assert len(active_sc.stratigraphy) >= 1
@@ -59,22 +56,22 @@ def test_e2e_full_workflow() -> None:
     assert project_state.value.active_scenario_id == "baseline"
 
     # 3. Add soil layer, surface load, dewatering well, and neighboring building
-    new_layer = SoilLayerSchema(
+    new_layer = SoilLayer(
         id="layer_deep_clay",
         name="Deep Stiff Clay",
         thickness=5.0,
-        gamma_dry=16.0,
+        gamma=16.0,
         gamma_sat=18.0,
         e0=0.9,
-        E_modulus=12.0,
+        Eoed=12000.0,
         Cc=0.25,
         Cr=0.04,
-        Cv=2.0,
+        Cv=6.3e-8,
         uscs_type=SoilTypeUSCS.CLAY,
     )
     add_soil_layer(new_layer)
 
-    new_load = LoadGeometrySchema(
+    new_load = LoadGeometry(
         id="load_storage_tank",
         name="Storage Tank Load",
         type=LoadType.RECTANGULAR,
@@ -86,7 +83,7 @@ def test_e2e_full_workflow() -> None:
     )
     add_load(new_load)
 
-    new_well = WellSchema(
+    new_well = Well(
         id="well_east_2",
         name="East Well 2",
         x=10.0,
@@ -112,37 +109,37 @@ def test_e2e_full_workflow() -> None:
     set_elevation_display_mode(False)
     assert display_elevation_mtaw.value is False
 
-    # 5. Solver Engine Runs
+    # 5. Solver Engine Runs via Core Project API
     curr_sc = project_state.value.get_active_scenario()
-    elastic_res = run_fast_elastic_solve(curr_sc)
-    assert elastic_res["elastic_settlement_mm"] > 0.0
+    project = curr_sc.to_project()
+    project_res = project.solve()
 
-    consolidation_res = run_full_consolidation_solve(curr_sc)
-    assert len(consolidation_res["time_years"]) == 50
+    assert project_res.settlement is not None
+    assert project_res.settlement.total_settlement > 0.0
 
-    hydraulics_res = run_hydraulics_solve(curr_sc)
-    assert hydraulics_res["R_influence_m"] > 0.0
+    hydraulics_res = project.solve_hydraulics()
+    assert hydraulics_res.R > 0.0
 
-    damage_res = run_building_damage_solve(curr_sc)
-    assert len(damage_res["buildings"]) >= 1
+    assert project_res.damage is not None
+    assert len(project_res.damage.assessments) >= 1
 
     # 6. Deliverable File Exports
-    pdf_b = generate_pdf_report(curr_sc)
+    pdf_b = generate_pdf_report(project, name=curr_sc.name)
     assert len(pdf_b) > 500
 
-    dxf_b = generate_dxf_drawing(curr_sc)
+    dxf_b = generate_dxf_drawing(project)
     assert len(dxf_b) > 200
 
-    excel_b = generate_excel_workbook(curr_sc)
+    excel_b = generate_excel_workbook(project, name=curr_sc.name)
     assert len(excel_b) > 500
 
-    csv_b = generate_csv_data(curr_sc)
+    csv_b = generate_csv_data(project)
     assert len(csv_b) > 50
 
     # 7. Project JSON Serialization / Deserialization (.settle file format)
     json_str = save_project_json()
     assert len(json_str) > 200
-    assert "baseline" in json_str
+    assert "soil" in json_str
 
     success = load_project_json(json_str)
     assert success is True
