@@ -50,8 +50,9 @@ nav:
       - Building Damage Risk: theory/building_damage.md
       - Physics Validation: validation.md
   - Case Studies:
-      - Kauwereelstraat 31 Ghent: case_studies/kauwereelstraat.md
-      - Bridge Abutment Settlement: case_studies/example_analysis.md
+      - Overview: case_studies/index.md
+      - Kauwereelstraat 31 Oud-Heverlee: case_studies/kauwereelstraat.md
+      - Complex Analysis Example: case_studies/example_analysis.md
   - API Reference:
       - Overview: api/index.md
       - Project Orchestrator: api/project.md
