@@ -53,20 +53,35 @@ def build_layer_breakdown_fig(
 ) -> go.Figure:
     """Build layer-by-layer stacked bar chart showing settlement per layer."""
     layer_names = [layer.name for layer in scenario.stratigraphy]
-    per_layer = (
-        results.settlement.per_layer_settlements
-        if results.settlement
-        else [0.0] * len(layer_names)
-    )
-    s_primary = [val * 1000.0 for val in per_layer]
+    
+    if results.settlement:
+        s_elastic = [val * 1000.0 for val in results.settlement.per_layer_elastic]
+        s_primary = [val * 1000.0 for val in results.settlement.per_layer_settlements]
+        s_creep = [val * 1000.0 for val in results.settlement.per_layer_creep]
+    else:
+        s_elastic = [0.0] * len(layer_names)
+        s_primary = [0.0] * len(layer_names)
+        s_creep = [0.0] * len(layer_names)
 
     fig = go.Figure(
         data=[
+            go.Bar(
+                name="Elastic Settlement (se)",
+                x=layer_names,
+                y=s_elastic,
+                marker_color="#3b82f6",
+            ),
             go.Bar(
                 name="Primary Consolidation (sc)",
                 x=layer_names,
                 y=s_primary,
                 marker_color="#f59e0b",
+            ),
+            go.Bar(
+                name="Secondary Creep (ss)",
+                x=layer_names,
+                y=s_creep,
+                marker_color="#ef4444",
             ),
         ]
     )
@@ -100,11 +115,15 @@ def build_time_consolidation_fig(
     ):
         times_years = results.settlement.times_days / 365.25
         settlement_mm = results.settlement.time_settlement_curve * 1000.0
+        u_curve = results.settlement.degree_of_consolidation_curve
     else:
         times_years = np.linspace(0.01, 50.0, 50)
         settlement_mm = np.zeros_like(times_years)
+        u_curve = np.zeros_like(times_years)
 
-    fig = go.Figure()
+    from plotly.subplots import make_subplots
+
+    fig = make_subplots(specs=[[{"secondary_y": True}]])
 
     fig.add_trace(
         go.Scatter(
@@ -114,13 +133,25 @@ def build_time_consolidation_fig(
             name="Settlement s(t) [mm]",
             line={"color": "#dc2626", "width": 2.5},
             marker={"size": 4},
-        )
+        ),
+        secondary_y=False,
     )
+
+    if u_curve is not None:
+        fig.add_trace(
+            go.Scatter(
+                x=times_years,
+                y=u_curve,
+                mode="lines",
+                name="Degree of Consolidation U [%]",
+                line={"color": "#10b981", "width": 2, "dash": "dot"},
+            ),
+            secondary_y=True,
+        )
 
     fig.update_layout(
         title="Settlement vs. Logarithmic Time Development (1 Day to 50 Years)",
         xaxis={"title": "Time [Years] (Log Scale)", "type": "log"},
-        yaxis={"title": "Settlement s [mm] (Downward)", "zeroline": True},
         margin={"l": 50, "r": 50, "t": 40, "b": 40},
         height=320,
         legend={
@@ -131,6 +162,10 @@ def build_time_consolidation_fig(
             "x": 1.0,
         },
     )
+    
+    fig.update_yaxes(title_text="Settlement s [mm] (Downward)", zeroline=True, secondary_y=False)
+    fig.update_yaxes(title_text="U [%]", range=[0, 105], secondary_y=True)
+    
     return fig
 
 

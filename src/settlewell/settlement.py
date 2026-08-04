@@ -392,7 +392,7 @@ def compute_settlement_vs_time(
 
 def compute_elastic_settlement(
     profile: SoilProfile, delta_sigma_z: NDArray[np.float64]
-) -> float:
+) -> tuple[float, list[float]]:
     """Compute instant elastic settlement of the soil profile.
 
     Parameters
@@ -404,14 +404,18 @@ def compute_elastic_settlement(
 
     Returns
     -------
-    float
-        Total elastic settlement [m].
+    tuple[float, list[float]]
+        Total elastic settlement [m] and list of elastic settlements per layer [m].
     """
     s_e = 0.0
+    layer_s_e = []
     for layer, dsigma in zip(profile.layers, delta_sigma_z):
+        layer_settlement = 0.0
         if layer.Eoed > 1e-3 and dsigma > 0:
-            s_e += (dsigma / layer.Eoed) * layer.thickness
-    return s_e
+            layer_settlement = (dsigma / layer.Eoed) * layer.thickness
+            s_e += layer_settlement
+        layer_s_e.append(layer_settlement)
+    return s_e, layer_s_e
 
 
 def compute_secondary_creep(
@@ -481,7 +485,7 @@ def compute_full_consolidation_curve(
     times_days: NDArray[np.float64],
     c_alpha_to_cc: float = 0.05,
     t_p_days: float = 365.0,
-) -> NDArray[np.float64]:
+) -> tuple[NDArray[np.float64], NDArray[np.float64]]:
     """Compute full time-consolidation settlement curve (elastic + primary + creep).
 
     Parameters
@@ -503,15 +507,17 @@ def compute_full_consolidation_curve(
 
     Returns
     -------
-    np.ndarray
-        Total settlement at each time step [m].
+    tuple[np.ndarray, np.ndarray]
+        Total settlement at each time step [m] and degree of consolidation [%].
     """
     times_arr = np.asarray(times_days, dtype=float)
     settlement_curve = np.zeros_like(times_arr, dtype=float)
+    u_curve = np.zeros_like(times_arr, dtype=float)
 
     for i, t_days in enumerate(times_arr):
         if t_days <= 0:
             settlement_curve[i] = max(0.0, s_elastic)
+            u_curve[i] = 0.0
             continue
 
         t_sec = t_days * 86400.0
@@ -522,9 +528,10 @@ def compute_full_consolidation_curve(
             U = compute_degree_of_consolidation(Tv)
 
         s_primary = s_primary_ult * U
+        u_curve[i] = U * 100.0
         s_creep = compute_secondary_creep(
             s_primary_ult, c_alpha_to_cc, t_days, t_p_days
         )
         settlement_curve[i] = max(0.0, s_elastic + s_primary + s_creep)
 
-    return settlement_curve
+    return settlement_curve, u_curve

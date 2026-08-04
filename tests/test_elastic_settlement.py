@@ -43,14 +43,14 @@ class TestElasticSettlement:
     def test_elastic_settlement_calculation(self, sample_profile: SoilProfile):
         """Test elastic settlement s_e = sum(dsigma * H / Eoed)."""
         delta_sigma_z = np.array([20.0, 30.0])
-        s_e = compute_elastic_settlement(sample_profile, delta_sigma_z)
+        s_e, _ = compute_elastic_settlement(sample_profile, delta_sigma_z)
         # Expected: (20*2/10000) + (30*3/15000) = 0.004 + 0.006 = 0.010 m
         assert s_e == pytest.approx(0.010)
 
     def test_zero_stress_gives_zero_settlement(self, sample_profile: SoilProfile):
         """Test zero stress increment yields zero elastic settlement."""
         delta_sigma_z = np.array([0.0, 0.0])
-        s_e = compute_elastic_settlement(sample_profile, delta_sigma_z)
+        s_e, _ = compute_elastic_settlement(sample_profile, delta_sigma_z)
         assert s_e == 0.0
 
 
@@ -110,7 +110,7 @@ class TestFullConsolidationCurve:
     def test_full_consolidation_curve(self):
         """Test time-dependent consolidation curve combining elastic, primary, and creep."""
         times_days = np.array([0.0, 365.0, 3650.0])
-        curve = compute_full_consolidation_curve(
+        curve, u_curve = compute_full_consolidation_curve(
             s_elastic=0.01,
             s_primary_ult=0.1,
             cv_eq=1e-7,

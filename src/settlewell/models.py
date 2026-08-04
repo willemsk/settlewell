@@ -380,23 +380,6 @@ class Building(BaseDomainModel):
     foundation_depth: float = Field(ge=0.0, default=0.6)
     building_type: BuildingType = BuildingType.MASONRY
 
-    @model_validator(mode="before")
-    @classmethod
-    def _remap_gui_fields(cls, data: Any) -> Any:
-        if isinstance(data, dict):
-            if "x_center" in data and "x" not in data:
-                data["x"] = data.pop("x_center")
-            if "structural_type" in data and "building_type" not in data:
-                data["building_type"] = data.pop("structural_type")
-        return data
-
-    @property
-    def x_center(self) -> float:
-        return self.x
-
-    @property
-    def structural_type(self) -> BuildingType:
-        return self.building_type
 
     @field_validator("length", mode="before")
     @classmethod

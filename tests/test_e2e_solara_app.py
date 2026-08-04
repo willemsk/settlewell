@@ -3,14 +3,15 @@
 import reacton
 
 from settlewell.models import (
-    Building,
     BuildingType,
+    ConstructionPit,
     LoadGeometry,
     LoadType,
     SoilLayer,
     SoilTypeUSCS,
     Well,
 )
+from settlewell.solara_app.schemas import BuildingSchema
 from settlewell.solara_app import Page
 from settlewell.solara_app.export import (
     generate_csv_data,
@@ -93,7 +94,7 @@ def test_e2e_full_workflow() -> None:
     )
     add_well(new_well)
 
-    new_bldg = Building(
+    new_bldg = BuildingSchema(
         id="bldg_church",
         name="Historic Church",
         x_center=25.0,
@@ -139,7 +140,7 @@ def test_e2e_full_workflow() -> None:
     # 7. Project JSON Serialization / Deserialization (.settle file format)
     json_str = save_project_json()
     assert len(json_str) > 200
-    assert "baseline" in json_str
+    assert "soil" in json_str
 
     success = load_project_json(json_str)
     assert success is True

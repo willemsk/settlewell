@@ -34,6 +34,7 @@ from settlewell.settlement import (
     compute_full_consolidation_curve,
     compute_initial_stress_profile,
     compute_total_settlement,
+    compute_secondary_creep,
 )
 from settlewell.soils import FLEMISH_PROFILE_TEMPLATES, FLEMISH_SOIL_PRESETS
 from settlewell.stress import compute_stress_profile_under_loads
@@ -69,7 +70,13 @@ class SettlementResults(BaseModelFrozen):
 
     total_settlement: float
     per_layer_settlements: list[float]
+    elastic_settlement: float = 0.0
+    primary_settlement: float = 0.0
+    creep_settlement: float = 0.0
+    per_layer_elastic: list[float] = Field(default_factory=list)
+    per_layer_creep: list[float] = Field(default_factory=list)
     time_settlement_curve: NDArray[np.float64] | None = None
+    degree_of_consolidation_curve: NDArray[np.float64] | None = None
     times_days: NDArray[np.float64] | None = None
 
 
@@ -437,13 +444,16 @@ class Project:
             self.soil,
         )[0]
 
-        total_settlement, per_layer = compute_total_settlement(
+        total_primary, per_layer_primary = compute_total_settlement(
             self.soil,
             drawdown_center,
             method=self.settings.settlement_method,
             additional_stress=str_res.delta_sigma_v,
         )
 
+        s_elastic, per_layer_elastic = compute_elastic_settlement(self.soil, str_res.delta_sigma_v)
+        
+        per_layer_creep = []
         if self.settings.calculate_creep:
             times_days = np.linspace(
                 self.settings.t_start_days,
@@ -457,18 +467,33 @@ class Project:
                 if self.settings.drainage == DrainageType.DOUBLE
                 else self.soil.total_depth
             )
-            s_elastic = compute_elastic_settlement(self.soil, str_res.delta_sigma_v)
-            time_curve = compute_full_consolidation_curve(
-                s_elastic, total_settlement, cv_eq, h_dr, times_days
+            time_curve, u_curve = compute_full_consolidation_curve(
+                s_elastic, total_primary, cv_eq, h_dr, times_days
             )
+            total_creep = compute_secondary_creep(
+                total_primary, 0.05, self.settings.t_end_years * 365.0
+            )
+            for s_prim in per_layer_primary:
+                per_layer_creep.append(compute_secondary_creep(s_prim, 0.05, self.settings.t_end_years * 365.0))
         else:
             time_curve = None
+            u_curve = None
             times_days = None
+            total_creep = 0.0
+            per_layer_creep = [0.0] * len(per_layer_primary)
+
+        total_settlement = s_elastic + total_primary + total_creep
 
         return SettlementResults(
             total_settlement=total_settlement,
-            per_layer_settlements=per_layer,
+            per_layer_settlements=per_layer_primary,
+            elastic_settlement=s_elastic,
+            primary_settlement=total_primary,
+            creep_settlement=total_creep,
+            per_layer_elastic=per_layer_elastic,
+            per_layer_creep=per_layer_creep,
             time_settlement_curve=time_curve,
+            degree_of_consolidation_curve=u_curve,
             times_days=times_days,
         )
 

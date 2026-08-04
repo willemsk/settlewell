@@ -5,7 +5,6 @@ from pathlib import Path
 import solara
 
 from settlewell.models import (
-    Building,
     BuildingType,
     ConstructionPit,
     DewateringConfig,
@@ -17,6 +16,7 @@ from settlewell.models import (
     Well,
 )
 from settlewell.solara_app.schemas import (
+    BuildingSchema,
     ProjectMetadataSchema,
     ProjectState,
     ScenarioSchema,
@@ -86,7 +86,7 @@ def create_default_project_state() -> ProjectState:
     ]
 
     default_buildings = [
-        Building(
+        BuildingSchema(
             id="bldg_1",
             name="Adjacent Residence",
             x_center=18.0,
@@ -192,12 +192,23 @@ def switch_active_scenario(scenario_id: str) -> None:
 
 
 def save_project_json() -> str:
-    """Serialize project state to .settle JSON format string."""
-    return project_state.value.model_dump_json(indent=2)
+    """Serialize active scenario to .settle JSON format string."""
+    active_sc = project_state.value.get_active_scenario()
+    project = active_sc.to_project()
+    from settlewell.project import ProjectDataModel
+    project_data = ProjectDataModel(
+        soil=project.soil,
+        pit=project.pit,
+        dewatering=project.dewatering,
+        buildings=project.buildings,
+        loads=project.loads,
+        settings=project.settings,
+    )
+    return project_data.model_dump_json(indent=2)
 
 
 def load_project_json(json_content: str) -> bool:
-    """Load project state from .settle JSON string.
+    """Load core Project from .settle JSON string and wrap in ProjectState.
 
     Parameters
     ----------
@@ -210,7 +221,28 @@ def load_project_json(json_content: str) -> bool:
         True if loaded successfully, False otherwise.
     """
     try:
-        new_state = ProjectState.model_validate_json(json_content)
+        from settlewell.project import ProjectDataModel
+        project_data = ProjectDataModel.model_validate_json(json_content)
+        
+        # Reconstruct ScenarioSchema from ProjectDataModel
+        scenario = ScenarioSchema(
+            id="baseline",
+            name="Loaded Project",
+            is_active=True,
+            water_table=WaterTableSchema(depth_z=-project_data.dewatering.original_gwl_mtaw if project_data.dewatering else 0.0),
+            stratigraphy=project_data.soil.layers if project_data.soil else [],
+            loads=project_data.loads,
+            construction_pit=project_data.pit if project_data.pit else ConstructionPit(),
+            dewatering=project_data.dewatering if project_data.dewatering else DewateringConfig(),
+            buildings=[BuildingSchema(**b.model_dump()) for b in project_data.buildings],
+            solver_settings=project_data.settings,
+        )
+        
+        new_state = ProjectState(
+            version="3.0",
+            scenarios=[scenario],
+            active_scenario_id="baseline"
+        )
         project_state.set(new_state)
         return True
     except Exception:
@@ -229,18 +261,18 @@ def load_project_from_file(file_path: Path | str) -> None:
     with open(path, encoding="utf-8") as f:
         content = f.read()
 
-    new_state = ProjectState.model_validate_json(content)
-    project_state.set(new_state)
+    if not load_project_json(content):
+        raise ValueError("Failed to parse project file.")
 
 
 def save_project_to_file(file_path: Path | str) -> None:
-    """Serialize current reactive project_state to a .settle JSON file."""
+    """Serialize current active scenario to a .settle JSON file."""
     path = Path(file_path)
     if not path.suffix:
         path = path.with_suffix(".settle")
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    json_data = project_state.value.model_dump_json(indent=2)
+    json_data = save_project_json()
     with open(path, "w", encoding="utf-8") as f:
         f.write(json_data)
 
@@ -588,14 +620,14 @@ def update_construction_pit(
     project_state.set(current_state)
 
 
-def add_building(building: Building | None = None) -> None:
+def add_building(building: BuildingSchema | None = None) -> None:
     """Add a neighboring building to the active scenario."""
     current_state = project_state.value.model_copy(deep=True)
     active_sc = current_state.get_active_scenario()
 
     if building is None:
         idx = len(active_sc.buildings) + 1
-        building = Building(
+        building = BuildingSchema(
             id=f"bldg_{idx}",
             name=f"Building {idx}",
             x_center=15.0 + (idx - 1) * 10.0,
@@ -608,7 +640,7 @@ def add_building(building: Building | None = None) -> None:
     project_state.set(current_state)
 
 
-def update_building(building_id: str, updated_bldg: Building) -> None:
+def update_building(building_id: str, updated_bldg: BuildingSchema) -> None:
     """Update a neighboring building by ID in active scenario."""
     current_state = project_state.value.model_copy(deep=True)
     active_sc = current_state.get_active_scenario()

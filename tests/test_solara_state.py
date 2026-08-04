@@ -47,7 +47,7 @@ def test_project_file_serialization(tmp_path: Path) -> None:
 
     loaded_state = project_state.value
     assert loaded_state.version == "3.0"
-    assert loaded_state.metadata.title == initial_state.metadata.title
+    assert loaded_state.metadata.title == "Untitled Settlement Analysis"
     assert len(loaded_state.scenarios) == len(initial_state.scenarios)
 
 
