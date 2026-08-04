@@ -45,3 +45,21 @@ jobs:
         run: uv run python -c "from settlewell.solara_app import app; print('Solara App imported successfully!')"
       - name: Run pytest
         run: uv run pytest
+
+  notebooks:
+    name: Notebook Smoke Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v9.0.0
+        with:
+          enable-cache: true
+      - name: Set up Python
+        run: uv python install 3.11
+      - name: Install dependencies
+        run: uv sync --extra notebook --extra export
+      - name: Regenerate notebooks from Jupytext sources
+        run: uv run jupytext --to notebook notebooks/*.py
+      - name: Execute notebooks (catch API regressions)
+        run: uv run jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=120 notebooks/*.ipynb

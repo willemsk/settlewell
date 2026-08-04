@@ -1,34 +1,36 @@
-"""Script to generate the complete notebooks/kauwereelstraat_31_analysis.ipynb notebook."""
+# ---
+# jupyter:
+#   jupytext:
+#     formats: py:percent
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.16.0
+# ---
 
-import nbformat as nbf
+# %% [markdown]
+# # Bronbemaling & Zettingsanalyse: Kauwereelstraat 31, Oud-Heverlee
+#
+# **Project**: Nieuwbouw Eengezinswoning met kelder  
+# **Locatie**: Kauwereelstraat 31, 3051 Oud-Heverlee  
+# **Opdrachtgever**: Dhr. Kherim Willems  
+# **Geotechnisch Rapport**: Sonderingsrapport 26010068-001 (Sonderingen S01, S02, S03)  
+#
+# ---
+#
+# ### Referentiepeilen (mTAW Benchmark Hierarchy)
+# * **Pas 0.00 (Vloerpeil woning)**: `30.30 mTAW`
+# * **Maaiveld vooraan (Referentie $z=0$)**: `29.76 mTAW`
+# * **Maaiveld achteraan**: `28.81 mTAW` (terrein daalt ~1.0 m over de eerste 20 m)
+# * **Oorspronkelijke Grondwaterstand (juli 2026)**: `27.28 mTAW` ($2.48\text{ m}$ onder maaiveld vooraan)
+# * **Bouwputbodem ($13.0\text{ m} \times 14.0\text{ m}$)**: `26.72 mTAW` ($3.58\text{ m}$ onder pas / $3.04\text{ m}$ onder maaiveld vooraan)
+# * **Pompputbodem**: `26.62 mTAW` ($3.68\text{ m}$ onder pas / $3.14\text{ m}$ onder maaiveld vooraan)
+# * **Doelniveau Grondwaterstand**: `26.12 mTAW` ($0.50\text{ m}$ droogstand onder pompput)
+# * **Vereiste Netto Aflaging ($\Delta s$)**: $27.28 - 26.12 = \mathbf{1.16\text{ m}}$ netto grondwaterverlaging
 
-
-def build_notebook():
-    nb = nbf.v4.new_notebook()
-
-    # Title & Metadata
-    title_md = r"""# Bronbemaling & Zettingsanalyse: Kauwereelstraat 31, Oud-Heverlee
-
-**Project**: Nieuwbouw Eengezinswoning met kelder  
-**Locatie**: Kauwereelstraat 31, 3051 Oud-Heverlee  
-**Opdrachtgever**: Dhr. Kherim Willems  
-**Geotechnisch Rapport**: Sonderingsrapport 26010068-001 (Sonderingen S01, S02, S03)  
-
----
-
-### Referentiepeilen (mTAW Benchmark Hierarchy)
-* **Pas 0.00 (Vloerpeil woning)**: `30.30 mTAW`
-* **Maaiveld vooraan (Referentie $z=0$)**: `29.76 mTAW`
-* **Maaiveld achteraan**: `28.81 mTAW` (terrein daalt ~1.0 m over de eerste 20 m)
-* **Oorspronkelijke Grondwaterstand (juli 2026)**: `27.28 mTAW` ($2.48\text{ m}$ onder maaiveld vooraan)
-* **Bouwputbodem ($13.0\text{ m} \times 14.0\text{ m}$)**: `26.72 mTAW` ($3.58\text{ m}$ onder pas / $3.04\text{ m}$ onder maaiveld vooraan)
-* **Pompputbodem**: `26.62 mTAW` ($3.68\text{ m}$ onder pas / $3.14\text{ m}$ onder maaiveld vooraan)
-* **Doelniveau Grondwaterstand**: `26.12 mTAW` ($0.50\text{ m}$ droogstand onder pompput)
-* **Vereiste Netto Aflaging ($\Delta s$)**: $27.28 - 26.12 = \mathbf{1.16\text{ m}}$ netto grondwaterverlaging
-"""
-
-    imports_code = """import matplotlib.pyplot as plt
-import numpy as np
+# %%
+import matplotlib.pyplot as plt
 
 from settlewell import (
     AquiferType,
@@ -43,14 +45,14 @@ from settlewell import (
 )
 
 print("Alle settlewell modules en Project API succesvol geïmporteerd.")
-"""
 
-    sec1_md = """## §1 Input Parameters (Invoergegevens)
+# %% [markdown]
+# ## §1 Input Parameters (Invoergegevens)
+#
+# In deze sectie worden de fysieke parameters gedefinieerd op basis van het sonderingsrapport `26010068-001` en de werfgegevens voor Kauwereelstraat 31.
 
-In deze sectie worden de fysieke parameters gedefinieerd op basis van het sonderingsrapport `26010068-001` en de werfgegevens voor Kauwereelstraat 31.
-"""
-
-    sec1_code = """# === 1. Soil Profile (Grondopbouw op basis van Sondering 26010068-001) ===
+# %%
+# === 1. Soil Profile (Grondopbouw op basis van Sondering 26010068-001) ===
 profile = SoilProfile(
     surface_level_mtaw=29.76,
     gwl_mtaw=27.28,
@@ -135,8 +137,14 @@ pit = ConstructionPit(
 
 # === 3. Dewatering System (8 Filterputten rondom bouwput) ===
 well_coords = [
-    (-7.0, -7.5), (7.0, -7.5), (7.0, 7.5), (-7.0, 7.5),
-    (0.0, -7.5), (7.0, 0.0), (0.0, 7.5), (-7.0, 0.0)
+    (-7.0, -7.5),
+    (7.0, -7.5),
+    (7.0, 7.5),
+    (-7.0, 7.5),
+    (0.0, -7.5),
+    (7.0, 0.0),
+    (0.0, 7.5),
+    (-7.0, 0.0),
 ]
 q_per_well = 1.2e-3  # ~4.32 m³/h per put
 wells = [
@@ -204,22 +212,26 @@ project = Project(
 )
 
 print(f"Bodemprofiel tot. dikte: {project.soil.total_depth:.1f} m")
-print(f"Oorspronkelijke GWL:    {project.soil.gwl_mtaw:.2f} mTAW ({project.soil.gwl_depth:.2f} m onder MV vooraan)")
+print(
+    f"Oorspronkelijke GWL:    {project.soil.gwl_mtaw:.2f} mTAW ({project.soil.gwl_depth:.2f} m onder MV vooraan)"
+)
 print(f"Vereiste aflaging:       {project.dewatering.target_drawdown:.2f} m")
-print(f"Totaal debiet (8 putten): {sum(w.Q for w in wells)*3600:.2f} m³/h")
-"""
+print(f"Totaal debiet (8 putten): {sum(w.Q for w in wells) * 3600:.2f} m³/h")
 
-    sec2_md = """## §2 Unified Calculation & Visualizations (Analyse & Grafieken)
+# %% [markdown]
+# ## §2 Unified Calculation & Visualizations (Analyse & Grafieken)
+#
+# Berekening van hydraulica, spanningen, zettingen en schade via `project.solve()`.
 
-Berekening van hydraulica, spanningen, zettingen en schade via `project.solve()`.
-"""
-
-    sec2_code = """# Execute unified calculation workflow
+# %%
+# Execute unified calculation workflow
 results = project.solve()
 
 print(f"Berekende hydraulische straal R: {results.hydraulics.R:.1f} m")
 print(f"Transmissiviteit T: {results.hydraulics.T:.2e} m²/s")
-print(f"Totale zetting centrum bouwput: {results.settlement.total_settlement * 1000:.2f} mm")
+print(
+    f"Totale zetting centrum bouwput: {results.settlement.total_settlement * 1000:.2f} mm"
+)
 
 # Dwarsprofiel (Cross-Section) voor Buurman #29
 fig_cs = project.plot_cross_section(building_idx=0)
@@ -232,52 +244,54 @@ plt.show()
 # 3D Oppervlakte van de Grondwaterverlaging
 fig_3d = project.plot_3d_drawdown(building_idx=0)
 fig_3d.show()
-"""
 
-    sec3_md = """## §3 Stress & Settlement Profiles (Spanningsverloop & Zettingskom)
-"""
+# %% [markdown]
+# ## §3 Stress & Settlement Profiles (Spanningsverloop & Zettingskom)
 
-    sec3_code = """fig_stress = project.plot_effective_stress_profile()
+# %%
+fig_stress = project.plot_effective_stress_profile()
 plt.show()
 
 fig_trough = project.plot_settlement_trough(building_idx=0)
 plt.show()
-"""
 
-    sec4_md = """## §4 Time-Dependent Consolidation (Tijdsafhankelijke Consolidatie)
-"""
+# %% [markdown]
+# ## §4 Time-Dependent Consolidation (Tijdsafhankelijke Consolidatie)
 
-    sec4_code = """fig_time = project.plot_time_settlement()
+# %%
+fig_time = project.plot_time_settlement()
 plt.show()
-"""
 
-    sec5_md = """## §5 Neighboring Building Damage Assessment (Schadebeoordeling)
-"""
+# %% [markdown]
+# ## §5 Neighboring Building Damage Assessment (Schadebeoordeling)
 
-    sec5_code = """for b_key, asm in results.damage.assessments.items():
+# %%
+for b_key, asm in results.damage.assessments.items():
     print(f"=== {b_key} ===")
-    print(f"  Max zetting:        {asm.max_settlement*1000:.2f} mm")
-    print(f"  Diff zetting:       {asm.differential_settlement*1000:.2f} mm")
-    print(f"  Hoekverdraaiing:    1/{int(1.0/max(asm.angular_distortion, 1e-9))}")
-    print(f"  Schadeklasse:       Klasse {asm.damage_category} ({asm.damage_description})")
+    print(f"  Max zetting:        {asm.max_settlement * 1000:.2f} mm")
+    print(f"  Diff zetting:       {asm.differential_settlement * 1000:.2f} mm")
+    print(f"  Hoekverdraaiing:    1/{int(1.0 / max(asm.angular_distortion, 1e-9))}")
+    print(
+        f"  Schadeklasse:       Klasse {asm.damage_category} ({asm.damage_description})"
+    )
     print(f"  Scheurwijdte:       {asm.expected_crack_width}")
     print()
 
 fig_damage = project.plot_damage_summary(building_idx=0)
 plt.show()
-"""
 
-    sec6_md = """## §6 PDF Report Export (Rapportage)
-"""
+# %% [markdown]
+# ## §6 PDF Report Export (Rapportage)
 
-    sec6_code = """project.export_pdf("kauwereelstraat_31_report.pdf")
+# %%
+project.export_pdf("kauwereelstraat_31_report.pdf")
 print("PDF berekeningsrapport succesvol geëxporteerd via project.export_pdf().")
-"""
 
-    sec7_md = """## §7 Verification & Sanity Checks (Verificatie)
-"""
+# %% [markdown]
+# ## §7 Verification & Sanity Checks (Verificatie)
 
-    sec7_code = """assert results.hydraulics is not None
+# %%
+assert results.hydraulics is not None
 assert results.settlement is not None
 assert results.damage is not None
 
@@ -288,35 +302,3 @@ for asm in results.damage.assessments.values():
     assert asm.damage_category <= 1, "Schadeklasse is te hoog!"
 
 print("✓ ALLE SANITY CHECKS SUCCESVOL GESLAAGD!")
-"""
-
-    # Add cells to notebook
-    cells = [
-        nbf.v4.new_markdown_cell(title_md),
-        nbf.v4.new_code_cell(imports_code),
-        nbf.v4.new_markdown_cell(sec1_md),
-        nbf.v4.new_code_cell(sec1_code),
-        nbf.v4.new_markdown_cell(sec2_md),
-        nbf.v4.new_code_cell(sec2_code),
-        nbf.v4.new_markdown_cell(sec3_md),
-        nbf.v4.new_code_cell(sec3_code),
-        nbf.v4.new_markdown_cell(sec4_md),
-        nbf.v4.new_code_cell(sec4_code),
-        nbf.v4.new_markdown_cell(sec5_md),
-        nbf.v4.new_code_cell(sec5_code),
-        nbf.v4.new_markdown_cell(sec6_md),
-        nbf.v4.new_code_cell(sec6_code),
-        nbf.v4.new_markdown_cell(sec7_md),
-        nbf.v4.new_code_cell(sec7_code),
-    ]
-
-    nb["cells"] = cells
-
-    output_path = "notebooks/kauwereelstraat_31_analysis.ipynb"
-    with open(output_path, "w", encoding="utf-8") as f:
-        nbf.write(nb, f)
-    print(f"Notebook generated successfully at: {output_path}")
-
-
-if __name__ == "__main__":
-    build_notebook()
