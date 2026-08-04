@@ -10,6 +10,12 @@ from .damage import (
     classify_damage,
 )
 from .eurocode import apply_partial_factors
+from .export import (
+    generate_csv_data,
+    generate_dxf_drawing,
+    generate_excel_workbook,
+    generate_pdf_report,
+)
 from .hydraulics import (
     compute_drawdown_at_points,
     compute_drawdown_grid,
@@ -139,6 +145,10 @@ __all__ = [
     "create_grid",
     "extract_drawdown_at_points",
     "fadum_corner_stress",
+    "generate_csv_data",
+    "generate_dxf_drawing",
+    "generate_excel_workbook",
+    "generate_pdf_report",
     "plot_3d_drawdown",
     "plot_3d_drawdown_mpl",
     "plot_cross_section",

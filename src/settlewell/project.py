@@ -272,6 +272,34 @@ class Project:
             data = json.load(f)
         return cls.from_dict(data)
 
+    def export_pdf(self, path: str | Path) -> None:
+        """Export project calculation report as a PDF document."""
+        from settlewell.export import generate_pdf_report
+
+        content = generate_pdf_report(self)
+        Path(path).write_bytes(content)
+
+    def export_dxf(self, path: str | Path) -> None:
+        """Export project drawing as a CAD DXF file."""
+        from settlewell.export import generate_dxf_drawing
+
+        content = generate_dxf_drawing(self)
+        Path(path).write_bytes(content)
+
+    def export_excel(self, path: str | Path) -> None:
+        """Export project calculation data as an Excel workbook (.xlsx)."""
+        from settlewell.export import generate_excel_workbook
+
+        content = generate_excel_workbook(self)
+        Path(path).write_bytes(content)
+
+    def export_csv(self, path: str | Path) -> None:
+        """Export settlement profile data as a CSV file."""
+        from settlewell.export import generate_csv_data
+
+        content = generate_csv_data(self)
+        Path(path).write_bytes(content)
+
     @classmethod
     def from_template(
         cls, template_name: str, gwl_mtaw: float, surface_level_mtaw: float
@@ -451,8 +479,10 @@ class Project:
             additional_stress=str_res.delta_sigma_v,
         )
 
-        s_elastic, per_layer_elastic = compute_elastic_settlement(self.soil, str_res.delta_sigma_v)
-        
+        s_elastic, per_layer_elastic = compute_elastic_settlement(
+            self.soil, str_res.delta_sigma_v
+        )
+
         per_layer_creep = []
         if self.settings.calculate_creep:
             times_days = np.linspace(
@@ -474,7 +504,11 @@ class Project:
                 total_primary, 0.05, self.settings.t_end_years * 365.0
             )
             for s_prim in per_layer_primary:
-                per_layer_creep.append(compute_secondary_creep(s_prim, 0.05, self.settings.t_end_years * 365.0))
+                per_layer_creep.append(
+                    compute_secondary_creep(
+                        s_prim, 0.05, self.settings.t_end_years * 365.0
+                    )
+                )
         else:
             time_curve = None
             u_curve = None

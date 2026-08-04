@@ -211,10 +211,12 @@ class TestTotalSettlement:
         hyd_res = standard_project.solve_hydraulics()
         str_res = standard_project.solve_stress()
         set_res = standard_project.solve_settlement(hyd_res, str_res)
-        expected_total = sum(set_res.per_layer_settlements) + set_res.elastic_settlement + set_res.creep_settlement
-        assert set_res.total_settlement == pytest.approx(
-            expected_total, rel=1e-10
+        expected_total = (
+            sum(set_res.per_layer_settlements)
+            + set_res.elastic_settlement
+            + set_res.creep_settlement
         )
+        assert set_res.total_settlement == pytest.approx(expected_total, rel=1e-10)
 
 
 class TestDegreeOfConsolidation:

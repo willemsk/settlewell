@@ -196,6 +196,7 @@ def save_project_json() -> str:
     active_sc = project_state.value.get_active_scenario()
     project = active_sc.to_project()
     from settlewell.project import ProjectDataModel
+
     project_data = ProjectDataModel(
         soil=project.soil,
         pit=project.pit,
@@ -222,26 +223,35 @@ def load_project_json(json_content: str) -> bool:
     """
     try:
         from settlewell.project import ProjectDataModel
+
         project_data = ProjectDataModel.model_validate_json(json_content)
-        
+
         # Reconstruct ScenarioSchema from ProjectDataModel
         scenario = ScenarioSchema(
             id="baseline",
             name="Loaded Project",
             is_active=True,
-            water_table=WaterTableSchema(depth_z=-project_data.dewatering.original_gwl_mtaw if project_data.dewatering else 0.0),
+            water_table=WaterTableSchema(
+                depth_z=-project_data.dewatering.original_gwl_mtaw
+                if project_data.dewatering
+                else 0.0
+            ),
             stratigraphy=project_data.soil.layers if project_data.soil else [],
             loads=project_data.loads,
-            construction_pit=project_data.pit if project_data.pit else ConstructionPit(),
-            dewatering=project_data.dewatering if project_data.dewatering else DewateringConfig(),
-            buildings=[BuildingSchema(**b.model_dump()) for b in project_data.buildings],
+            construction_pit=project_data.pit
+            if project_data.pit
+            else ConstructionPit(),
+            dewatering=project_data.dewatering
+            if project_data.dewatering
+            else DewateringConfig(),
+            buildings=[
+                BuildingSchema(**b.model_dump()) for b in project_data.buildings
+            ],
             solver_settings=project_data.settings,
         )
-        
+
         new_state = ProjectState(
-            version="3.0",
-            scenarios=[scenario],
-            active_scenario_id="baseline"
+            version="3.0", scenarios=[scenario], active_scenario_id="baseline"
         )
         project_state.set(new_state)
         return True

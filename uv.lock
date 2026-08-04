@@ -1992,7 +1992,7 @@ name = "pexpect"
 version = "4.9.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "ptyprocess", marker = "sys_platform != 'emscripten' and sys_platform != 'win32'" },
+    { name = "ptyprocess" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/42/92/cc564bf6381ff43ce1f4d06852fc19a2f11d180f23dc32d9588bee2f149d/pexpect-4.9.0.tar.gz", hash = "sha256:ee7d41123f3c9911050ea2c2dac107568dc43b2d3b0c7557a33212c398ead30f", size = 166450, upload-time = "2023-11-25T09:07:26.339Z" }
 wheels = [
@@ -2798,7 +2798,7 @@ resolution-markers = [
     "python_full_version < '3.12' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/7a/97/5a3609c4f8d58b039179648e62dd220f89864f56f7357f5d4f45c29eb2cc/scipy-1.17.1.tar.gz", hash = "sha256:95d8e012d8cb8816c226aef832200b1d45109ed4464303e997c5b13122b297c0", size = 30573822, upload-time = "2026-02-23T00:26:24.851Z" }
 wheels = [
@@ -2877,7 +2877,7 @@ resolution-markers = [
     "python_full_version >= '3.12' and python_full_version < '3.14' and sys_platform != 'emscripten' and sys_platform != 'win32'",
 ]
 dependencies = [
-    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "numpy", version = "2.5.1", source = { registry = "https://pypi.org/simple" } },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a7/25/c2700dfaf6442b4effaa91af24ebce5dc9d31bb4a69706313aae70d72cd0/scipy-1.18.0.tar.gz", hash = "sha256:67b2ad2ad54c72ca6d04975a9b2df8c3638c34ddd5b28738e94fc2b57929d378", size = 30774447, upload-time = "2026-06-19T15:01:43.456Z" }
 wheels = [
@@ -2952,6 +2952,12 @@ docs = [
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
 ]
+export = [
+    { name = "ezdxf" },
+    { name = "openpyxl" },
+    { name = "pandas" },
+    { name = "reportlab" },
+]
 notebook = [
     { name = "ipykernel" },
     { name = "jupyter" },
@@ -2972,7 +2978,7 @@ web = [
 [package.metadata]
 requires-dist = [
     { name = "anywidget", marker = "extra == 'web'", specifier = ">=0.9.0" },
-    { name = "ezdxf", marker = "extra == 'web'", specifier = ">=1.4.4" },
+    { name = "ezdxf", marker = "extra == 'export'", specifier = ">=1.0.0" },
     { name = "ipycanvas", marker = "extra == 'web'", specifier = ">=0.14.3" },
     { name = "ipykernel", marker = "extra == 'notebook'", specifier = ">=6.0" },
     { name = "jupyter", marker = "extra == 'notebook'", specifier = ">=1.0" },
@@ -2981,16 +2987,17 @@ requires-dist = [
     { name = "mkdocs-material", marker = "extra == 'docs'", specifier = ">=9.5" },
     { name = "mkdocstrings", extras = ["python"], marker = "extra == 'docs'", specifier = ">=0.24" },
     { name = "numpy", specifier = ">=1.24" },
-    { name = "openpyxl", marker = "extra == 'web'", specifier = ">=3.1.5" },
-    { name = "pandas", marker = "extra == 'web'", specifier = ">=2.0.0" },
+    { name = "openpyxl", marker = "extra == 'export'", specifier = ">=3.0.0" },
+    { name = "pandas", marker = "extra == 'export'", specifier = ">=2.0.0" },
     { name = "plotly", specifier = ">=5.15" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "pytest", marker = "extra == 'test'", specifier = ">=7.0" },
-    { name = "reportlab", marker = "extra == 'web'", specifier = ">=5.0.0" },
+    { name = "reportlab", marker = "extra == 'export'", specifier = ">=3.6.0" },
     { name = "scipy", specifier = ">=1.10" },
+    { name = "settlewell", extras = ["export"], marker = "extra == 'web'" },
     { name = "solara", marker = "extra == 'web'", specifier = ">=1.60.3" },
 ]
-provides-extras = ["notebook", "test", "web", "docs"]
+provides-extras = ["export", "notebook", "test", "web", "docs"]
 
 [[package]]
 name = "six"

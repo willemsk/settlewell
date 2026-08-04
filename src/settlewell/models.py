@@ -380,7 +380,6 @@ class Building(BaseDomainModel):
     foundation_depth: float = Field(ge=0.0, default=0.6)
     building_type: BuildingType = BuildingType.MASONRY
 
-
     @field_validator("length", mode="before")
     @classmethod
     def _v_length(cls, v: Any) -> Any:

@@ -32,7 +32,6 @@ ConstructionPitSchema = ConstructionPit
 DewateringConfigSchema = DewateringConfig
 
 
-
 class BuildingSchema(Building):
     @model_validator(mode="before")
     @classmethod
@@ -51,6 +50,7 @@ class BuildingSchema(Building):
     @property
     def structural_type(self) -> BuildingType:
         return self.building_type
+
 
 class WaterTableSchema(BaseModel):
     """Pydantic schema for groundwater table depth."""

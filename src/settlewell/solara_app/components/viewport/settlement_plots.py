@@ -53,7 +53,7 @@ def build_layer_breakdown_fig(
 ) -> go.Figure:
     """Build layer-by-layer stacked bar chart showing settlement per layer."""
     layer_names = [layer.name for layer in scenario.stratigraphy]
-    
+
     if results.settlement:
         s_elastic = [val * 1000.0 for val in results.settlement.per_layer_elastic]
         s_primary = [val * 1000.0 for val in results.settlement.per_layer_settlements]
@@ -162,10 +162,12 @@ def build_time_consolidation_fig(
             "x": 1.0,
         },
     )
-    
-    fig.update_yaxes(title_text="Settlement s [mm] (Downward)", zeroline=True, secondary_y=False)
+
+    fig.update_yaxes(
+        title_text="Settlement s [mm] (Downward)", zeroline=True, secondary_y=False
+    )
     fig.update_yaxes(title_text="U [%]", range=[0, 105], secondary_y=True)
-    
+
     return fig
 
 
