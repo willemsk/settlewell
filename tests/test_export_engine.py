@@ -96,15 +96,7 @@ def test_project_facade_export_methods(sample_project: Project, tmp_path: Path) 
     assert csv_path.stat().st_size > 50
 
 
-def test_scenario_schema_export_compatibility() -> None:
-    """Verify export functions work with Solara ScenarioSchema instances."""
-    state = project_state.value
-    scenario = state.get_active_scenario()
 
-    assert generate_pdf_report(scenario).startswith(b"%PDF")
-    assert b"SECTION" in generate_dxf_drawing(scenario)
-    assert len(generate_excel_workbook(scenario)) > 500
-    assert len(generate_csv_data(scenario)) > 50
 
 
 def test_export_view_rendering() -> None:

@@ -4,28 +4,21 @@ from __future__ import annotations
 
 from datetime import datetime
 from io import BytesIO, StringIO
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from settlewell.project import Project
 
 
-def _get_project_and_name(project: Any) -> tuple[Any, str]:
-    """Extract core Project instance and project/scenario name."""
-    name = getattr(project, "name", None)
-    if name is None:
-        name = "Project Calculation Report"
-    if hasattr(project, "to_project"):
-        proj = project.to_project()
-    else:
-        proj = project
-    return proj, str(name)
-
-
-def generate_pdf_report(project: Any) -> bytes:
+def generate_pdf_report(project: "Project", name: str = "Project Calculation Report") -> bytes:
     """Generate a multi-page PDF engineering calculation report for a Project.
 
     Parameters
     ----------
-    project : Project | ScenarioSchema
-        Active calculation project or scenario schema.
+    project : Project
+        Active calculation project.
+    name : str, optional
+        Project or scenario name to display in the report.
 
     Returns
     -------
@@ -48,7 +41,6 @@ def generate_pdf_report(project: Any) -> bytes:
             "Optional dependency missing. Please install settlewell[export] to use PDF export features."
         ) from err
 
-    proj, name = _get_project_and_name(project)
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -142,7 +134,7 @@ def generate_pdf_report(project: Any) -> bytes:
             "k_h [m/s]",
         ]
     ]
-    layers = proj.soil.layers if proj.soil else []
+    layers = project.soil.layers if project.soil else []
     for layer in layers:
         flemish_val = (
             layer.flemish_type.value
@@ -202,7 +194,7 @@ def generate_pdf_report(project: Any) -> bytes:
             "Stress q [kPa]",
         ]
     ]
-    for load in proj.loads:
+    for load in project.loads:
         load_type_val = (
             load.type.value if hasattr(load.type, "value") else str(load.type)
         )
@@ -236,8 +228,8 @@ def generate_pdf_report(project: Any) -> bytes:
     story.append(
         Paragraph("4. Excavation Construction Pit & Dewatering Wells", h1_style)
     )
-    pit = proj.pit
-    dewatering = proj.dewatering
+    pit = project.pit
+    dewatering = project.dewatering
     pit_l = pit.length if pit else 0.0
     pit_w = pit.width if pit else 0.0
     pit_d = pit.depth if pit else 0.0
@@ -291,7 +283,7 @@ def generate_pdf_report(project: Any) -> bytes:
     story.append(
         Paragraph("5. Neighboring Building Structural Damage Assessment", h1_style)
     )
-    if proj.buildings:
+    if project.buildings:
         bldg_table_data = [
             [
                 "Building Name",
@@ -301,7 +293,7 @@ def generate_pdf_report(project: Any) -> bytes:
                 "Structure Type",
             ]
         ]
-        for bldg in proj.buildings:
+        for bldg in project.buildings:
             bx_center = getattr(bldg, "x_center", bldg.x)
             bldg_type = getattr(
                 bldg, "building_type", getattr(bldg, "structural_type", "masonry")
@@ -349,13 +341,13 @@ def generate_pdf_report(project: Any) -> bytes:
     return buffer.getvalue()
 
 
-def generate_dxf_drawing(project: Any) -> bytes:
+def generate_dxf_drawing(project: "Project") -> bytes:
     """Generate a multi-layer 2D CAD DXF vector drawing for a Project.
 
     Parameters
     ----------
-    project : Project | ScenarioSchema
-        Active calculation project or scenario schema.
+    project : Project
+        Active calculation project.
 
     Returns
     -------
@@ -370,7 +362,6 @@ def generate_dxf_drawing(project: Any) -> bytes:
             "Optional dependency missing. Please install settlewell[export] to use DXF export features."
         ) from err
 
-    proj, _ = _get_project_and_name(project)
 
     doc = ezdxf.new(dxfversion="R2010")
     msp = doc.modelspace()
@@ -385,11 +376,11 @@ def generate_dxf_drawing(project: Any) -> bytes:
     doc.layers.add(name="SETTLEMENT_BOWL", color=7)  # White/Black
 
     # 1. Soil Strata Layers
-    x_left = proj.settings.x_min
-    x_right = proj.settings.x_max
+    x_left = project.settings.x_min
+    x_right = project.settings.x_max
     current_z = 0.0
 
-    layers = proj.soil.layers if proj.soil else []
+    layers = project.soil.layers if project.soil else []
     for layer in layers:
         z_top = current_z
         z_bot = current_z - layer.thickness
@@ -412,7 +403,7 @@ def generate_dxf_drawing(project: Any) -> bytes:
         current_z = z_bot
 
     # 2. Groundwater Table
-    gwl_depth = proj.soil.gwl_depth if proj.soil else 2.0
+    gwl_depth = project.soil.gwl_depth if project.soil else 2.0
     gwl_z = -gwl_depth
     msp.add_line(
         (x_left, gwl_z),
@@ -425,7 +416,7 @@ def generate_dxf_drawing(project: Any) -> bytes:
     ).set_placement((x_right - 6.0, gwl_z + 0.2))
 
     # 3. Foundation Load Polygons
-    for load in proj.loads:
+    for load in project.loads:
         xl = load.x_center - load.width_B / 2.0
         xr = load.x_center + load.width_B / 2.0
         zt = load.z_surface_offset
@@ -441,8 +432,8 @@ def generate_dxf_drawing(project: Any) -> bytes:
         ).set_placement((xl, zb + 0.2))
 
     # 4. Construction Pit
-    if proj.pit:
-        pit = proj.pit
+    if project.pit:
+        pit = project.pit
         pxl = -pit.length / 2.0
         pxr = pit.length / 2.0
         pzb = -pit.depth
@@ -452,19 +443,19 @@ def generate_dxf_drawing(project: Any) -> bytes:
         )
 
     # 5. Dewatering Wells
-    wells = proj.dewatering.wells if proj.dewatering else []
+    wells = project.dewatering.wells if project.dewatering else []
     for well in wells:
         msp.add_circle(
             (well.x, 0.0), radius=well.r_w, dxfattribs={"layer": "DEWATERING_WELLS"}
         )
         msp.add_line(
             (well.x, 0.0),
-            (well.x, -proj.settings.z_max),
+            (well.x, -project.settings.z_max),
             dxfattribs={"layer": "DEWATERING_WELLS", "linetype": "CENTER"},
         )
 
     # 6. Buildings
-    for bldg in proj.buildings:
+    for bldg in project.buildings:
         bx_center = getattr(bldg, "x_center", bldg.x)
         bxl = bx_center - bldg.length / 2.0
         bxr = bx_center + bldg.length / 2.0
@@ -477,7 +468,7 @@ def generate_dxf_drawing(project: Any) -> bytes:
 
     # 7. Surface Settlement Bowl Curve Polyline
     x_curve = np.linspace(x_left, x_right, 50)
-    primary_B = proj.loads[0].width_B if proj.loads else 4.0
+    primary_B = project.loads[0].width_B if project.loads else 4.0
     s_curve_mm = 41.2 / (1.0 + (x_curve / max(0.5, primary_B / 2.0)) ** 2)
     s_curve_m = s_curve_mm / 1000.0  # Convert mm to m for CAD scale
 
@@ -492,13 +483,15 @@ def generate_dxf_drawing(project: Any) -> bytes:
     return s_io.getvalue().encode("utf-8")
 
 
-def generate_excel_workbook(project: Any) -> bytes:
+def generate_excel_workbook(project: "Project", name: str = "Project Calculation Report") -> bytes:
     """Generate a multi-tab Excel workbook (.xlsx) for a calculation project.
 
     Parameters
     ----------
-    project : Project | ScenarioSchema
-        Active calculation project or scenario schema.
+    project : Project
+        Active calculation project.
+    name : str, optional
+        Project or scenario name to display in the report.
 
     Returns
     -------
@@ -513,21 +506,21 @@ def generate_excel_workbook(project: Any) -> bytes:
             "Optional dependency missing. Please install settlewell[export] to use Excel export features."
         ) from err
 
-    proj, name = _get_project_and_name(project)
-    res = proj.solve() if (proj.soil and proj.pit and proj.dewatering) else None
+
+    res = project.results if project.results else (project.solve() if (project.soil and project.pit and project.dewatering) else None)
 
     buffer = BytesIO()
 
     # 1. Project Summary Sheet
-    gw_str = f"{proj.soil.gwl_depth:.2f} m" if proj.soil else "N/A"
-    pit_l = f"{proj.pit.length} m" if proj.pit else "N/A"
-    pit_w = f"{proj.pit.width} m" if proj.pit else "N/A"
-    pit_d = f"{proj.pit.depth} m" if proj.pit else "N/A"
-    n_wells = len(proj.dewatering.wells) if proj.dewatering else 0
+    gw_str = f"{project.soil.gwl_depth:.2f} m" if project.soil else "N/A"
+    pit_l = f"{project.pit.length} m" if project.pit else "N/A"
+    pit_w = f"{project.pit.width} m" if project.pit else "N/A"
+    pit_d = f"{project.pit.depth} m" if project.pit else "N/A"
+    n_wells = len(project.dewatering.wells) if project.dewatering else 0
     stress_method_str = (
-        proj.settings.stress_method.value
-        if hasattr(proj.settings.stress_method, "value")
-        else str(proj.settings.stress_method)
+        project.settings.stress_method.value
+        if hasattr(project.settings.stress_method, "value")
+        else str(project.settings.stress_method)
     )
 
     df_summary = pd.DataFrame(
@@ -539,12 +532,12 @@ def generate_excel_workbook(project: Any) -> bytes:
             {"Parameter": "Excavation Pit Depth", "Value": pit_d},
             {"Parameter": "Active Dewatering Wells", "Value": n_wells},
             {"Parameter": "Stress Calculation Method", "Value": stress_method_str},
-            {"Parameter": "Max Depth (z_max)", "Value": f"{proj.settings.z_max} m"},
+            {"Parameter": "Max Depth (z_max)", "Value": f"{project.settings.z_max} m"},
         ]
     )
 
     # 2. Soil Stratigraphy Sheet
-    layers = proj.soil.layers if proj.soil else []
+    layers = project.soil.layers if project.soil else []
     df_strat = pd.DataFrame(
         [
             {
@@ -623,13 +616,13 @@ def generate_excel_workbook(project: Any) -> bytes:
     return buffer.getvalue()
 
 
-def generate_csv_data(project: Any) -> bytes:
+def generate_csv_data(project: "Project") -> bytes:
     """Generate raw numerical settlement profile CSV data.
 
     Parameters
     ----------
-    project : Project | ScenarioSchema
-        Active calculation project or scenario schema.
+    project : Project
+        Active calculation project.
 
     Returns
     -------
@@ -644,8 +637,8 @@ def generate_csv_data(project: Any) -> bytes:
             "Optional dependency missing. Please install settlewell[export] to use CSV export features."
         ) from err
 
-    proj, _ = _get_project_and_name(project)
-    res = proj.solve() if (proj.soil and proj.pit and proj.dewatering) else None
+
+    res = project.results if project.results else (project.solve() if (project.soil and project.pit and project.dewatering) else None)
 
     if res and res.stress is not None:
         df = pd.DataFrame(
@@ -659,8 +652,8 @@ def generate_csv_data(project: Any) -> bytes:
         df = pd.DataFrame()
 
     # Add surface settlement bowl profile points
-    x_grid = np.linspace(proj.settings.x_min, proj.settings.x_max, 50)
-    primary_B = proj.loads[0].width_B if proj.loads else 4.0
+    x_grid = np.linspace(project.settings.x_min, project.settings.x_max, 50)
+    primary_B = project.loads[0].width_B if project.loads else 4.0
     s_max_mm = (
         (res.settlement.total_settlement * 1000.0) if (res and res.settlement) else 0.0
     )

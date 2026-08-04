@@ -15,9 +15,9 @@ dependencies = [
 
 [project.optional-dependencies]
 export = [
-    "reportlab>=3.6.0",
-    "ezdxf>=1.0.0",
-    "openpyxl>=3.0.0",
+    "reportlab>=5.0.0",
+    "ezdxf>=1.4.4",
+    "openpyxl>=3.1.5",
     "pandas>=2.0.0",
 ]
 notebook = ["jupyter>=1.0", "ipykernel>=6.0"]

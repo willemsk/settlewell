@@ -17,10 +17,11 @@ def ExportView() -> solara.Element:
     state = project_state.value
     active_sc = state.get_active_scenario()
 
-    pdf_bytes = generate_pdf_report(active_sc)
-    dxf_bytes = generate_dxf_drawing(active_sc)
-    excel_bytes = generate_excel_workbook(active_sc)
-    csv_bytes = generate_csv_data(active_sc)
+    proj = active_sc.to_project()
+    pdf_bytes = generate_pdf_report(proj, name=active_sc.name)
+    dxf_bytes = generate_dxf_drawing(proj)
+    excel_bytes = generate_excel_workbook(proj, name=active_sc.name)
+    csv_bytes = generate_csv_data(proj)
 
     return solara.Row(
         style={"width": "100%", "gap": "24px", "padding": "12px 0px"},

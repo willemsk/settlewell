@@ -124,16 +124,16 @@ def test_e2e_full_workflow() -> None:
     assert len(project_res.damage.assessments) >= 1
 
     # 6. Deliverable File Exports
-    pdf_b = generate_pdf_report(curr_sc)
+    pdf_b = generate_pdf_report(project, name=curr_sc.name)
     assert len(pdf_b) > 500
 
-    dxf_b = generate_dxf_drawing(curr_sc)
+    dxf_b = generate_dxf_drawing(project)
     assert len(dxf_b) > 200
 
-    excel_b = generate_excel_workbook(curr_sc)
+    excel_b = generate_excel_workbook(project, name=curr_sc.name)
     assert len(excel_b) > 500
 
-    csv_b = generate_csv_data(curr_sc)
+    csv_b = generate_csv_data(project)
     assert len(csv_b) > 50
 
     # 7. Project JSON Serialization / Deserialization (.settle file format)
