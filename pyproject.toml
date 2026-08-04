@@ -20,7 +20,7 @@ export = [
     "openpyxl>=3.1.5",
     "pandas>=2.0.0",
 ]
-notebook = ["jupyter>=1.0", "ipykernel>=6.0"]
+notebook = ["jupyter>=1.0", "ipykernel>=6.0", "jupytext>=1.16", "nbconvert>=7.0"]
 test = ["pytest>=7.0"]
 web = [
     "solara>=1.60.3",
@@ -52,7 +52,7 @@ markers = [
 
 [tool.ruff]
 target-version = "py311"
-exclude = [".agents"]
+exclude = [".agents", "notebooks"]
 
 [tool.ruff.lint]
 select = ["E", "F", "UP"]
