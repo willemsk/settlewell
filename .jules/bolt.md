@@ -16,3 +16,6 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+## 2024-08-01 - Python math vs Numpy for Scalars
+**Learning:** `_fadum_corner` was frequently calculating stress influence values over large grid spaces utilizing nested loops. The function relied on NumPy scalar operations (`np.sqrt`, `np.arctan`, `np.pi`) for variables typed as explicit `float`. NumPy functions introduce immense C-API context-switching overhead when executing millions of iterations on basic scalar values compared to standard Python `math`.
+**Action:** Always replace `numpy` equivalents with standard library `math` (`math.sqrt`, `math.atan`) when performing mathematical operations inside hot-path iterative loops that deal strictly with scalar floats, rather than vectorized arrays.
