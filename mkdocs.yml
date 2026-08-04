@@ -38,18 +38,30 @@ markdown_extensions:
 - pymdownx.arithmatex:
     generic: true
 nav:
-- Home: index.md
-- Getting Started: getting-started.md
-- Validation & Physics: validation.md
-- Theory: theory.md
-- API Reference:
-  - Project: api/project.md
-  - Export & Reporting: api/export.md
-  - Models: api/models.md
-  - Stress: api/stress.md
-  - Hydraulics: api/hydraulics.md
-  - Settlement: api/settlement.md
-  - Eurocode: api/eurocode.md
-  - Damage: api/damage.md
-  - Numerical: api/numerical.md
-  - Plotting: api/plotting.md
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - User Guides:
+      - Project Workflows: guides/project_workflow.md
+      - Solara Web Application: guides/solara_gui.md
+      - Exporting Deliverables: guides/exporting.md
+  - Theory & Eurocode 7:
+      - Mechanics Overview: theory/index.md
+      - Eurocode 7 & Flemish ANB: theory/eurocode7.md
+      - Building Damage Risk: theory/building_damage.md
+      - Physics Validation: validation.md
+  - Case Studies:
+      - Kauwereelstraat 31 Ghent: case_studies/kauwereelstraat.md
+      - Bridge Abutment Settlement: case_studies/example_analysis.md
+  - API Reference:
+      - Overview: api/index.md
+      - Project Orchestrator: api/project.md
+      - Export Engine: api/export.md
+      - Domain Models: api/models.md
+      - Stress Distribution: api/stress.md
+      - Hydraulics & Drawdown: api/hydraulics.md
+      - Settlement & Creep: api/settlement.md
+      - Eurocode 7 Factors: api/eurocode.md
+      - Building Damage: api/damage.md
+      - Numerical Solver: api/numerical.md
+      - Plotting & Visualizations: api/plotting.md
+
