@@ -98,20 +98,35 @@ class SoilLayer(BaseDomainModel):
     """Geotechnical properties of a single horizontal soil layer."""
 
     name: str
+    """Name or descriptive label for this soil layer."""
     thickness: float = Field(gt=0.0)
+    """Thickness of the layer [m]."""
     gamma: float = Field(gt=0.0)
+    """Dry unit weight [kN/m³]."""
     gamma_sat: float = Field(gt=0.0)
+    """Saturated unit weight [kN/m³]."""
     k_h: float = Field(gt=0.0, default=1e-4)
+    """Horizontal hydraulic conductivity [m/s]."""
     e0: float = Field(gt=0.0)
+    """Initial void ratio [-]."""
     Cc: float = Field(ge=0.0)
+    """Virgin compression index [-]."""
     Cr: float = Field(ge=0.0)
+    """Recompression (swelling) index [-]."""
     Eoed: float = Field(gt=0.0)
+    """Oedometric constrained modulus [kPa]."""
     Cv: float = Field(ge=0.0)
+    """Coefficient of consolidation [m²/s]."""
     OCR: float = Field(ge=1.0, default=1.0)
+    """Overconsolidation ratio [-]."""
     id: str | None = Field(default=None)
+    """Optional unique identifier."""
     color: str = Field(default="#f59e0b")
+    """Hex color code for plotting (e.g. '#f59e0b')."""
     uscs_type: SoilTypeUSCS = Field(default=SoilTypeUSCS.SAND)
+    """USCS classification type for hatching."""
     flemish_type: FlemishSoilType = Field(default=FlemishSoilType.PLEISTOCEEN_ZAND)
+    """Flemish standard soil classification type."""
 
     @property
     def gamma_dry(self) -> float:
@@ -214,8 +229,11 @@ class SoilProfile(BaseDomainModel):
     """Multi-layer soil profile with groundwater level."""
 
     layers: list[SoilLayer] = Field(min_length=1)
+    """List of soil layers ordered from top to bottom."""
     gwl_mtaw: float
+    """Groundwater level elevation [mTAW]."""
     surface_level_mtaw: float
+    """Ground surface elevation [mTAW]."""
 
     @field_validator("layers", mode="before")
     @classmethod
@@ -257,13 +275,21 @@ class Well(BaseDomainModel):
     """Specification of a single dewatering well."""
 
     x: float
+    """X-coordinate of the well [m]."""
     y: float
+    """Y-coordinate of the well [m]."""
     Q: float
+    """Pumping rate (discharge) [m³/s]. Use positive values for extraction."""
     id: str | None = Field(default=None)
+    """Optional unique identifier."""
     name: str = Field(default="Well")
+    """Descriptive name for the well."""
     r_w: float = Field(gt=0.0, default=0.075)
+    """Well radius [m]."""
     screen_top_mtaw: float = 0.0
+    """Top elevation of the well screen [mTAW]."""
     screen_bottom_mtaw: float = 0.0
+    """Bottom elevation of the well screen [mTAW]."""
 
     @field_validator("r_w", mode="before")
     @classmethod
@@ -285,11 +311,17 @@ class ConstructionPit(BaseDomainModel):
     """Rectangular excavation geometry for a construction pit."""
 
     length: float = Field(gt=0.0, default=20.0)
+    """Length of the excavation pit [m]."""
     width: float = Field(gt=0.0, default=15.0)
+    """Width of the excavation pit [m]."""
     depth: float = Field(gt=0.0, default=4.0)
+    """Depth of the excavation below surface level [m]."""
     center_x: float = 0.0
+    """X-coordinate of the pit's center [m]."""
     center_y: float = 0.0
+    """Y-coordinate of the pit's center [m]."""
     bottom_mtaw: float = 0.0
+    """Elevation of the pit bottom [mTAW]."""
 
     @field_validator("length", mode="before")
     @classmethod
@@ -317,13 +349,21 @@ class DewateringConfig(BaseDomainModel):
     """Dewatering system layout and hydraulic target parameters."""
 
     wells: list[Well] = Field(default_factory=list)
+    """List of dewatering wells."""
     target_drawdown_mtaw: float = -2.0
+    """Required groundwater level inside the pit [mTAW]."""
     original_gwl_mtaw: float = 4.0
+    """Original undisturbed groundwater level [mTAW]."""
     pumping_duration_days: float = Field(gt=0.0, default=30.0)
+    """Duration of the dewatering phase [days]."""
     aquifer_type: AquiferType = AquiferType.UNCONFINED
+    """Type of aquifer (confined or unconfined)."""
     R: float | None = Field(gt=0.0, default=None)
+    """Radius of influence (Sichardt/Weber) [m]. Computed automatically if None."""
     T: float | None = Field(gt=0.0, default=None)
+    """Aquifer transmissivity [m²/s]. Computed automatically if None."""
     S: float | None = Field(gt=0.0, default=None)
+    """Aquifer storativity or specific yield [-]."""
 
     @field_validator("pumping_duration_days", mode="before")
     @classmethod
@@ -371,14 +411,23 @@ class Building(BaseDomainModel):
     """Neighboring building structure for settlement damage assessment."""
 
     x: float = 0.0
+    """X-coordinate of the building center [m]."""
     y: float = 0.0
+    """Y-coordinate of the building center [m]."""
     length: float = Field(gt=0.0, default=10.0)
+    """Length of the building footprint [m]."""
     width: float = Field(gt=0.0, default=8.0)
+    """Width of the building footprint [m]."""
     id: str | None = Field(default=None)
+    """Optional unique identifier."""
     name: str = Field(default="Building")
+    """Descriptive name for the building."""
     orientation_deg: float = 0.0
+    """Orientation of the building relative to the x-axis [degrees]."""
     foundation_depth: float = Field(ge=0.0, default=0.6)
+    """Depth of the foundation below ground surface [m]."""
     building_type: BuildingType = BuildingType.MASONRY
+    """Construction type of the building."""
 
     @field_validator("length", mode="before")
     @classmethod
@@ -426,29 +475,51 @@ class LoadGeometry(BaseDomainModel):
     """Geometry and magnitude of surface loading."""
 
     id: str | None = Field(default=None)
+    """Optional unique identifier."""
     name: str = Field(default="Footing Load")
+    """Descriptive name for the load."""
     type: LoadType = Field(default=LoadType.RECTANGULAR)
+    """Geometric shape of the load."""
     x_center: float = 0.0
+    """X-coordinate of the load center [m]."""
     z_surface_offset: float = 0.0
+    """Depth of the load application below ground surface [m]."""
     width_B: float = Field(gt=0.0, default=4.0)
+    """Width of the load footprint [m]."""
     length_L: float = Field(gt=0.0, default=8.0)
+    """Length of the load footprint [m]."""
     stress_q: float = Field(gt=0.0, default=100.0)
+    """Magnitude of the applied surface stress [kPa]."""
 
 
 class SolverSettings(BaseDomainModel):
     """Calculation settings for numerical and analytical solvers."""
 
     stress_method: StressMethod = Field(default=StressMethod.BOUSSINESQ)
+    """Method used for vertical stress distribution calculations."""
     drainage: DrainageType = Field(default=DrainageType.DOUBLE)
+    """Consolidation drainage condition (single or double drainage)."""
     design_approach: DesignApproach = Field(default=DesignApproach.SLS_CHARACTERISTIC)
+    """Eurocode 7 design approach for partial safety factors."""
     hydraulics_solver: str = Field(default="analytical")
+    """Solver used for hydraulic calculations."""
     settlement_method: str = Field(default="cc_cr")
+    """Method used for consolidation settlement calculations."""
     z_max: float = Field(gt=0.0, default=20.0)
+    """Maximum depth for vertical stress integration [m]."""
     delta_z: float = Field(gt=0.0, default=0.25)
+    """Vertical spatial step size for numerical integration [m]."""
     grid_dx: float = Field(gt=0.0, default=1.0)
+    """Horizontal grid spacing for contour plotting and spatial analysis [m]."""
     grid_padding: float = Field(gt=0.0, default=50.0)
+    """Extra padding added around defined geometries for the calculation grid [m]."""
     x_min: float = -15.0
+    """Minimum X-coordinate for 1D/2D profile generation [m]."""
     x_max: float = 15.0
+    """Maximum X-coordinate for 1D/2D profile generation [m]."""
     t_start_days: float = Field(ge=1.0, default=1.0)
+    """Starting time for time-dependent settlement analysis [days]."""
     t_end_years: float = Field(gt=0.0, default=50.0)
+    """Ending time for time-dependent settlement analysis [years]."""
     calculate_creep: bool = True
+    """Flag to enable or disable secondary compression (creep) calculation."""

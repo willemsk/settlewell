@@ -10,7 +10,9 @@ if TYPE_CHECKING:
     from settlewell.project import Project
 
 
-def generate_pdf_report(project: "Project", name: str = "Project Calculation Report") -> bytes:
+def generate_pdf_report(
+    project: Project, name: str = "Project Calculation Report"
+) -> bytes:
     """Generate a multi-page PDF engineering calculation report for a Project.
 
     Parameters
@@ -40,7 +42,6 @@ def generate_pdf_report(project: "Project", name: str = "Project Calculation Rep
         raise ImportError(
             "Optional dependency missing. Please install settlewell[export] to use PDF export features."
         ) from err
-
 
     buffer = BytesIO()
     doc = SimpleDocTemplate(
@@ -341,7 +342,7 @@ def generate_pdf_report(project: "Project", name: str = "Project Calculation Rep
     return buffer.getvalue()
 
 
-def generate_dxf_drawing(project: "Project") -> bytes:
+def generate_dxf_drawing(project: Project) -> bytes:
     """Generate a multi-layer 2D CAD DXF vector drawing for a Project.
 
     Parameters
@@ -361,7 +362,6 @@ def generate_dxf_drawing(project: "Project") -> bytes:
         raise ImportError(
             "Optional dependency missing. Please install settlewell[export] to use DXF export features."
         ) from err
-
 
     doc = ezdxf.new(dxfversion="R2010")
     msp = doc.modelspace()
@@ -483,7 +483,9 @@ def generate_dxf_drawing(project: "Project") -> bytes:
     return s_io.getvalue().encode("utf-8")
 
 
-def generate_excel_workbook(project: "Project", name: str = "Project Calculation Report") -> bytes:
+def generate_excel_workbook(
+    project: Project, name: str = "Project Calculation Report"
+) -> bytes:
     """Generate a multi-tab Excel workbook (.xlsx) for a calculation project.
 
     Parameters
@@ -506,8 +508,15 @@ def generate_excel_workbook(project: "Project", name: str = "Project Calculation
             "Optional dependency missing. Please install settlewell[export] to use Excel export features."
         ) from err
 
-
-    res = project.results if project.results else (project.solve() if (project.soil and project.pit and project.dewatering) else None)
+    res = (
+        project.results
+        if project.results
+        else (
+            project.solve()
+            if (project.soil and project.pit and project.dewatering)
+            else None
+        )
+    )
 
     buffer = BytesIO()
 
@@ -616,7 +625,7 @@ def generate_excel_workbook(project: "Project", name: str = "Project Calculation
     return buffer.getvalue()
 
 
-def generate_csv_data(project: "Project") -> bytes:
+def generate_csv_data(project: Project) -> bytes:
     """Generate raw numerical settlement profile CSV data.
 
     Parameters
@@ -637,8 +646,15 @@ def generate_csv_data(project: "Project") -> bytes:
             "Optional dependency missing. Please install settlewell[export] to use CSV export features."
         ) from err
 
-
-    res = project.results if project.results else (project.solve() if (project.soil and project.pit and project.dewatering) else None)
+    res = (
+        project.results
+        if project.results
+        else (
+            project.solve()
+            if (project.soil and project.pit and project.dewatering)
+            else None
+        )
+    )
 
     if res and res.stress is not None:
         df = pd.DataFrame(
