@@ -44,6 +44,7 @@ nav:
 - Theory: theory.md
 - API Reference:
   - Project: api/project.md
+  - Export & Reporting: api/export.md
   - Models: api/models.md
   - Stress: api/stress.md
   - Hydraulics: api/hydraulics.md

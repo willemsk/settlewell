@@ -2,15 +2,19 @@
 
 ## Installation
 
-`settlewell` uses [`uv`](https://github.com/astral-sh/uv) for fast, deterministic Python package management.
+Install `settlewell` with optional export capabilities (PDF, DXF, Excel):
 
-### Clone and Install
+```bash
+pip install settlewell[export]
+```
+
+Or for local development using [`uv`](https://github.com/astral-sh/uv):
 
 ```bash
 git clone https://github.com/willemsk/settlewell.git
 cd settlewell
 
-# Install with all extras (web, testing, documentation)
+# Install with all extras (web, testing, export, documentation)
 uv sync --all-extras
 ```
 
@@ -34,61 +38,59 @@ uv run --extra docs mkdocs serve
 
 ## Quick Example
 
+The `Project` orchestrator class unifies soil profiles, construction pit geometry, dewatering system configurations, neighboring building assessments, and export utilities under a single clean API.
+
 ```python
-from settlewell import (
-    SoilProfile,
-    SoilLayer,
-    DewateringConfig,
-    Well,
-    Building,
-    AquiferType,
-    compute_drawdown_at_points,
-)
+from settlewell import Building, ConstructionPit, DewateringConfig, Project, Well
 
-# 1. Define Soil Profile
-profile = SoilProfile(
-    surface_level_mtaw=5.0,
+# 1. Initialize project from a Flemish soil profile preset template
+project = Project.from_template(
+    template_name="Antwerp Boom Clay Formation",
     gwl_mtaw=4.0,
-    layers=[
-        SoilLayer(
-            name="Sand",
-            thickness=2.0,
-            gamma=17.5,
-            gamma_sat=20.0,
-            k_h=1e-4,
-            e0=0.5,
-            Cc=0.02,
-            Cr=0.005,
-            Eoed=30000,
-            Cv=1e-2,
-        ),
-        SoilLayer(
-            name="Clay",
-            thickness=3.0,
-            gamma=16.0,
-            gamma_sat=18.5,
-            k_h=1e-9,
-            e0=1.0,
-            Cc=0.30,
-            Cr=0.06,
-            Eoed=3000,
-            Cv=1e-7,
-            OCR=1.5,
-        ),
-    ],
+    surface_level_mtaw=5.0,
 )
 
-# 2. Configure Dewatering System
-wells = [Well(x=0.0, y=0.0, Q=0.001)]
-config = DewateringConfig(
-    wells=wells,
+# 2. Define construction pit excavation
+project.pit = ConstructionPit(
+    length=20.0,
+    width=15.0,
+    depth=3.5,
+)
+
+# 3. Configure dewatering system layout and target groundwater level
+project.dewatering = DewateringConfig(
+    wells=[
+        Well(name="W1", x=-10.0, y=-7.5, Q=5.0),
+        Well(name="W2", x=10.0, y=-7.5, Q=5.0),
+        Well(name="W3", x=10.0, y=7.5, Q=5.0),
+        Well(name="W4", x=-10.0, y=7.5, Q=5.0),
+    ],
     target_drawdown_mtaw=1.5,
     original_gwl_mtaw=4.0,
     pumping_duration_days=90,
-    aquifer_type=AquiferType.UNCONFINED,
 )
 
-# 3. Compute Drawdown at (x=10, y=0)
-drawdown = compute_drawdown_at_points([(10.0, 0.0)], config, profile)
-print(f"Drawdown at 10m distance: {drawdown[0]:.3f} m")
+# 4. Add neighboring buildings for structural damage assessment
+project.buildings = [
+    Building(
+        name="Residence 1",
+        x=25.0,
+        y=0.0,
+        length=12.0,
+        width=8.0,
+        foundation_depth=1.5,
+    )
+]
+
+# 5. Execute unified geotechnical and hydraulic calculation
+results = project.solve()
+
+print(f"Radius of Influence R: {results.hydraulics.R:.1f} m")
+print(
+    f"Total Pit Center Settlement: {results.settlement.total_settlement * 1000:.1f} mm"
+)
+
+# 6. Export calculation report to PDF
+project.export_pdf("report.pdf")
 ```
+

@@ -17,6 +17,7 @@ from settlewell import (
     AquiferType,
     ConstructionPit,
     DewateringConfig,
+    Project,
     SoilLayer,
     SoilProfile,
     Well,
@@ -77,6 +78,12 @@ def generate_fd_grid_refinement_plot():
     )
     profile = SoilProfile(layers=[layer], gwl_mtaw=H0, surface_level_mtaw=H0 + 1.0)
     pit = ConstructionPit(length=10.0, width=8.0, depth=3.0)
+    project = Project(soil=profile, pit=pit, dewatering=config)
+    assert (
+        project.soil is not None
+        and project.pit is not None
+        and project.dewatering is not None
+    )
 
     x_analytical = np.linspace(1.0, 150.0, 300)
     s_analytical = thiem_drawdown_single_well(
@@ -199,7 +206,8 @@ def generate_mesh_independence_plot():
             for i in range(n_sub)
         ]
         profile = SoilProfile(layers=layers, gwl_mtaw=4.0, surface_level_mtaw=5.0)
-        s, _ = compute_total_settlement(profile, drawdown=2.0)
+        project = Project(soil=profile)
+        s, _ = compute_total_settlement(project.soil, drawdown=2.0)
         settlements.append(s * 1000.0)  # in mm
 
     fig, ax = plt.subplots(figsize=(8, 5))
