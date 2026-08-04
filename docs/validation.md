@@ -1,12 +1,12 @@
 # Validation & Physics Convergence
 
-This page documents the mathematical validation, asymptotic limits, and numerical convergence tests implemented in the `bronbemaling` package. The package is benchmarked against known analytical solutions in groundwater hydraulics and geotechnical 1D consolidation theory.
+This page documents the mathematical validation, asymptotic limits, and numerical convergence tests implemented in the `settlewell` package. The package is benchmarked against known analytical solutions in groundwater hydraulics and geotechnical 1D consolidation theory.
 
 ---
 
 ## 1. 2D Finite-Difference Grid Refinement ($\Delta x \to 0$)
 
-The 2D steady-state groundwater solver in `bronbemaling.numerical` solves the Poisson-Laplace groundwater flow equation on a regular grid:
+The 2D steady-state groundwater solver in `settlewell.numerical` solves the Poisson-Laplace groundwater flow equation on a regular grid:
 
 $$T \left( \frac{\partial^2 h}{\partial x^2} + \frac{\partial^2 h}{\partial y^2} \right) = - \sum_{w} Q_w \delta(x_w, y_w)$$
 
@@ -42,7 +42,7 @@ $$t_{\text{ss}} = \frac{R^2 S}{2.25 T}$$
 
 ## 3. 1D Consolidation Spatial Mesh Independence ($N \to \infty$)
 
-Ground settlement calculation in `bronbemaling.settlement` calculates primary consolidation per soil layer based on initial vertical effective stress $\sigma'_{v0}$ and stress increase $\Delta \sigma'_v$.
+Ground settlement calculation in `settlewell.settlement` calculates primary consolidation per soil layer based on initial vertical effective stress $\sigma'_{v0}$ and stress increase $\Delta \sigma'_v$.
 
 Subdividing thick compressible clay layers into $N$ thinner sublayers ensures accurate stress integration across depth:
 
