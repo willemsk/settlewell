@@ -29,8 +29,15 @@ The following Python code uses the `settlewell` API to model the soil profile, c
 ```python
 import matplotlib.pyplot as plt
 from settlewell import (
-    AquiferType, Building, BuildingType, ConstructionPit,
-    DewateringConfig, Project, SoilLayer, SoilProfile, Well
+    AquiferType,
+    Building,
+    BuildingType,
+    ConstructionPit,
+    DewateringConfig,
+    Project,
+    SoilLayer,
+    SoilProfile,
+    Well,
 )
 
 # === 1. Soil Profile ===
@@ -41,32 +48,67 @@ profile = SoilProfile(
         SoilLayer(
             name="Loam (Top layer)",
             thickness=2.0,
-            gamma=17.0, gamma_sat=19.0, k_h=1e-6,
-            e0=0.75, Cc=0.15, Cr=0.03, Eoed=3000.0, Cv=2e-7, OCR=1.2,
+            gamma=17.0,
+            gamma_sat=19.0,
+            k_h=1e-6,
+            e0=0.75,
+            Cc=0.15,
+            Cr=0.03,
+            Eoed=3000.0,
+            Cv=2e-7,
+            OCR=1.2,
         ),
         SoilLayer(
             name="Sandy Loam",
             thickness=2.0,
-            gamma=18.0, gamma_sat=20.0, k_h=5e-5,
-            e0=0.60, Cc=0.05, Cr=0.01, Eoed=15000.0, Cv=5e-6, OCR=1.0,
+            gamma=18.0,
+            gamma_sat=20.0,
+            k_h=5e-5,
+            e0=0.60,
+            Cc=0.05,
+            Cr=0.01,
+            Eoed=15000.0,
+            Cv=5e-6,
+            OCR=1.0,
         ),
         SoilLayer(
             name="Sand (Dense)",
             thickness=7.4,
-            gamma=18.5, gamma_sat=20.5, k_h=1e-4,
-            e0=0.55, Cc=0.02, Cr=0.005, Eoed=40000.0, Cv=1e-5, OCR=1.0,
+            gamma=18.5,
+            gamma_sat=20.5,
+            k_h=1e-4,
+            e0=0.55,
+            Cc=0.02,
+            Cr=0.005,
+            Eoed=40000.0,
+            Cv=1e-5,
+            OCR=1.0,
         ),
         SoilLayer(
             name="Clay",
             thickness=2.8,
-            gamma=16.5, gamma_sat=18.5, k_h=1e-8,
-            e0=0.90, Cc=0.20, Cr=0.04, Eoed=6000.0, Cv=1e-7, OCR=1.5,
+            gamma=16.5,
+            gamma_sat=18.5,
+            k_h=1e-8,
+            e0=0.90,
+            Cc=0.20,
+            Cr=0.04,
+            Eoed=6000.0,
+            Cv=1e-7,
+            OCR=1.5,
         ),
         SoilLayer(
             name="Deep Sand with Gravel",
             thickness=5.8,
-            gamma=19.0, gamma_sat=21.0, k_h=2e-4,
-            e0=0.50, Cc=0.015, Cr=0.003, Eoed=50000.0, Cv=1e-5, OCR=1.0,
+            gamma=19.0,
+            gamma_sat=21.0,
+            k_h=2e-4,
+            e0=0.50,
+            Cc=0.015,
+            Cr=0.003,
+            Eoed=50000.0,
+            Cv=1e-5,
+            OCR=1.0,
         ),
     ],
 )
@@ -87,8 +129,12 @@ well_coords = [(-7.0, -7.5), (7.0, -7.5), (0.0, 7.5)]
 q_per_well = 2.5e-3  # m³/s per well
 wells = [
     Well(
-        x=wx, y=wy, Q=q_per_well, r_w=0.075,
-        screen_top_mtaw=25.76, screen_bottom_mtaw=21.76,
+        x=wx,
+        y=wy,
+        Q=q_per_well,
+        r_w=0.075,
+        screen_top_mtaw=25.76,
+        screen_bottom_mtaw=21.76,
     )
     for wx, wy in well_coords
 ]
@@ -106,14 +152,22 @@ dewatering = DewateringConfig(
 b29 = Building(
     id="Building_29",
     name="Kauwereelstraat 29",
-    x=16.5, y=0.0, length=10.0, width=10.0,
-    foundation_depth=1.5, building_type=BuildingType.MASONRY,
+    x=16.5,
+    y=0.0,
+    length=10.0,
+    width=10.0,
+    foundation_depth=1.5,
+    building_type=BuildingType.MASONRY,
 )
 b33 = Building(
     id="Building_33",
     name="Kauwereelstraat 33",
-    x=-16.5, y=0.0, length=10.0, width=10.0,
-    foundation_depth=1.5, building_type=BuildingType.MASONRY,
+    x=-16.5,
+    y=0.0,
+    length=10.0,
+    width=10.0,
+    foundation_depth=1.5,
+    building_type=BuildingType.MASONRY,
 )
 
 buildings = [b29, b33]
@@ -129,7 +183,9 @@ project = Project(
 results = project.solve()
 
 print(f"Calculated Hydraulic Radius (R): {results.hydraulics.R:.1f} m")
-print(f"Total Settlement at pit center: {results.settlement.total_settlement * 1000:.2f} mm")
+print(
+    f"Total Settlement at pit center: {results.settlement.total_settlement * 1000:.2f} mm"
+)
 
 # Generate PDF report
 project.export_pdf("kauwereelstraat_31_report.pdf")
@@ -143,8 +199,10 @@ After calling `project.solve()`, the `ProjectResults` object will contain all hy
 # Damage Assessment Summary
 for b_key, asm in results.damage.assessments.items():
     print(f"=== {b_key} ===")
-    print(f"  Max Settlement:      {asm.max_settlement*1000:.2f} mm")
-    print(f"  Diff Settlement:     {asm.differential_settlement*1000:.2f} mm")
-    print(f"  Angular Distortion:  1/{int(1.0/max(asm.angular_distortion, 1e-9))}")
-    print(f"  Damage Category:     Class {asm.damage_category} ({asm.damage_description})")
+    print(f"  Max Settlement:      {asm.max_settlement * 1000:.2f} mm")
+    print(f"  Diff Settlement:     {asm.differential_settlement * 1000:.2f} mm")
+    print(f"  Angular Distortion:  1/{int(1.0 / max(asm.angular_distortion, 1e-9))}")
+    print(
+        f"  Damage Category:     Class {asm.damage_category} ({asm.damage_description})"
+    )
 ```

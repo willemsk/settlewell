@@ -16,8 +16,8 @@ from settlewell import Project
 # Initialize a project from a Flemish template
 project = Project.from_template(
     template_name="Antwerp Boom Clay Formation",
-    gwl_mtaw=4.0,           # Groundwater level (mTAW)
-    surface_level_mtaw=6.0  # Ground surface level (mTAW)
+    gwl_mtaw=4.0,  # Groundwater level (mTAW)
+    surface_level_mtaw=6.0,  # Ground surface level (mTAW)
 )
 ```
 
@@ -40,7 +40,7 @@ custom_layers = [
         Cr=0.01,
         Eoed=15000.0,
         Cv=1e-6,
-        uscs_type=SoilTypeUSCS.SAND
+        uscs_type=SoilTypeUSCS.SAND,
     ),
     SoilLayer(
         name="Stiff Clay",
@@ -53,15 +53,11 @@ custom_layers = [
         Cr=0.03,
         Eoed=8000.0,
         Cv=5e-8,
-        uscs_type=SoilTypeUSCS.CLAY
-    )
+        uscs_type=SoilTypeUSCS.CLAY,
+    ),
 ]
 
-custom_profile = SoilProfile(
-    layers=custom_layers,
-    gwl_mtaw=4.0,
-    surface_level_mtaw=6.0
-)
+custom_profile = SoilProfile(layers=custom_layers, gwl_mtaw=4.0, surface_level_mtaw=6.0)
 
 # Initialize project with custom soil
 project = Project(soil=custom_profile)
@@ -75,11 +71,7 @@ Next, specify the dimensions of your construction pit and the dewatering system 
 from settlewell import ConstructionPit, DewateringConfig, Well, AquiferType
 
 # Add excavation pit
-project.pit = ConstructionPit(
-    length=30.0,
-    width=20.0,
-    depth=5.0
-)
+project.pit = ConstructionPit(length=30.0, width=20.0, depth=5.0)
 
 # Add dewatering configuration with a well array
 project.dewatering = DewateringConfig(
@@ -92,7 +84,7 @@ project.dewatering = DewateringConfig(
         Well(x=15.0, y=-10.0, Q=15.0),
         Well(x=15.0, y=10.0, Q=15.0),
         Well(x=-15.0, y=10.0, Q=15.0),
-    ]
+    ],
 )
 ```
 
@@ -111,7 +103,7 @@ project.buildings = [
         y=0.0,
         length=12.0,
         width=8.0,
-        building_type=BuildingType.MASONRY
+        building_type=BuildingType.MASONRY,
     )
 ]
 
@@ -123,7 +115,7 @@ project.loads = [
         x_center=20.0,
         width_B=5.0,
         length_L=5.0,
-        stress_q=150.0  # kPa
+        stress_q=150.0,  # kPa
     )
 ]
 ```

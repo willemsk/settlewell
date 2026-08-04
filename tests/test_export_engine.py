@@ -96,9 +96,6 @@ def test_project_facade_export_methods(sample_project: Project, tmp_path: Path) 
     assert csv_path.stat().st_size > 50
 
 
-
-
-
 def test_export_view_rendering() -> None:
     """Verify ExportView component rendering with reacton."""
     box_export = reacton.render(ExportView())
