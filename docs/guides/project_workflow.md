@@ -21,6 +21,52 @@ project = Project.from_template(
 )
 ```
 
+### Defining Custom Soil Strata
+
+If you don't use a preset, you can define your custom soil layers and construct a `SoilProfile`.
+
+```python
+from settlewell import Project, SoilProfile, SoilLayer, SoilTypeUSCS
+
+custom_layers = [
+    SoilLayer(
+        name="Topsoil",
+        thickness=1.5,
+        gamma=16.0,
+        gamma_sat=18.0,
+        k_h=1e-5,
+        e0=0.6,
+        Cc=0.05,
+        Cr=0.01,
+        Eoed=15000.0,
+        Cv=1e-6,
+        uscs_type=SoilTypeUSCS.SAND
+    ),
+    SoilLayer(
+        name="Stiff Clay",
+        thickness=8.5,
+        gamma=19.0,
+        gamma_sat=20.0,
+        k_h=1e-8,
+        e0=0.8,
+        Cc=0.15,
+        Cr=0.03,
+        Eoed=8000.0,
+        Cv=5e-8,
+        uscs_type=SoilTypeUSCS.CLAY
+    )
+]
+
+custom_profile = SoilProfile(
+    layers=custom_layers,
+    gwl_mtaw=4.0,
+    surface_level_mtaw=6.0
+)
+
+# Initialize project with custom soil
+project = Project(soil=custom_profile)
+```
+
 ### Adding Pit and Dewatering Configuration
 
 Next, specify the dimensions of your construction pit and the dewatering system configuration.
@@ -95,7 +141,7 @@ print(f"Total Settlement: {results.settlement.total_settlement * 1000:.1f} mm")
 print(f"Max Drawdown: {results.hydraulics.drawdown_grid.max():.2f} m")
 
 damage = results.damage.assessments["Historical Masonry House"]
-print(f"Damage Category: {damage.damage_category.name}")
+print(f"Damage Category: {damage.damage_category}")
 ```
 
 ## Visualizing Results
