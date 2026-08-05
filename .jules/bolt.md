@@ -16,3 +16,7 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+
+## 2026-08-05 - Vectorized Extract Drawdown Points Bottleneck
+**Learning:** `extract_drawdown_at_points` used a slow python list comprehension `np.array([(py, px) for px, py in points], dtype=float)` to construct the interpolation coordinates array by reversing `(x, y)` to `(y, x)` due to the `(y, x)` orientation of the 2D finite-difference solver. For hundreds of thousands of grid points this creates a CPU bottleneck.
+**Action:** Use `np.asarray` and fast numpy array slicing (e.g. `pts[:, [1, 0]]`) instead of slow Python list comprehensions to swap coordinate array dimensions when interpolating points for SciPy's `RegularGridInterpolator`.
