@@ -16,3 +16,7 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+
+## 2024-05-25 - SciPy RegularGridInterpolator Empty Input Bug
+**Learning:** In `src/settlewell/numerical.py` `extract_drawdown_at_points`, passing an empty coordinate list to `RegularGridInterpolator` through a list comprehension or simple `np.asarray` without shape checking yielded a flat array `(0,)` which crashed the interpolator.
+**Action:** When passing coordinate arrays to SciPy's `RegularGridInterpolator`, explicitly handle empty inputs by returning an empty array with the correct dimensionality (e.g., `np.empty((0, 2), dtype=float)` for 2D grids) before invoking the interpolator to prevent shape mismatch crashes.
