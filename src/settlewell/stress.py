@@ -261,8 +261,12 @@ def boussinesq_rectangular_stress(
     if np.any(~inside_mask):
         y_half_outside = np.broadcast_to(y_half, x_rel_arr.shape)[~inside_mask]
         Iz_outside = 2.0 * (
-            fadum_corner_stress(b_far[~inside_mask], y_half_outside, z_arr[~inside_mask])
-            - fadum_corner_stress(b_near[~inside_mask], y_half_outside, z_arr[~inside_mask])
+            fadum_corner_stress(
+                b_far[~inside_mask], y_half_outside, z_arr[~inside_mask]
+            )
+            - fadum_corner_stress(
+                b_near[~inside_mask], y_half_outside, z_arr[~inside_mask]
+            )
         )
         Iz[~inside_mask] = Iz_outside
 
