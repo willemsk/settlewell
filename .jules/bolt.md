@@ -16,3 +16,7 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+
+## 2025-02-12 - Vectorized Load Stress Increment Calculations Bottleneck
+**Learning:** `compute_stress_heatmap` in `src/settlewell/stress.py` evaluated stress influence equations (Boussinesq, Fadum, 2-to-1 method) over dense 2D depth grids using a standard double Python `for` loop over scalar values. This was identified as a performance bottleneck when simulating foundations on fine resolution grids.
+**Action:** When computing structural load stresses over a field/grid, avoid python loops by broadly type-hinting mathematical physics functions to support `float | np.ndarray` arrays, relying entirely on `np.meshgrid` arrays, NumPy boolean indexing (`np.where`), and element-wise array math functions to maintain high C-level execution speed, ensuring strict backwards compatibility via shape and dimensionality checks for existing scalar calls.
