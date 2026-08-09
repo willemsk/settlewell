@@ -1,54 +1,78 @@
-import math
 import numpy as np
 from numpy.typing import NDArray
 
 from settlewell.models import LoadGeometry, LoadType, StressMethod
 
 
-def fadum_corner_stress(b: float, l_dim: float, z: float) -> float:
+def fadum_corner_stress(
+    b: float | np.ndarray, l_dim: float | np.ndarray, z: float | np.ndarray
+) -> float | np.ndarray:
     """
     Calculate Fadum (1948) corner stress influence value Iz for a rectangle b x l_dim at depth z.
 
     Parameters
     ----------
-    b : float
+    b : float or np.ndarray
         Width of the rectangular area [m].
-    l_dim : float
+    l_dim : float or np.ndarray
         Length of the rectangular area [m].
-    z : float
+    z : float or np.ndarray
         Depth below the loaded area [m].
 
     Returns
     -------
-    float
+    float or np.ndarray
         Vertical stress influence factor Iz [-].
     """
-    if z <= 1e-6:
-        return 0.25
-    if b <= 1e-6 or l_dim <= 1e-6:
-        return 0.0
+    b_arr, l_dim_arr, z_arr = np.broadcast_arrays(b, l_dim, z)
+    out = np.zeros_like(b_arr, dtype=np.float64)
 
-    m = b / z
-    n = l_dim / z
-    m2 = m * m
-    n2 = n * n
-    v = m2 + n2 + 1.0
-    v_mn = m2 * n2
+    mask_z_zero = z_arr <= 1e-6
+    mask_b_l_zero = (b_arr <= 1e-6) | (l_dim_arr <= 1e-6)
 
-    term1 = (2.0 * m * n * math.sqrt(v) / (v + v_mn)) * ((v + 1.0) / v)
-    arg2 = (2.0 * m * n * math.sqrt(v)) / (v - v_mn)
+    out[mask_z_zero] = 0.25
+    out[~mask_z_zero & mask_b_l_zero] = 0.0
 
-    if abs(v - v_mn) < 1e-12:
-        arg2_val = math.pi / 2.0
-    elif v - v_mn < 0:
-        arg2_val = math.atan(arg2) + math.pi
-    else:
-        arg2_val = math.atan(arg2)
+    mask_calc = ~mask_z_zero & ~mask_b_l_zero
 
-    return float((1.0 / (4.0 * math.pi)) * (term1 + arg2_val))
+    if np.any(mask_calc):
+        b_c = b_arr[mask_calc]
+        l_c = l_dim_arr[mask_calc]
+        z_c = z_arr[mask_calc]
+
+        m = b_c / z_c
+        n = l_c / z_c
+        m2 = m * m
+        n2 = n * n
+        v = m2 + n2 + 1.0
+        v_mn = m2 * n2
+
+        term1 = (2.0 * m * n * np.sqrt(v) / (v + v_mn)) * ((v + 1.0) / v)
+
+        with np.errstate(divide="ignore", invalid="ignore"):
+            arg2 = (2.0 * m * n * np.sqrt(v)) / (v - v_mn)
+
+        arg2_val = np.empty_like(arg2)
+        diff = v - v_mn
+
+        mask_eq = np.abs(diff) < 1e-12
+        mask_lt = (diff < 0) & ~mask_eq
+        mask_gt = ~(mask_eq | mask_lt)
+
+        arg2_val[mask_eq] = np.pi / 2.0
+        arg2_val[mask_lt] = np.arctan(arg2[mask_lt]) + np.pi
+        arg2_val[mask_gt] = np.arctan(arg2[mask_gt])
+
+        out[mask_calc] = (1.0 / (4.0 * np.pi)) * (term1 + arg2_val)
+
+    if out.ndim == 0:
+        return float(out)
+    return out
 
 
-def boussinesq_strip_stress(q: float, B: float, x_rel: float, z: float) -> float:
+def boussinesq_strip_stress(
+    q: float, B: float, x_rel: float | np.ndarray, z: float | np.ndarray
+) -> float | np.ndarray:
     """
     Calculate vertical stress increment under a Boussinesq strip load.
 
@@ -58,31 +82,45 @@ def boussinesq_strip_stress(q: float, B: float, x_rel: float, z: float) -> float
         Applied uniform stress [kPa].
     B : float
         Width of the strip load [m].
-    x_rel : float
+    x_rel : float or np.ndarray
         Horizontal distance from the center of the strip [m].
-    z : float
+    z : float or np.ndarray
         Depth below the load [m].
 
     Returns
     -------
-    float
+    float or np.ndarray
         Vertical stress increment [kPa].
     """
-    if z <= 1e-6:
-        if abs(x_rel) <= B / 2.0:
-            return float(q)
-        return 0.0
+    x_arr, z_arr = np.broadcast_arrays(x_rel, z)
+    out = np.zeros_like(x_arr, dtype=np.float64)
 
-    x_L = x_rel - B / 2.0
-    x_R = x_rel + B / 2.0
+    mask_z_zero = z_arr <= 1e-6
+    mask_in_strip = np.abs(x_arr) <= B / 2.0
 
-    alpha = math.atan(x_R / z) - math.atan(x_L / z)
-    return float((q / math.pi) * (alpha + math.sin(alpha) * math.cos(alpha)))
+    out[mask_z_zero & mask_in_strip] = float(q)
+    out[mask_z_zero & ~mask_in_strip] = 0.0
+
+    mask_calc = ~mask_z_zero
+
+    if np.any(mask_calc):
+        x_c = x_arr[mask_calc]
+        z_c = z_arr[mask_calc]
+
+        x_L = x_c - B / 2.0
+        x_R = x_c + B / 2.0
+
+        alpha = np.arctan(x_R / z_c) - np.arctan(x_L / z_c)
+        out[mask_calc] = (q / np.pi) * (alpha + np.sin(alpha) * np.cos(alpha))
+
+    if out.ndim == 0:
+        return float(out)
+    return out
 
 
 def boussinesq_rectangular_stress(
-    q: float, B: float, L: float, x_rel: float, z: float
-) -> float:
+    q: float, B: float, L: float, x_rel: float | np.ndarray, z: float | np.ndarray
+) -> float | np.ndarray:
     """
     Calculate vertical stress increment under a Boussinesq rectangular load.
 
@@ -94,39 +132,58 @@ def boussinesq_rectangular_stress(
         Width of the rectangular load [m].
     L : float
         Length of the rectangular load [m].
-    x_rel : float
+    x_rel : float or np.ndarray
         Horizontal distance from the center of the load [m].
-    z : float
+    z : float or np.ndarray
         Depth below the surface [m].
 
     Returns
     -------
-    float
+    float or np.ndarray
         Vertical stress increment [kPa].
     """
+    x_arr, z_arr = np.broadcast_arrays(x_rel, z)
+    out = np.zeros_like(x_arr, dtype=np.float64)
+
     y_half = L / 2.0
-    if abs(x_rel) <= B / 2.0:
-        b1 = B / 2.0 - abs(x_rel)
-        b2 = B / 2.0 + abs(x_rel)
+    abs_x = np.abs(x_arr)
+
+    mask_inside = abs_x <= B / 2.0
+    mask_outside = ~mask_inside
+
+    if np.any(mask_inside):
+        b1 = B / 2.0 - abs_x[mask_inside]
+        b2 = B / 2.0 + abs_x[mask_inside]
+        z_in = z_arr[mask_inside]
         Iz = 2.0 * (
-            fadum_corner_stress(b1, y_half, z) + fadum_corner_stress(b2, y_half, z)
+            fadum_corner_stress(b1, y_half, z_in)
+            + fadum_corner_stress(b2, y_half, z_in)
         )
-    else:
-        b_far = abs(x_rel) + B / 2.0
-        b_near = abs(x_rel) - B / 2.0
+        out[mask_inside] = Iz
+
+    if np.any(mask_outside):
+        b_far = abs_x[mask_outside] + B / 2.0
+        b_near = abs_x[mask_outside] - B / 2.0
+        z_out = z_arr[mask_outside]
         Iz = 2.0 * (
-            fadum_corner_stress(b_far, y_half, z)
-            - fadum_corner_stress(b_near, y_half, z)
+            fadum_corner_stress(b_far, y_half, z_out)
+            - fadum_corner_stress(b_near, y_half, z_out)
         )
-    return max(0.0, float(q * Iz))
+        out[mask_outside] = Iz
+
+    out = np.maximum(0.0, q * out)
+
+    if out.ndim == 0:
+        return float(out)
+    return out
 
 
 def compute_load_stress_increment(
     load: LoadGeometry,
-    x_rel: float,
-    z: float,
+    x_rel: float | np.ndarray,
+    z: float | np.ndarray,
     method: StressMethod = StressMethod.BOUSSINESQ,
-) -> float:
+) -> float | np.ndarray:
     """
     Compute vertical stress increment delta_sigma_z under a specific surface load geometry.
 
@@ -134,16 +191,16 @@ def compute_load_stress_increment(
     ----------
     load : LoadGeometry
         The load geometry definition.
-    x_rel : float
+    x_rel : float or np.ndarray
         Horizontal distance from the load's center [m].
-    z : float
+    z : float or np.ndarray
         Depth below the surface [m].
     method : StressMethod, optional
         The stress distribution method to apply. Default is StressMethod.BOUSSINESQ.
 
     Returns
     -------
-    float
+    float or np.ndarray
         Vertical stress increment [kPa].
 
     Raises
@@ -155,18 +212,31 @@ def compute_load_stress_increment(
     """
     q = max(0.0, float(load.stress_q))
     B = max(0.1, float(load.width_B))
-    depth = max(0.01, float(z + load.z_surface_offset))
+
+    if np.isscalar(z):
+        depth = max(0.01, float(z + load.z_surface_offset))
+    else:
+        depth = np.maximum(0.01, z + load.z_surface_offset)
 
     if method == StressMethod.TWO_TO_ONE:
+        x_arr, depth_arr = np.broadcast_arrays(x_rel, depth)
+        out = np.zeros_like(x_arr, dtype=np.float64)
+
+        mask = np.abs(x_arr) <= (B + depth_arr) / 2.0
+
         if load.type == LoadType.STRIP:
-            if abs(x_rel) <= (B + depth) / 2.0:
-                return float((q * B) / (B + depth))
-            return 0.0
+            if np.any(mask):
+                out[mask] = (q * B) / (B + depth_arr[mask])
         else:
             L = max(0.1, float(load.length_L))
-            if abs(x_rel) <= (B + depth) / 2.0:
-                return float((q * B * L) / ((B + depth) * (L + depth)))
-            return 0.0
+            if np.any(mask):
+                out[mask] = (q * B * L) / (
+                    (B + depth_arr[mask]) * (L + depth_arr[mask])
+                )
+
+        if out.ndim == 0:
+            return float(out)
+        return out
 
     elif method == StressMethod.BOUSSINESQ:
         if load.type == LoadType.STRIP:
@@ -242,15 +312,16 @@ def compute_stress_heatmap(
     heatmap = np.zeros((len(z_points), len(x_points)), dtype=np.float64)
     primary_q = loads[0].stress_q if loads else 100.0
 
-    # TODO: Optimize this loop via vectorization.
-    # A double loop over scalar physics functions is a performance bottleneck for large grids.
-    # Future sprints should vectorize boussinesq/fadum equations to accept NumPy arrays.
-    for i, z in enumerate(z_points):
-        for j, x in enumerate(x_points):
-            ds_sum = 0.0
-            for load in loads:
-                x_rel = x - load.x_center
-                ds_sum += compute_load_stress_increment(load, x_rel, z, method)
-            heatmap[i, j] = ds_sum / max(1.0, float(primary_q))
+    if not loads:
+        return heatmap
+
+    X, Z = np.meshgrid(x_points, z_points)
+
+    ds_sum = np.zeros_like(X, dtype=np.float64)
+    for load in loads:
+        x_rel = X - load.x_center
+        ds_sum += compute_load_stress_increment(load, x_rel, Z, method)
+
+    heatmap = ds_sum / max(1.0, float(primary_q))
 
     return heatmap
