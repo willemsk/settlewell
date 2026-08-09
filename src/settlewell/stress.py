@@ -49,7 +49,7 @@ def fadum_corner_stress(
 
         term1 = (2.0 * m * n * np.sqrt(v) / (v + v_mn)) * ((v + 1.0) / v)
 
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             arg2 = (2.0 * m * n * np.sqrt(v)) / (v - v_mn)
 
         arg2_val = np.empty_like(arg2)
