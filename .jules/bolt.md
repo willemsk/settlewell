@@ -16,3 +16,7 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+
+## 2024-08-13 - Vectorizing Multi-input Mathematical Functions
+**Learning:** When vectorizing multi-input mathematical functions (like stress equations) to handle both scalar and `numpy.ndarray` types without breaking the public scalar API, manually handling broadcasting using `np.broadcast_shapes` and `np.broadcast_to` avoids shape mismatch errors during complex inner numpy array indexing.
+**Action:** When vectorizing mathematical operations that accept multiple inputs and may evaluate based on boolean masks, explicitly broadcast all array inputs up front using `np.broadcast_to` rather than relying purely on implicit NumPy broadcasting to ensure shape consistency when slicing valid elements for computation.
