@@ -16,3 +16,7 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+
+## 2024-10-24 - Vectorized Stress Heatmap Calculation
+**Learning:** `compute_stress_heatmap` in `src/settlewell/stress.py` used a double `for` loop over `z_points` and `x_points` calling scalar mathematical functions which became a performance bottleneck for dense grids.
+**Action:** When calculating grid-based evaluation of mathematical stress formulas (e.g. Boussinesq, Fadum), avoid Python loops by vectorizing the core math functions to handle both scalar and `np.ndarray` input types while preserving fast paths. Use `np.meshgrid` to generate coordinates and pass arrays down into the vectorized physics functions.
