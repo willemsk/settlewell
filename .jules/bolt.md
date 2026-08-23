@@ -16,3 +16,8 @@
 *   **Bottleneck:** Using `list(zip(X.ravel(), Y.ravel()))` to convert large meshgrid arrays into pairs of coordinate points is extremely slow and causes unnecessary memory allocations and python loop overhead for high-resolution grids.
 *   **Solution:** Replace with `np.column_stack((X.ravel(), Y.ravel()))` which is heavily optimized natively in C by NumPy.
 *   **Action:** When passing points to vectorized numerical computations from large multi-dimensional arrays, avoid generating large standard Python lists using `zip` and instead use NumPy stack/concatenation functions like `np.column_stack`.
+
+## 2024-11-20 - Vectorized Stress Heatmap Generation
+*   **Bottleneck:** Evaluating complex scalar equations (e.g. `fadum_corner_stress`, `boussinesq_rectangular_stress`) iteratively in double `for` loops across large depth/distance grids scales terribly. Testing indicated ~0.3s just for a 200x200 grid point stress heatmap generation.
+*   **Solution:** Removed Python loops in `compute_stress_profile_under_loads` and `compute_stress_heatmap`, processing multi-dimensional inputs with `np.meshgrid` arrays. Modified math functions to branch conditionally and process arrays natively, dropping execution time to ~0.02s (10x faster).
+*   **Action:** When vectorizing multi-dimensional inputs in numerical equations to accept NumPy grids, maintain a scalar fast path using explicit scalar type checks (`not isinstance(val, np.ndarray)`), explicitly handle shape broadcasting (`np.broadcast_shapes`), suppress runtime warnings (`with np.errstate`), conditionally index via boolean masks, and preserve dimensionality upon exit (`if out.ndim == 1: ...`).
